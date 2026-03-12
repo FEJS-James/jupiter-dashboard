@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Board } from '@/components/kanban/board'
 import { TaskFormDialog } from '@/components/kanban/task-form-dialog'
 import { DeleteTaskDialog } from '@/components/kanban/delete-task-dialog'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -35,6 +35,18 @@ export default function TasksPage() {
   const [filterProject, setFilterProject] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
   const [filterAssignee, setFilterAssignee] = useState('')
+
+  // Debounced search term to prevent excessive filtering
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
+
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm)
+    }, 300) // 300ms delay
+
+    return () => clearTimeout(timer)
+  }, [searchTerm])
 
   const fetchData = useCallback(async () => {
     try {
@@ -68,7 +80,7 @@ export default function TasksPage() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [setError, setTasks, setProjects, setAgents, setLoading])
 
   useEffect(() => {
     fetchData()
@@ -76,7 +88,7 @@ export default function TasksPage() {
 
   // Filter tasks based on search and filters
   const filteredTasks = tasks.filter(task => {
-    if (searchTerm && !task.title.toLowerCase().includes(searchTerm.toLowerCase())) {
+    if (debouncedSearchTerm && !task.title.toLowerCase().includes(debouncedSearchTerm.toLowerCase())) {
       return false
     }
     if (filterProject && task.projectId !== parseInt(filterProject)) {
@@ -177,7 +189,7 @@ export default function TasksPage() {
     } catch (error) {
       console.error('Delete task error:', error)
       toast.error('Failed to delete task')
-      throw error
+      // Don't re-throw error to allow dialog to close
     }
   }
 
@@ -227,7 +239,7 @@ export default function TasksPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6" role="main" aria-label="Task Management">
       {/* Page Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -245,6 +257,7 @@ export default function TasksPage() {
             <Button 
               onClick={() => handleCreateTask()}
               className="bg-blue-600 hover:bg-blue-700"
+              aria-label="Create new task"
             >
               <Plus className="w-4 h-4 mr-2" />
               Create Task
@@ -253,6 +266,7 @@ export default function TasksPage() {
               onClick={fetchData}
               variant="outline"
               className="border-slate-600 text-slate-300 hover:bg-slate-800"
+              aria-label="Refresh tasks data"
             >
               <RefreshCw className="w-4 h-4" />
             </Button>
@@ -260,7 +274,7 @@ export default function TasksPage() {
         </div>
 
         {/* Filters and Search */}
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card className="bg-slate-800/50 border-slate-700" role="search" aria-label="Task filters and search">
           <CardHeader className="pb-4">
             <CardTitle className="text-lg text-slate-200 flex items-center gap-2">
               <Filter className="w-5 h-5" />
@@ -346,7 +360,7 @@ export default function TasksPage() {
                   <span className="text-sm text-slate-400">Active filters:</span>
                   {searchTerm && (
                     <Badge variant="secondary" className="bg-slate-700 text-slate-200">
-                      Search: "{searchTerm}"
+                      Search: &quot;{searchTerm}&quot;
                     </Badge>
                   )}
                   {filterProject && (
@@ -369,6 +383,13 @@ export default function TasksPage() {
                     variant="ghost"
                     size="sm"
                     className="text-slate-400 hover:text-slate-200 h-6"
+                    aria-label="Clear all active filters"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        clearFilters()
+                      }
+                    }}
                   >
                     Clear all
                   </Button>

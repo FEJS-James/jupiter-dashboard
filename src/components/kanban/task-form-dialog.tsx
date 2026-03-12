@@ -73,7 +73,7 @@ export function TaskFormDialog({
         priority: task.priority || 'medium',
         status: task.status || defaultStatus,
         projectId: task.projectId || 0,
-        assignedAgent: task.assignedAgent || '',
+        assignedAgent: task.assignedAgent || 'unassigned',
         dueDate: task.dueDate ? task.dueDate.slice(0, 16) : '', // Format for datetime-local input
         effort: task.effort || 0,
         tags: task.tags || [],
@@ -87,7 +87,7 @@ export function TaskFormDialog({
         priority: 'medium',
         status: defaultStatus,
         projectId: projects.length > 0 ? projects[0].id : 0,
-        assignedAgent: '',
+        assignedAgent: 'unassigned',
         dueDate: '',
         effort: 0,
         tags: [],
@@ -132,7 +132,7 @@ export function TaskFormDialog({
         ...formData,
         dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : undefined,
         effort: formData.effort || undefined,
-        assignedAgent: formData.assignedAgent || undefined,
+        assignedAgent: (formData.assignedAgent && formData.assignedAgent !== 'unassigned') ? formData.assignedAgent : undefined,
         tags: formData.tags.length > 0 ? formData.tags : undefined,
         dependencies: formData.dependencies.length > 0 ? formData.dependencies : undefined
       }
@@ -298,7 +298,7 @@ export function TaskFormDialog({
                   <SelectValue placeholder="Select agent" />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-800 border-slate-600">
-                  <SelectItem value="" className="text-slate-100">No assignment</SelectItem>
+                  <SelectItem value="unassigned" className="text-slate-100">No assignment</SelectItem>
                   {agents.map(agent => (
                     <SelectItem key={agent.id} value={agent.name} className="text-slate-100">
                       <div className="flex items-center gap-2">
