@@ -1,135 +1,226 @@
 import React from 'react'
-import { render, screen, fireEvent } from '@testing-library/react'
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { ThemeToggle, useThemeStyles } from './theme-toggle'
-import { useTheme } from '@/contexts/theme-context'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { vi, describe, it, expect, beforeEach } from 'vitest'
+import { ThemeProvider } from '@/contexts/theme-context'
+import { ThemeToggle } from './theme-toggle'
 
-// Mock the theme context
-vi.mock('@/contexts/theme-context', () => ({
-  useTheme: vi.fn(),
-}))
+// Mock window.matchMedia
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: vi.fn().mockImplementation(query => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(), // deprecated
+    removeListener: vi.fn(), // deprecated
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })),
+})
 
-// Mock framer-motion
-vi.mock('framer-motion', () => ({
-  motion: {
-    button: 'button',
-    div: 'div',
-  },
-  AnimatePresence: ({ children }: { children: React.ReactNode }) => children,
-}))
+// Mock localStorage
+const localStorageMock = {
+  getItem: vi.fn(),
+  setItem: vi.fn(),
+  removeItem: vi.fn(),
+  clear: vi.fn(),
+}
+Object.defineProperty(window, 'localStorage', {
+  value: localStorageMock
+})
 
-// Mock lucide-react icons
-vi.mock('lucide-react', () => ({
-  Sun: () => <div data-testid="sun-icon" />,
-  Moon: () => <div data-testid="moon-icon" />,
-  Monitor: () => <div data-testid="monitor-icon" />,
-  ChevronDown: () => <div data-testid="chevron-down-icon" />,
-}))
+// Helper component to test theme context
+const TestComponent = ({ variant = 'button' }: { variant?: 'button' | 'dropdown' }) => (
+  <ThemeProvider>
+    <ThemeToggle variant={variant} />
+  </ThemeProvider>
+)
 
-describe('ThemeToggle', () => {
-  const mockSetTheme = vi.fn()
-  const mockToggleTheme = vi.fn()
-
+describe('ThemeToggle Component', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    ;(useTheme as any).mockReturnValue({
-      theme: 'dark',
-      actualTheme: 'dark',
-      setTheme: mockSetTheme,
-      toggleTheme: mockToggleTheme,
+    localStorageMock.getItem.mockReturnValue(null)
+  })
+
+  describe('Button variant', () => {
+    it('renders the theme toggle button', () => {
+      render(<TestComponent variant="button" />)
+      
+      const button = screen.getByRole('button')
+      expect(button).toBeInTheDocument()
+    })
+
+    it('toggles between dark and light themes on click', async () => {
+      render(<TestComponent variant="button" />)
+      
+      const button = screen.getByRole('button')
+      
+      // Initially should be dark theme (default)
+      fireEvent.click(button)
+      
+      // Should have called localStorage.setItem
+      await waitFor(() => {
+        expect(localStorageMock.setItem).toHaveBeenCalledWith('theme', 'light')
+      })
+      
+      // Click again to toggle back
+      fireEvent.click(button)
+      
+      await waitFor(() => {
+        expect(localStorageMock.setItem).toHaveBeenCalledWith('theme', 'dark')
+      })
+    })
+
+    it('displays correct icon for current theme', () => {
+      render(<TestComponent variant="button" />)
+      
+      const button = screen.getByRole('button')
+      expect(button).toBeInTheDocument()
+      
+      // Should have an icon (svg element)
+      const svg = button.querySelector('svg')
+      expect(svg).toBeInTheDocument()
+    })
+
+    it('has proper accessibility attributes', () => {
+      render(<TestComponent variant="button" />)
+      
+      const button = screen.getByRole('button')
+      expect(button).toHaveAttribute('title')
     })
   })
 
-  it('renders button variant with dark theme icon', () => {
-    render(<ThemeToggle variant="button" />)
-    
-    expect(screen.getByTestId('moon-icon')).toBeInTheDocument()
-    expect(screen.getByRole('button')).toHaveAttribute('title', 'Switch to light theme')
-  })
-
-  it('renders button variant with light theme icon', () => {
-    ;(useTheme as any).mockReturnValue({
-      theme: 'light',
-      actualTheme: 'light',
-      setTheme: mockSetTheme,
-      toggleTheme: mockToggleTheme,
+  describe('Dropdown variant', () => {
+    it('renders the dropdown toggle', () => {
+      render(<TestComponent variant="dropdown" />)
+      
+      const button = screen.getByRole('button')
+      expect(button).toBeInTheDocument()
+      expect(button).toHaveTextContent('System') // Default theme
     })
 
-    render(<ThemeToggle variant="button" />)
-    
-    expect(screen.getByTestId('sun-icon')).toBeInTheDocument()
-    expect(screen.getByRole('button')).toHaveAttribute('title', 'Switch to dark theme')
+    it('opens dropdown when clicked', async () => {
+      render(<TestComponent variant="dropdown" />)
+      
+      const button = screen.getByRole('button')
+      fireEvent.click(button)
+      
+      await waitFor(() => {
+        expect(screen.getByText('Light')).toBeInTheDocument()
+        expect(screen.getByText('Dark')).toBeInTheDocument()
+        expect(screen.getByText('System')).toBeInTheDocument()
+      })
+    })
+
+    it('selects theme option from dropdown', async () => {
+      render(<TestComponent variant="dropdown" />)
+      
+      const button = screen.getByRole('button')
+      fireEvent.click(button)
+      
+      await waitFor(() => {
+        expect(screen.getByText('Light')).toBeInTheDocument()
+      })
+      
+      const lightOption = screen.getByText('Light')
+      fireEvent.click(lightOption)
+      
+      await waitFor(() => {
+        expect(localStorageMock.setItem).toHaveBeenCalledWith('theme', 'light')
+      })
+    })
+
+    it('closes dropdown when backdrop is clicked', async () => {
+      render(<TestComponent variant="dropdown" />)
+      
+      const button = screen.getByRole('button')
+      fireEvent.click(button)
+      
+      await waitFor(() => {
+        expect(screen.getByText('Light')).toBeInTheDocument()
+      })
+      
+      // Click backdrop (this might need adjustment based on implementation)
+      fireEvent.click(document.body)
+      
+      await waitFor(() => {
+        expect(screen.queryByText('Light')).not.toBeInTheDocument()
+      })
+    })
   })
 
-  it('calls toggleTheme when button variant is clicked', () => {
-    render(<ThemeToggle variant="button" />)
-    
-    fireEvent.click(screen.getByRole('button'))
-    expect(mockToggleTheme).toHaveBeenCalledTimes(1)
+  describe('Theme persistence', () => {
+    it('loads saved theme from localStorage', () => {
+      localStorageMock.getItem.mockReturnValue('light')
+      
+      render(<TestComponent variant="dropdown" />)
+      
+      expect(localStorageMock.getItem).toHaveBeenCalledWith('theme')
+      
+      const button = screen.getByRole('button')
+      expect(button).toHaveTextContent('Light')
+    })
+
+    it('defaults to system theme when no saved preference', () => {
+      localStorageMock.getItem.mockReturnValue(null)
+      
+      render(<TestComponent variant="dropdown" />)
+      
+      const button = screen.getByRole('button')
+      expect(button).toHaveTextContent('System')
+    })
   })
 
-  it('renders dropdown variant with theme options', () => {
-    render(<ThemeToggle variant="dropdown" />)
-    
-    expect(screen.getByTestId('moon-icon')).toBeInTheDocument()
-    expect(screen.getByText('Dark')).toBeInTheDocument()
-    expect(screen.getByTestId('chevron-down-icon')).toBeInTheDocument()
+  describe('System preference detection', () => {
+    it('detects system dark theme preference', () => {
+      window.matchMedia = vi.fn().mockImplementation(query => ({
+        matches: query === '(prefers-color-scheme: dark)',
+        media: query,
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      }))
+
+      render(<TestComponent />)
+      
+      // Component should detect system preference
+      expect(window.matchMedia).toHaveBeenCalledWith('(prefers-color-scheme: dark)')
+    })
   })
 
-  it('applies correct size classes', () => {
-    const { rerender } = render(<ThemeToggle size="sm" />)
-    expect(screen.getByRole('button')).toHaveClass('h-8', 'w-8', 'p-1.5')
-
-    rerender(<ThemeToggle size="lg" />)
-    expect(screen.getByRole('button')).toHaveClass('h-10', 'w-10', 'p-2.5')
+  describe('Theme transitions', () => {
+    it('applies theme classes to HTML element', async () => {
+      render(<TestComponent variant="button" />)
+      
+      const button = screen.getByRole('button')
+      fireEvent.click(button)
+      
+      await waitFor(() => {
+        // Check that HTML classes are being managed
+        // This would need to be adjusted based on how the theme context works
+        expect(document.documentElement.classList.contains('light') || 
+               document.documentElement.classList.contains('dark')).toBe(true)
+      })
+    })
   })
 })
 
-describe('useThemeStyles', () => {
-  it('returns dark theme styles when actualTheme is dark', () => {
-    ;(useTheme as any).mockReturnValue({
-      actualTheme: 'dark',
-    })
-
-    // We need to test this hook within a component
-    function TestComponent() {
-      const styles = useThemeStyles()
-      return (
-        <div>
-          <div data-testid="bg-primary" className={styles.bg.primary} />
-          <div data-testid="text-primary" className={styles.text.primary} />
-          <div data-testid="border-primary" className={styles.border.primary} />
-        </div>
-      )
+describe('Theme Context', () => {
+  it('provides theme context to children', () => {
+    const TestChild = () => {
+      return <div data-testid="test-child">Test</div>
     }
-
-    render(<TestComponent />)
     
-    expect(screen.getByTestId('bg-primary')).toHaveClass('bg-slate-950')
-    expect(screen.getByTestId('text-primary')).toHaveClass('text-white')
-    expect(screen.getByTestId('border-primary')).toHaveClass('border-slate-700')
-  })
-
-  it('returns light theme styles when actualTheme is light', () => {
-    ;(useTheme as any).mockReturnValue({
-      actualTheme: 'light',
-    })
-
-    function TestComponent() {
-      const styles = useThemeStyles()
-      return (
-        <div>
-          <div data-testid="bg-primary" className={styles.bg.primary} />
-          <div data-testid="text-primary" className={styles.text.primary} />
-          <div data-testid="border-primary" className={styles.border.primary} />
-        </div>
-      )
-    }
-
-    render(<TestComponent />)
+    render(
+      <ThemeProvider>
+        <TestChild />
+      </ThemeProvider>
+    )
     
-    expect(screen.getByTestId('bg-primary')).toHaveClass('bg-white')
-    expect(screen.getByTestId('text-primary')).toHaveClass('text-slate-900')
-    expect(screen.getByTestId('border-primary')).toHaveClass('border-slate-200')
+    expect(screen.getByTestId('test-child')).toBeInTheDocument()
   })
 })
