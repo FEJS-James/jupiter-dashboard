@@ -3,7 +3,7 @@
  * Tests all REST API endpoints to verify functionality
  */
 
-import { db } from './src/lib/db';
+// Removed unused import: db
 
 const API_BASE = 'http://localhost:3000/api';
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Board } from '@/components/kanban/board'
 import { TaskFormDialog } from '@/components/kanban/task-form-dialog'
 import { DeleteTaskDialog } from '@/components/kanban/delete-task-dialog'

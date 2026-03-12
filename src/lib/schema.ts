@@ -90,7 +90,7 @@ export const activity = sqliteTable('activity', {
   agentId: integer('agent_id')
     .references(() => agents.id, { onDelete: 'set null' }),
   action: text('action').notNull(), // e.g., 'created', 'moved', 'assigned', 'commented'
-  details: text('details', { mode: 'json' }).$type<Record<string, any>>(),
+  details: text('details', { mode: 'json' }).$type<Record<string, unknown>>(),
   timestamp: integer('timestamp', { mode: 'timestamp' })
     .notNull()
     .default(sql`(unixepoch())`),

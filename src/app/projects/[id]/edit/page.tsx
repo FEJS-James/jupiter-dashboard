@@ -103,7 +103,7 @@ export default function EditProjectPage() {
     if (projectId) {
       fetchProject()
     }
-  }, [projectId])
+  }, [projectId, fetchProject])
 
   const validateForm = (): boolean => {
     if (!formData) return false
@@ -291,7 +291,7 @@ export default function EditProjectPage() {
             Edit Project
           </h1>
           <p className="text-slate-400">
-            Update the details for "{project.name}".
+            Update the details for &quot;{project.name}&quot;.
           </p>
         </motion.div>
 

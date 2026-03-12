@@ -52,7 +52,6 @@ const statusLabels = {
 }
 
 export default function ProjectsListPage() {
-  const router = useRouter()
   const [projects, setProjects] = useState<ProjectWithStats[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

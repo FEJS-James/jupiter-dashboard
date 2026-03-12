@@ -111,7 +111,7 @@ export async function GET(request: NextRequest) {
     const tasksWithDetails = await query;
     
     return createSuccessResponse(tasksWithDetails);
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error?.name === 'ZodError') {
       return handleZodError(error);
     }
@@ -169,7 +169,7 @@ export async function POST(request: NextRequest) {
       .returning();
     
     return createSuccessResponse(newTask, 'Task created successfully', 201);
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error?.name === 'ZodError') {
       return handleZodError(error);
     }

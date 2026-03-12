@@ -71,7 +71,7 @@ export default function ProjectBoardPage() {
     if (projectId) {
       fetchProjectData()
     }
-  }, [projectId])
+  }, [projectId, fetchProjectData])
 
   if (loading) {
     return (

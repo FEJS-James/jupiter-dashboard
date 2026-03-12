@@ -117,7 +117,7 @@ export async function PATCH(
     }
     
     // Prepare update data
-    const updateData: any = { ...validatedData };
+    const updateData: Record<string, unknown> = { ...validatedData };
     
     // Convert dueDate string to timestamp if provided
     if (validatedData.dueDate !== undefined) {
@@ -132,7 +132,7 @@ export async function PATCH(
       .returning();
     
     return createSuccessResponse(updatedTask, 'Task updated successfully');
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error?.message === 'Invalid ID parameter') {
       return createErrorResponse('Invalid task ID', 400);
     }
@@ -181,7 +181,7 @@ export async function DELETE(
       .where(eq(tasks.id, taskId));
     
     return createSuccessResponse(null, 'Task deleted successfully');
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error?.message === 'Invalid ID parameter') {
       return createErrorResponse('Invalid task ID', 400);
     }

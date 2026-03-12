@@ -5,11 +5,11 @@ import { ZodError } from 'zod';
  * Utility functions for API routes
  */
 
-export function createErrorResponse(error: string, status: number = 500, details?: any) {
+export function createErrorResponse(error: string, status: number = 500, details?: unknown) {
   return NextResponse.json({ error, details }, { status });
 }
 
-export function createSuccessResponse(data?: any, message?: string, status: number = 200) {
+export function createSuccessResponse(data?: unknown, message?: string, status: number = 200) {
   return NextResponse.json({ success: true, data, message }, { status });
 }
 
@@ -22,7 +22,7 @@ export function handleZodError(error: ZodError) {
   return createErrorResponse('Validation failed', 400, { issues });
 }
 
-export function handleDatabaseError(error: any) {
+export function handleDatabaseError(error: unknown) {
   console.error('Database error:', error);
   
   // Handle common SQLite errors
@@ -40,7 +40,7 @@ export function handleDatabaseError(error: any) {
 export async function parseRequestBody(request: Request) {
   try {
     return await request.json();
-  } catch (error) {
+  } catch {
     throw new Error('Invalid JSON in request body');
   }
 }
