@@ -10,8 +10,8 @@ const { exec } = require('child_process');
 const { promisify } = require('util');
 const execAsync = promisify(exec);
 
-const BASE_URL = 'http://localhost:3000';
-const WS_URL = 'ws://localhost:3000';
+const BASE_URL = 'http://localhost:3001';
+const WS_URL = 'ws://localhost:3001';
 const TASK_ID = 1;
 const AGENT_ID = 1;
 
@@ -34,7 +34,7 @@ async function makeRequest(method, path, data = null) {
   return new Promise((resolve, reject) => {
     const options = {
       hostname: 'localhost',
-      port: 3000,
+      port: 3001,
       path: path,
       method: method,
       headers: {
