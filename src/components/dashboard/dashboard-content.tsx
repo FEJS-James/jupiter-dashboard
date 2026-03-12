@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
-  Zap,
+
   Users,
   CheckCircle2,
   Clock,
@@ -17,7 +17,7 @@ import {
   GitBranch,
   Activity,
   TrendingUp,
-  Calendar,
+
   BarChart3,
   Settings,
   FolderOpen,

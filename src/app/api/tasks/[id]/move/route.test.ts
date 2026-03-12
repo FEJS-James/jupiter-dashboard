@@ -3,7 +3,7 @@ import { POST } from './route'
 import { db } from '@/lib/db'
 
 // Create a proper mock query that can be awaited
-const createMockQuery = (finalResult: any = []) => {
+const createMockQuery = (finalResult: unknown[] = []) => {
   const query = {
     from: vi.fn(),
     where: vi.fn(),
@@ -17,15 +17,15 @@ const createMockQuery = (finalResult: any = []) => {
   
   // Make the final query object awaitable by assigning then method
   Object.assign(query, {
-    then: (resolve: any) => resolve(finalResult),
-    catch: (reject: any) => Promise.resolve(finalResult).catch(reject),
-    finally: (fn: any) => Promise.resolve(finalResult).finally(fn),
+    then: (resolve: (value: unknown[]) => void) => resolve(finalResult),
+    catch: (reject: (reason?: unknown) => void) => Promise.resolve(finalResult).catch(reject),
+    finally: (fn: () => void) => Promise.resolve(finalResult).finally(fn),
   })
   
   return query
 }
 
-const createMockUpdate = (finalResult: any = []) => {
+const createMockUpdate = (finalResult: unknown[] = []) => {
   const mockUpdate = {
     set: vi.fn().mockReturnThis(),
     where: vi.fn().mockReturnThis(),
@@ -54,7 +54,7 @@ vi.mock('drizzle-orm', () => ({
   relations: vi.fn((table, callback) => ({ table, callback, type: 'relations' })),
 }))
 
-const createMockRequest = (body: any) => {
+const createMockRequest = (body: unknown) => {
   return {
     url: 'https://localhost:3000/api/tasks/1/move',
     method: 'POST',
@@ -118,7 +118,7 @@ describe('/api/tasks/[id]/move API Route', () => {
       const request = createMockRequest(moveData)
       const params = Promise.resolve({ id: '1' })
       
-      const response = await POST(request, { params })
+      await POST(request, { params })
       
       expect(db.select).toHaveBeenCalled()
       expect(db.update).toHaveBeenCalled()

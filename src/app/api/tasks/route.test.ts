@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import { GET, POST } from './route'
 import { db } from '@/lib/db'
-import { tasks, projects, agents } from '@/lib/schema'
+import { tasks } from '@/lib/schema'
 
 // Mock Request and NextRequest
 const mockUrl = 'https://localhost:3000/api/tasks'
-const createMockRequest = (url: string = mockUrl, method: string = 'GET', body?: any) => {
+const createMockRequest = (url: string = mockUrl, method: string = 'GET', body?: unknown) => {
   const request = {
     url,
     method,
