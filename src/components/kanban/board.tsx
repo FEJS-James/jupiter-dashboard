@@ -5,6 +5,9 @@ import { Column } from './column'
 
 interface BoardProps {
   tasks: Task[]
+  onCreateTask?: (status: TaskStatus) => void
+  onEditTask?: (task: Task) => void
+  onDeleteTask?: (task: Task) => void
 }
 
 const columnConfig: Array<{
@@ -20,7 +23,7 @@ const columnConfig: Array<{
   { title: 'Done', status: 'done', color: '#059669' },
 ]
 
-export function Board({ tasks }: BoardProps) {
+export function Board({ tasks, onCreateTask, onEditTask, onDeleteTask }: BoardProps) {
   // Group tasks by status
   const tasksByStatus = tasks.reduce((acc, task) => {
     if (!acc[task.status]) {
@@ -77,6 +80,9 @@ export function Board({ tasks }: BoardProps) {
             status={status}
             tasks={tasksByStatus[status] || []}
             color={color}
+            onCreateTask={onCreateTask}
+            onEditTask={onEditTask}
+            onDeleteTask={onDeleteTask}
           />
         ))}
       </div>

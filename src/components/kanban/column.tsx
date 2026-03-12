@@ -9,6 +9,9 @@ interface ColumnProps {
   status: TaskStatus
   tasks: Task[]
   color: string
+  onCreateTask?: (status: TaskStatus) => void
+  onEditTask?: (task: Task) => void
+  onDeleteTask?: (task: Task) => void
 }
 
 const statusIcons: Record<TaskStatus, string> = {
@@ -21,7 +24,7 @@ const statusIcons: Record<TaskStatus, string> = {
   blocked: '🚫',
 }
 
-export function Column({ title, status, tasks, color }: ColumnProps) {
+export function Column({ title, status, tasks, color, onCreateTask, onEditTask, onDeleteTask }: ColumnProps) {
   const totalTasks = tasks.length
   const completionRatio = status === 'done' ? 1 : 
     status === 'blocked' ? 0 : 
@@ -41,9 +44,8 @@ export function Column({ title, status, tasks, color }: ColumnProps) {
           </div>
           <button 
             className="p-1.5 text-slate-400 hover:text-slate-300 hover:bg-slate-800 rounded-md transition-colors"
-            onClick={() => {
-              // TODO: Handle add task to column
-            }}
+            onClick={() => onCreateTask?.(status)}
+            title={`Add task to ${title}`}
           >
             <Plus className="w-4 h-4" />
           </button>
@@ -65,7 +67,12 @@ export function Column({ title, status, tasks, color }: ColumnProps) {
       <div className="space-y-0 min-h-[200px]">
         {tasks.length > 0 ? (
           tasks.map((task) => (
-            <TaskCard key={task.id} task={task} />
+            <TaskCard 
+              key={task.id} 
+              task={task}
+              onEdit={onEditTask}
+              onDelete={onDeleteTask}
+            />
           ))
         ) : (
           <div className="text-center py-8 text-slate-500">

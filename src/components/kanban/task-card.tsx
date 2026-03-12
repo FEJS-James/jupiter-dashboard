@@ -9,6 +9,8 @@ import { Clock, AlertCircle, Edit, Trash2 } from 'lucide-react'
 
 interface TaskCardProps {
   task: Task
+  onEdit?: (task: Task) => void
+  onDelete?: (task: Task) => void
 }
 
 const priorityColors: Record<TaskPriority, string> = {
@@ -32,7 +34,7 @@ const agentColors: Record<string, string> = {
   manager: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
 }
 
-export function TaskCard({ task }: TaskCardProps) {
+export function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
   const dueDate = task.dueDate ? new Date(task.dueDate) : null
   const isOverdue = dueDate && dueDate < new Date()
 
@@ -140,8 +142,9 @@ export function TaskCard({ task }: TaskCardProps) {
               className="p-1 text-slate-400 hover:text-slate-300 hover:bg-slate-800 rounded"
               onClick={(e) => {
                 e.stopPropagation()
-                // TODO: Handle edit action
+                onEdit?.(task)
               }}
+              title="Edit task"
             >
               <Edit className="w-3 h-3" />
             </button>
@@ -149,8 +152,9 @@ export function TaskCard({ task }: TaskCardProps) {
               className="p-1 text-slate-400 hover:text-red-400 hover:bg-slate-800 rounded"
               onClick={(e) => {
                 e.stopPropagation()
-                // TODO: Handle delete action
+                onDelete?.(task)
               }}
+              title="Delete task"
             >
               <Trash2 className="w-3 h-3" />
             </button>

@@ -11,7 +11,8 @@ import {
   Settings,
   ChevronDown,
   Circle,
-  FolderOpen
+  FolderOpen,
+  CheckSquare
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -31,7 +32,8 @@ export function Sidebar({ className, onCollapseChange }: SidebarProps) {
   const [selectedProject, setSelectedProject] = useState('AgentFlow Pipeline')
 
   const navigationItems = [
-    { icon: Home, label: 'Dashboard', href: '/', active: true },
+    { icon: Home, label: 'Dashboard', href: '/', active: false },
+    { icon: CheckSquare, label: 'Tasks', href: '/tasks', active: true },
     { icon: Layers, label: 'Projects', href: '/projects' },
     { icon: Users, label: 'Agents', href: '/agents' },
     { icon: BarChart3, label: 'Analytics', href: '/analytics' },
