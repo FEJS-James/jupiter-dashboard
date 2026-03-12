@@ -720,8 +720,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                     >
                       <div className="flex items-center gap-2">
                         <Badge 
-                          size="sm"
-                          className={`${statusConfig[relatedTask.status].bgColor} ${statusConfig[relatedTask.status].color} border`}
+                          className={`${statusConfig[relatedTask.status].bgColor} ${statusConfig[relatedTask.status].color} border text-xs`}
                         >
                           {statusConfig[relatedTask.status].icon}
                         </Badge>
