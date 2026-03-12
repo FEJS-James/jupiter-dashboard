@@ -86,7 +86,7 @@ export function Board({ tasks, onCreateTask, onEditTask, onDeleteTask, onMoveTas
                 Project Board
               </h1>
               <p className="text-slate-400">
-                {tasks.length} total tasks across {columnConfig.length} columns
+                Showing {tasks.length} tasks across {columnConfig.length} columns
                 {isDragging && draggedTask && (
                   <span className="ml-2 text-blue-400">
                     Moving "{draggedTask.title}"
@@ -95,7 +95,7 @@ export function Board({ tasks, onCreateTask, onEditTask, onDeleteTask, onMoveTas
               </p>
             </div>
             
-            {/* Board Stats */}
+            {/* Board Stats - Now Shows Filtered Results */}
             <div className="flex items-center gap-4 text-sm">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
