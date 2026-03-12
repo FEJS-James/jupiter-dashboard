@@ -1,0 +1,183 @@
+import { NextRequest } from 'next/server';
+import { eq, and, desc } from 'drizzle-orm';
+import { db } from '@/lib/db';
+import { tasks, projects, agents } from '@/lib/schema';
+import { createTaskSchema, taskFiltersSchema } from '@/lib/validation';
+import { 
+  createErrorResponse, 
+  createSuccessResponse, 
+  handleZodError, 
+  handleDatabaseError,
+  parseRequestBody
+} from '@/lib/api-utils';
+
+/**
+ * GET /api/tasks - List tasks with filters
+ * 
+ * @param request - Request with query parameters for filtering
+ * @returns Filtered list of tasks with project and agent info
+ */
+export async function GET(request: NextRequest) {
+  try {
+    const url = new URL(request.url);
+    const rawParams = Object.fromEntries(url.searchParams.entries());
+    const filters = taskFiltersSchema.parse(rawParams);
+    
+    // Build query conditions
+    const conditions = [];
+    
+    if (filters.status) {
+      conditions.push(eq(tasks.status, filters.status));
+    }
+    
+    if (filters.agent) {
+      conditions.push(eq(tasks.assignedAgent, filters.agent));
+    }
+    
+    if (filters.priority) {
+      conditions.push(eq(tasks.priority, filters.priority));
+    }
+    
+    if (filters.project) {
+      // Handle both project ID and project name
+      const projectId = parseInt(filters.project, 10);
+      if (!isNaN(projectId)) {
+        conditions.push(eq(tasks.projectId, projectId));
+      } else {
+        // If not a number, try to find project by name
+        const project = await db
+          .select({ id: projects.id })
+          .from(projects)
+          .where(eq(projects.name, filters.project))
+          .limit(1);
+        
+        if (project.length > 0) {
+          conditions.push(eq(tasks.projectId, project[0].id));
+        } else {
+          // If project not found, return empty result
+          return createSuccessResponse([]);
+        }
+      }
+    }
+    
+    // Execute query with joins
+    const query = db
+      .select({
+        id: tasks.id,
+        projectId: tasks.projectId,
+        title: tasks.title,
+        description: tasks.description,
+        status: tasks.status,
+        priority: tasks.priority,
+        assignedAgent: tasks.assignedAgent,
+        tags: tasks.tags,
+        dueDate: tasks.dueDate,
+        effort: tasks.effort,
+        dependencies: tasks.dependencies,
+        createdAt: tasks.createdAt,
+        updatedAt: tasks.updatedAt,
+        project: {
+          id: projects.id,
+          name: projects.name,
+          status: projects.status,
+        },
+        agent: {
+          id: agents.id,
+          name: agents.name,
+          role: agents.role,
+          color: agents.color,
+          status: agents.status,
+        },
+      })
+      .from(tasks)
+      .leftJoin(projects, eq(tasks.projectId, projects.id))
+      .leftJoin(agents, eq(tasks.assignedAgent, agents.name))
+      .orderBy(desc(tasks.updatedAt));
+    
+    // Apply conditions if any
+    if (conditions.length > 0) {
+      query.where(and(...conditions));
+    }
+    
+    // Apply pagination
+    if (filters.limit) {
+      query.limit(filters.limit);
+    }
+    
+    if (filters.offset) {
+      query.offset(filters.offset);
+    }
+    
+    const tasksWithDetails = await query;
+    
+    return createSuccessResponse(tasksWithDetails);
+  } catch (error: any) {
+    if (error?.name === 'ZodError') {
+      return handleZodError(error);
+    }
+    
+    return handleDatabaseError(error);
+  }
+}
+
+/**
+ * POST /api/tasks - Create a new task
+ * 
+ * @param request - Request body containing task data
+ * @returns Created task with generated ID
+ */
+export async function POST(request: NextRequest) {
+  try {
+    const body = await parseRequestBody(request);
+    const validatedData = createTaskSchema.parse(body);
+    
+    // Verify project exists
+    const project = await db
+      .select()
+      .from(projects)
+      .where(eq(projects.id, validatedData.projectId))
+      .limit(1);
+    
+    if (project.length === 0) {
+      return createErrorResponse('Project not found', 400);
+    }
+    
+    // Verify assigned agent exists if provided
+    if (validatedData.assignedAgent) {
+      const agent = await db
+        .select()
+        .from(agents)
+        .where(eq(agents.name, validatedData.assignedAgent))
+        .limit(1);
+      
+      if (agent.length === 0) {
+        return createErrorResponse('Assigned agent not found', 400);
+      }
+    }
+    
+    // Convert dueDate string to timestamp if provided
+    const taskData = {
+      ...validatedData,
+      dueDate: validatedData.dueDate ? new Date(validatedData.dueDate) : null,
+      tags: validatedData.tags || null,
+      dependencies: validatedData.dependencies || null,
+    };
+    
+    const [newTask] = await db
+      .insert(tasks)
+      .values(taskData)
+      .returning();
+    
+    return createSuccessResponse(newTask, 'Task created successfully', 201);
+  } catch (error: any) {
+    if (error?.name === 'ZodError') {
+      return handleZodError(error);
+    }
+    
+    if (error?.message === 'Invalid JSON in request body') {
+      return createErrorResponse('Invalid JSON in request body', 400);
+    }
+    
+    return handleDatabaseError(error);
+  }
+}
