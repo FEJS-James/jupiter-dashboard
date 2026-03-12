@@ -6,6 +6,7 @@ import { Header } from "./header"
 import { Footer } from "./footer"
 import { WebSocketProvider } from "@/contexts/websocket-context"
 import { WebSocketErrorBoundary } from "@/components/error-boundary"
+import { useTheme } from "@/contexts/theme-context"
 import { Toaster } from "sonner"
 
 interface LayoutWrapperProps {
@@ -14,6 +15,7 @@ interface LayoutWrapperProps {
 
 export function LayoutWrapper({ children }: LayoutWrapperProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const { actualTheme } = useTheme()
 
   // Listen for sidebar collapse changes
   useEffect(() => {
@@ -32,7 +34,7 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
   return (
     <WebSocketErrorBoundary>
       <WebSocketProvider>
-        <div className="flex h-screen overflow-hidden">
+        <div className="flex h-screen overflow-hidden bg-background text-foreground transition-colors duration-300">
         {/* Sidebar */}
         <Sidebar onCollapseChange={setSidebarCollapsed} />
 
@@ -47,7 +49,11 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
           <Header sidebarCollapsed={sidebarCollapsed} />
 
           {/* Main Content */}
-          <main className="flex-1 pt-16 pb-12 px-6 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 overflow-auto">
+          <main className={`flex-1 pt-16 pb-12 px-6 overflow-auto transition-all duration-300 ${
+            actualTheme === 'dark' 
+              ? 'bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950' 
+              : 'bg-gradient-to-br from-slate-50 via-white to-slate-50'
+          }`}>
             <div className="h-full w-full max-w-7xl mx-auto">
               {children}
             </div>
@@ -60,13 +66,17 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
         
         {/* Global toast notifications */}
         <Toaster 
-          theme="dark" 
+          theme={actualTheme} 
           position="top-right"
           toastOptions={{
-            style: {
+            style: actualTheme === 'dark' ? {
               background: 'rgb(30 41 59)',
               border: '1px solid rgb(51 65 85)',
               color: 'rgb(226 232 240)'
+            } : {
+              background: 'rgb(255 255 255)',
+              border: '1px solid rgb(226 232 240)',
+              color: 'rgb(30 41 59)'
             }
           }}
         />

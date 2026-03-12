@@ -10,6 +10,8 @@ import {
   Layers
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useTheme } from '@/contexts/theme-context'
+import { useTheme } from '@/contexts/theme-context'
 
 interface FooterProps {
   className?: string
@@ -17,6 +19,7 @@ interface FooterProps {
 }
 
 export function Footer({ className, sidebarCollapsed = false }: FooterProps) {
+  const { actualTheme } = useTheme()
   const pipelineStats = {
     total: 24,
     inProgress: 8,
@@ -38,7 +41,10 @@ export function Footer({ className, sidebarCollapsed = false }: FooterProps) {
   return (
     <motion.footer
       className={cn(
-        'fixed bottom-0 right-0 h-12 bg-slate-900/95 backdrop-blur-xl border-t border-slate-700/50 z-30 transition-all duration-300',
+        'fixed bottom-0 right-0 h-12 backdrop-blur-xl border-t z-30 transition-all duration-300',
+        actualTheme === 'dark' 
+          ? 'bg-slate-900/95 border-slate-700/50' 
+          : 'bg-white/95 border-slate-200/50',
         sidebarCollapsed ? 'left-16' : 'left-[280px]',
         className
       )}
@@ -52,13 +58,19 @@ export function Footer({ className, sidebarCollapsed = false }: FooterProps) {
         <div className="flex items-center space-x-6">
           <div className="flex items-center space-x-3">
             <Activity className="h-4 w-4 text-blue-400" />
-            <span className="text-xs font-medium text-slate-300">Pipeline Status</span>
+            <span className={cn(
+              'text-xs font-medium',
+              actualTheme === 'dark' ? 'text-slate-300' : 'text-slate-700'
+            )}>Pipeline Status</span>
           </div>
           
           <div className="flex items-center space-x-4">
             {/* Progress Bar */}
             <div className="flex items-center space-x-2">
-              <div className="w-20 h-1.5 bg-slate-700 rounded-full overflow-hidden">
+              <div className={cn(
+                'w-20 h-1.5 rounded-full overflow-hidden',
+                actualTheme === 'dark' ? 'bg-slate-700' : 'bg-slate-200'
+              )}>
                 <motion.div
                   className="h-full bg-gradient-to-r from-blue-500 to-green-500 rounded-full"
                   initial={{ width: 0 }}
@@ -66,7 +78,10 @@ export function Footer({ className, sidebarCollapsed = false }: FooterProps) {
                   transition={{ duration: 1, ease: 'easeOut' }}
                 />
               </div>
-              <span className="text-xs text-slate-400">
+              <span className={cn(
+                'text-xs',
+                actualTheme === 'dark' ? 'text-slate-400' : 'text-slate-600'
+              )}>
                 {Math.round(getProgressPercentage())}%
               </span>
             </div>
@@ -75,15 +90,21 @@ export function Footer({ className, sidebarCollapsed = false }: FooterProps) {
             <div className="flex items-center space-x-3 text-xs">
               <div className="flex items-center space-x-1">
                 <Clock className="h-3 w-3 text-yellow-400" />
-                <span className="text-slate-400">{pipelineStats.inProgress}</span>
+                <span className={cn(
+                  actualTheme === 'dark' ? 'text-slate-400' : 'text-slate-600'
+                )}>{pipelineStats.inProgress}</span>
               </div>
               <div className="flex items-center space-x-1">
                 <CheckCircle className="h-3 w-3 text-green-400" />
-                <span className="text-slate-400">{pipelineStats.completed}</span>
+                <span className={cn(
+                  actualTheme === 'dark' ? 'text-slate-400' : 'text-slate-600'
+                )}>{pipelineStats.completed}</span>
               </div>
               <div className="flex items-center space-x-1">
                 <AlertCircle className="h-3 w-3 text-red-400" />
-                <span className="text-slate-400">{pipelineStats.failed}</span>
+                <span className={cn(
+                  actualTheme === 'dark' ? 'text-slate-400' : 'text-slate-600'
+                )}>{pipelineStats.failed}</span>
               </div>
             </div>
           </div>
@@ -91,7 +112,10 @@ export function Footer({ className, sidebarCollapsed = false }: FooterProps) {
 
         {/* System Stats */}
         <div className="flex items-center space-x-6">
-          <div className="flex items-center space-x-4 text-xs text-slate-400">
+          <div className={cn(
+            'flex items-center space-x-4 text-xs',
+            actualTheme === 'dark' ? 'text-slate-400' : 'text-slate-600'
+          )}>
             <div className="flex items-center space-x-1">
               <Users className="h-3 w-3 text-blue-400" />
               <span>
@@ -102,7 +126,9 @@ export function Footer({ className, sidebarCollapsed = false }: FooterProps) {
               <Layers className="h-3 w-3 text-green-400" />
               <span>{systemStats.tasksInProgress} Tasks</span>
             </div>
-            <div className="text-slate-500">
+            <div className={cn(
+              actualTheme === 'dark' ? 'text-slate-500' : 'text-slate-600'
+            )}>
               Uptime: {systemStats.uptime}
             </div>
           </div>
@@ -122,7 +148,10 @@ export function Footer({ className, sidebarCollapsed = false }: FooterProps) {
                   ease: 'easeInOut' 
                 }}
               />
-              <span className="text-xs text-slate-400">System Operational</span>
+              <span className={cn(
+                'text-xs',
+                actualTheme === 'dark' ? 'text-slate-400' : 'text-slate-600'
+              )}>System Operational</span>
             </div>
           </div>
         </div>

@@ -15,6 +15,7 @@ import {
   CheckSquare
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useTheme } from '@/contexts/theme-context'
 
 interface SidebarProps {
   className?: string
@@ -23,6 +24,7 @@ interface SidebarProps {
 
 export function Sidebar({ className, onCollapseChange }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const { actualTheme } = useTheme()
 
   const toggleCollapse = () => {
     const newCollapsedState = !isCollapsed
@@ -65,7 +67,10 @@ export function Sidebar({ className, onCollapseChange }: SidebarProps) {
   return (
     <motion.div
       className={cn(
-        'fixed left-0 top-0 h-full bg-slate-900/95 backdrop-blur-xl border-r border-slate-700/50 z-40 transition-all duration-300 ease-in-out',
+        'fixed left-0 top-0 h-full backdrop-blur-xl border-r z-40 transition-all duration-300 ease-in-out',
+        actualTheme === 'dark' 
+          ? 'bg-slate-900/95 border-slate-700/50' 
+          : 'bg-white/95 border-slate-200/50',
         isCollapsed ? 'w-16' : 'w-[280px]',
         className
       )}
@@ -74,10 +79,16 @@ export function Sidebar({ className, onCollapseChange }: SidebarProps) {
     >
       <div className="flex h-full flex-col">
         {/* Header with collapse toggle */}
-        <div className="flex h-16 items-center justify-between px-4 border-b border-slate-700/50">
+        <div className={cn(
+          'flex h-16 items-center justify-between px-4 border-b',
+          actualTheme === 'dark' ? 'border-slate-700/50' : 'border-slate-200/50'
+        )}>
           {!isCollapsed && (
             <motion.h1 
-              className="text-lg font-semibold text-white"
+              className={cn(
+                'text-lg font-semibold',
+                actualTheme === 'dark' ? 'text-white' : 'text-slate-900'
+              )}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -87,11 +98,17 @@ export function Sidebar({ className, onCollapseChange }: SidebarProps) {
           )}
           <button
             onClick={toggleCollapse}
-            className="p-1.5 rounded-lg hover:bg-slate-800/50 transition-colors"
+            className={cn(
+              'p-1.5 rounded-lg transition-colors',
+              actualTheme === 'dark' 
+                ? 'hover:bg-slate-800/50' 
+                : 'hover:bg-slate-100/50'
+            )}
           >
             <ChevronLeft 
               className={cn(
-                'h-4 w-4 text-slate-400 transition-transform duration-300',
+                'h-4 w-4 transition-transform duration-300',
+                actualTheme === 'dark' ? 'text-slate-400' : 'text-slate-600',
                 isCollapsed && 'rotate-180'
               )}
             />
@@ -101,20 +118,36 @@ export function Sidebar({ className, onCollapseChange }: SidebarProps) {
         {/* Project Selector */}
         {!isCollapsed && (
           <motion.div 
-            className="p-4 border-b border-slate-700/50"
+            className={cn(
+              'p-4 border-b',
+              actualTheme === 'dark' ? 'border-slate-700/50' : 'border-slate-200/50'
+            )}
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
           >
             <div className="relative">
-              <button className="w-full flex items-center justify-between p-3 bg-slate-800/50 rounded-lg hover:bg-slate-800/70 transition-colors group">
+              <button className={cn(
+                'w-full flex items-center justify-between p-3 rounded-lg transition-colors group',
+                actualTheme === 'dark'
+                  ? 'bg-slate-800/50 hover:bg-slate-800/70'
+                  : 'bg-slate-100/50 hover:bg-slate-100/70'
+              )}>
                 <div className="flex items-center space-x-3">
                   <FolderOpen className="h-4 w-4 text-blue-400" />
-                  <span className="text-sm font-medium text-white truncate">
+                  <span className={cn(
+                    'text-sm font-medium truncate',
+                    actualTheme === 'dark' ? 'text-white' : 'text-slate-900'
+                  )}>
                     {selectedProject}
                   </span>
                 </div>
-                <ChevronDown className="h-4 w-4 text-slate-400 group-hover:text-slate-300" />
+                <ChevronDown className={cn(
+                  'h-4 w-4 transition-colors',
+                  actualTheme === 'dark' 
+                    ? 'text-slate-400 group-hover:text-slate-300' 
+                    : 'text-slate-600 group-hover:text-slate-700'
+                )} />
               </button>
             </div>
           </motion.div>
@@ -134,7 +167,9 @@ export function Sidebar({ className, onCollapseChange }: SidebarProps) {
                   'w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-all duration-200',
                   item.active
                     ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                    : actualTheme === 'dark'
+                      ? 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/50'
                 )}
               >
                 <item.icon className={cn('h-5 w-5 flex-shrink-0', isCollapsed ? 'mx-auto' : '')} />
@@ -148,24 +183,38 @@ export function Sidebar({ className, onCollapseChange }: SidebarProps) {
 
         {/* Agent Status */}
         <motion.div 
-          className="p-4 border-t border-slate-700/50"
+          className={cn(
+            'p-4 border-t',
+            actualTheme === 'dark' ? 'border-slate-700/50' : 'border-slate-200/50'
+          )}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
           {!isCollapsed ? (
             <div className="space-y-3">
-              <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+              <h3 className={cn(
+                'text-xs font-semibold uppercase tracking-wider',
+                actualTheme === 'dark' ? 'text-slate-400' : 'text-slate-600'
+              )}>
                 Agent Status
               </h3>
               {agents.map((agent) => (
                 <div key={agent.name} className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <div className={cn('h-2 w-2 rounded-full', getStatusColor(agent.status))} />
-                    <span className="text-sm text-slate-300">{agent.name}</span>
+                    <span className={cn(
+                      'text-sm',
+                      actualTheme === 'dark' ? 'text-slate-300' : 'text-slate-700'
+                    )}>{agent.name}</span>
                   </div>
                   {agent.tasks > 0 && (
-                    <span className="text-xs bg-slate-700 text-slate-300 px-1.5 py-0.5 rounded">
+                    <span className={cn(
+                      'text-xs px-1.5 py-0.5 rounded',
+                      actualTheme === 'dark' 
+                        ? 'bg-slate-700 text-slate-300' 
+                        : 'bg-slate-200 text-slate-700'
+                    )}>
                       {agent.tasks}
                     </span>
                   )}
