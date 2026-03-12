@@ -58,7 +58,7 @@ export const taskFiltersSchema = z.object({
 
 export const moveTaskSchema = z.object({
   status: z.enum(['backlog', 'in-progress', 'code-review', 'testing', 'deploying', 'done', 'blocked']),
-  assignedAgent: z.string().optional(),
+  assignedAgent: z.string().optional().or(z.null()),
 });
 
 export const addCommentSchema = z.object({
