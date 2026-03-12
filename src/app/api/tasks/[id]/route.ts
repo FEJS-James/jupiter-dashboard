@@ -13,6 +13,7 @@ import {
   extractIdFromParams
 } from '@/lib/api-utils';
 import { websocketManager } from '@/lib/websocket-manager';
+import { NotificationService } from '@/lib/notification-service';
 
 /**
  * GET /api/tasks/[id] - Get task details
@@ -132,6 +133,67 @@ export async function PATCH(
       .set(updateData)
       .where(eq(tasks.id, taskId))
       .returning();
+
+    // Create notifications for various changes
+    const oldTask = existingTask[0];
+
+    // Handle assignment changes
+    if (validatedData.assignedAgent !== undefined && validatedData.assignedAgent !== oldTask.assignedAgent) {
+      if (validatedData.assignedAgent) {
+        // Get new assignee
+        const newAssignee = await db
+          .select()
+          .from(agents)
+          .where(eq(agents.name, validatedData.assignedAgent))
+          .limit(1);
+
+        // Get previous assignee if exists
+        let previousAssigneeId: number | undefined;
+        if (oldTask.assignedAgent) {
+          const previousAssignee = await db
+            .select({ id: agents.id })
+            .from(agents)
+            .where(eq(agents.name, oldTask.assignedAgent))
+            .limit(1);
+          
+          if (previousAssignee.length > 0) {
+            previousAssigneeId = previousAssignee[0].id;
+          }
+        }
+
+        if (newAssignee.length > 0) {
+          if (oldTask.assignedAgent) {
+            // Reassignment
+            await NotificationService.notifyTaskReassigned(
+              updatedTask, 
+              newAssignee[0].id, 
+              previousAssigneeId
+            );
+          } else {
+            // New assignment
+            await NotificationService.notifyTaskAssigned(updatedTask, newAssignee[0].id);
+          }
+        }
+      }
+    }
+
+    // Handle status changes
+    if (validatedData.status !== undefined && validatedData.status !== oldTask.status) {
+      await NotificationService.notifyTaskStatusChanged(
+        updatedTask,
+        oldTask.status,
+        validatedData.status
+      );
+    }
+
+    // Handle priority changes
+    if (validatedData.priority !== undefined && validatedData.priority !== oldTask.priority) {
+      await NotificationService.notifyTaskPriorityChanged(
+        updatedTask,
+        oldTask.priority,
+        validatedData.priority
+      );
+    }
     
     // Emit real-time event for task update
     websocketManager.emitTaskUpdated(updatedTask);

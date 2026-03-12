@@ -300,6 +300,22 @@ app.prepare().then(() => {
       }
     }))
 
+    // Handle notification events
+    socket.on('notificationRead', createRateLimitedHandler((notificationId: number) => {
+      // Broadcast to other clients that this notification was read
+      socket.broadcast.emit('notificationUpdated', { id: notificationId, isRead: true })
+    }))
+
+    socket.on('notificationDeleted', createRateLimitedHandler((notificationId: number) => {
+      // Broadcast to other clients that this notification was deleted
+      socket.broadcast.emit('notificationDeleted', notificationId)
+    }))
+
+    socket.on('notificationsReadAll', createRateLimitedHandler((recipientId: number) => {
+      // Broadcast to other clients that all notifications for this user were read
+      socket.broadcast.emit('notificationsReadAll', recipientId)
+    }))
+
     // Handle disconnection with proper cleanup
     socket.on('disconnect', (reason) => {
       const user = connectedUsers.get(socket.id)

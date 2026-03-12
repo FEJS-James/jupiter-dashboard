@@ -162,3 +162,77 @@ export interface TaskAttachment {
   uploadedBy: number
   uploadedAt: string
 }
+
+// Notification Types
+
+export type NotificationType = 
+  | 'task_assigned' 
+  | 'task_reassigned' 
+  | 'task_status_changed' 
+  | 'task_priority_changed'
+  | 'comment_added' 
+  | 'comment_mention' 
+  | 'comment_reply' 
+  | 'project_task_added'
+  | 'project_updated' 
+  | 'system_announcement'
+
+export type NotificationPriority = 'low' | 'normal' | 'high' | 'urgent'
+
+export type NotificationEntityType = 'task' | 'project' | 'comment' | 'system'
+
+export interface Notification {
+  id: number
+  recipientId: number
+  type: NotificationType
+  title: string
+  message: string
+  entityType?: NotificationEntityType
+  entityId?: number
+  relatedEntityType?: 'task' | 'project' | 'comment' | 'agent'
+  relatedEntityId?: number
+  actionUrl?: string
+  metadata?: Record<string, unknown>
+  isRead: boolean
+  readAt?: string
+  priority: NotificationPriority
+  expiresAt?: string
+  createdAt: string
+  // Relations
+  recipient?: Agent
+  task?: Task
+  project?: Project
+  comment?: TaskComment
+}
+
+export interface NotificationWithRelations extends Notification {
+  recipient: Agent
+  task?: TaskWithRelations
+  project?: Project
+  comment?: TaskComment
+}
+
+export interface NotificationPreference {
+  id: number
+  agentId: number
+  notificationType: NotificationType
+  enabled: boolean
+  emailEnabled: boolean
+  pushEnabled: boolean
+  createdAt: string
+  updatedAt: string
+  agent?: Agent
+}
+
+export interface NotificationStats {
+  unreadCount: number
+  totalCount: number
+  byType: Record<NotificationType, number>
+  byPriority: Record<NotificationPriority, number>
+}
+
+export interface NotificationGroup {
+  date: string
+  notifications: NotificationWithRelations[]
+  unreadCount: number
+}

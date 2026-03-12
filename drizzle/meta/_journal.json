@@ -8,6 +8,13 @@
       "when": 1773276281888,
       "tag": "0000_quiet_sunfire",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1773341523216,
+      "tag": "0001_friendly_sleeper",
+      "breakpoints": true
     }
   ]
 }

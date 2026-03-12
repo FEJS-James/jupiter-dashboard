@@ -13,6 +13,7 @@ import {
 import { cn } from '@/lib/utils'
 import { useTheme } from '@/contexts/theme-context'
 import { ThemeToggle } from '@/components/theme/theme-toggle'
+import { NotificationBell } from '@/components/notifications/notification-bell'
 
 interface HeaderProps {
   className?: string
@@ -128,25 +129,7 @@ export function Header({ className, sidebarCollapsed = false }: HeaderProps) {
           </motion.button>
 
           {/* Notifications */}
-          <motion.button 
-            className={cn(
-              'relative p-2 rounded-lg transition-colors group',
-              actualTheme === 'dark'
-                ? 'hover:bg-slate-800/50'
-                : 'hover:bg-slate-100/50'
-            )}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <Bell className={cn(
-              'h-5 w-5 transition-colors',
-              actualTheme === 'dark'
-                ? 'text-slate-400 group-hover:text-slate-300'
-                : 'text-slate-600 group-hover:text-slate-700'
-            )} />
-            {/* Notification dot */}
-            <div className="absolute top-1.5 right-1.5 h-2 w-2 bg-red-500 rounded-full" />
-          </motion.button>
+          <NotificationBell agentId={1} />
 
           {/* Divider */}
           <div className={cn(

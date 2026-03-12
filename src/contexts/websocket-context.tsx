@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react'
 import io, { Socket } from 'socket.io-client'
-import { Task, TaskStatus } from '@/types'
+import { Task, TaskStatus, Notification, NotificationWithRelations } from '@/types'
 
 export interface ConnectedUser {
   id: string
@@ -35,6 +35,12 @@ export interface ActivityEvent {
 
 export type ConnectionStatus = 'connecting' | 'connected' | 'disconnected' | 'reconnecting' | 'error'
 
+export interface NotificationEvent {
+  type: 'notification_created' | 'notification_updated' | 'notification_deleted'
+  notification: NotificationWithRelations
+  recipientId: number
+}
+
 interface WebSocketContextValue {
   socket: Socket | null
   connectionStatus: ConnectionStatus
@@ -53,6 +59,11 @@ interface WebSocketContextValue {
   emitTaskDeleted: (taskId: number, optimistic?: boolean) => void
   emitTaskMoved: (taskId: number, fromStatus: TaskStatus, toStatus: TaskStatus, task: Task, optimistic?: boolean) => void
   
+  // Notification methods
+  emitNotificationRead: (notificationId: number) => void
+  emitNotificationDeleted: (notificationId: number) => void
+  emitNotificationsReadAll: (recipientId: number) => void
+  
   // Presence methods
   updatePresence: (presence: UserPresence) => void
   
@@ -61,6 +72,11 @@ interface WebSocketContextValue {
   onTaskUpdated: (callback: (task: Task) => void) => () => void
   onTaskDeleted: (callback: (taskId: number) => void) => () => void
   onTaskMoved: (callback: (taskId: number, fromStatus: TaskStatus, toStatus: TaskStatus, task: Task) => void) => () => void
+  
+  // Notification event listeners
+  onNotificationCreated: (callback: (notification: NotificationWithRelations) => void) => () => void
+  onNotificationUpdated: (callback: (notification: NotificationWithRelations) => void) => () => void
+  onNotificationDeleted: (callback: (notificationId: number) => void) => () => void
   
   // Operation management
   clearRollbackTimer: (operationId: string) => void
@@ -220,6 +236,9 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
       // The consuming component should handle the rollback based on the operation type
     })
 
+    // Notification events (handled by consuming components)
+    // These are set up but event handlers are defined later with the on* methods
+
     setSocket(newSocket)
   }, [url, socket])
 
@@ -321,6 +340,25 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     }
   }, [socket])
 
+  // Notification emit methods
+  const emitNotificationRead = useCallback((notificationId: number) => {
+    if (socket?.connected) {
+      socket.emit('notificationRead', notificationId)
+    }
+  }, [socket])
+
+  const emitNotificationDeleted = useCallback((notificationId: number) => {
+    if (socket?.connected) {
+      socket.emit('notificationDeleted', notificationId)
+    }
+  }, [socket])
+
+  const emitNotificationsReadAll = useCallback((recipientId: number) => {
+    if (socket?.connected) {
+      socket.emit('notificationsReadAll', recipientId)
+    }
+  }, [socket])
+
   // Event listener methods
   const onTaskCreated = useCallback((callback: (task: Task) => void) => {
     if (!socket) return () => {}
@@ -350,6 +388,28 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     return () => socket.off('taskMoved', callback)
   }, [socket])
 
+  // Notification event listener methods
+  const onNotificationCreated = useCallback((callback: (notification: NotificationWithRelations) => void) => {
+    if (!socket) return () => {}
+    
+    socket.on('notificationCreated', callback)
+    return () => socket.off('notificationCreated', callback)
+  }, [socket])
+
+  const onNotificationUpdated = useCallback((callback: (notification: NotificationWithRelations) => void) => {
+    if (!socket) return () => {}
+    
+    socket.on('notificationUpdated', callback)
+    return () => socket.off('notificationUpdated', callback)
+  }, [socket])
+
+  const onNotificationDeleted = useCallback((callback: (notificationId: number) => void) => {
+    if (!socket) return () => {}
+    
+    socket.on('notificationDeleted', callback)
+    return () => socket.off('notificationDeleted', callback)
+  }, [socket])
+
   const clearActivities = useCallback(() => {
     setActivities([])
   }, [])
@@ -377,11 +437,17 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     emitTaskUpdated,
     emitTaskDeleted,
     emitTaskMoved,
+    emitNotificationRead,
+    emitNotificationDeleted,
+    emitNotificationsReadAll,
     updatePresence,
     onTaskCreated,
     onTaskUpdated,
     onTaskDeleted,
     onTaskMoved,
+    onNotificationCreated,
+    onNotificationUpdated,
+    onNotificationDeleted,
     clearRollbackTimer,
     clearActivities
   }

@@ -13,6 +13,7 @@ import {
 } from '@/lib/api-utils';
 import { websocketManager } from '@/lib/websocket-manager';
 import { ActivityLogger } from '@/lib/activity-logger';
+import { NotificationService } from '@/lib/notification-service';
 
 /**
  * GET /api/tasks - List tasks with filters
@@ -183,6 +184,22 @@ export async function POST(request: NextRequest) {
         assignedAgent: newTask.assignedAgent,
       }
     );
+
+    // Create notifications for task assignment
+    if (newTask.assignedAgent) {
+      const assignedAgent = await db
+        .select()
+        .from(agents)
+        .where(eq(agents.name, newTask.assignedAgent))
+        .limit(1);
+      
+      if (assignedAgent.length > 0) {
+        await NotificationService.notifyTaskAssigned(newTask, assignedAgent[0].id);
+      }
+    }
+
+    // Create notifications for project team members about new task
+    await NotificationService.notifyProjectTaskAdded(newTask, project[0]);
     
     // Emit real-time event for task creation
     console.log('WebSocket manager ready status:', websocketManager.isReady());

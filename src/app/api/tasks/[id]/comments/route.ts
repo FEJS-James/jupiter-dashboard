@@ -19,6 +19,7 @@ import {
 } from '@/lib/api-utils';
 import { websocketManager } from '@/lib/websocket-manager';
 import { ActivityLogger } from '@/lib/activity-logger';
+import { NotificationService } from '@/lib/notification-service';
 
 /**
  * GET /api/tasks/[id]/comments - Get comments for a task with enhanced features
@@ -284,7 +285,41 @@ export async function POST(
         hasAttachments: !!(validatedData.attachments && validatedData.attachments.length > 0),
       }
     );
+
+    // Get commenter agent details
+    const commenterAgent = agent[0]; // We already fetched this above
+
+    // Create comprehensive notifications using the new NotificationService
+    await NotificationService.notifyCommentAdded(
+      {
+        id: newComment.id,
+        taskId: taskId,
+        content: newComment.content,
+        timestamp: newComment.timestamp,
+        // Add other required comment properties with defaults
+        parentId: newComment.parentId,
+        contentType: newComment.contentType,
+        isEdited: false,
+        isDeleted: false,
+        mentions: validatedData.mentions || [],
+        attachments: validatedData.attachments || [],
+        metadata: validatedData.metadata || {},
+        updatedAt: newComment.updatedAt,
+        agent: commenterAgent,
+        agentId: commenterAgent.id,
+        deletedAt: null,
+        deletedByAgentId: null,
+        deletedByAgent: null,
+        replies: [],
+        reactions: [],
+        editHistory: [],
+        replyCount: 0,
+      },
+      existingTask[0], // task
+      commenterAgent   // commenter
+    );
     
+    // Keep old comment notifications for backward compatibility (can be removed later)
     // Create notifications for mentions
     if (validatedData.mentions && validatedData.mentions.length > 0) {
       const notificationInserts = validatedData.mentions
