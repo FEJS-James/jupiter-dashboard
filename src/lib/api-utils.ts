@@ -26,12 +26,14 @@ export function handleDatabaseError(error: unknown) {
   console.error('Database error:', error);
   
   // Handle common SQLite errors
-  if (error.code === 'SQLITE_CONSTRAINT_FOREIGNKEY') {
-    return createErrorResponse('Referenced resource not found', 400);
-  }
-  
-  if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
-    return createErrorResponse('Resource already exists', 409);
+  if (error && typeof error === 'object' && 'code' in error) {
+    if (error.code === 'SQLITE_CONSTRAINT_FOREIGNKEY') {
+      return createErrorResponse('Referenced resource not found', 400);
+    }
+    
+    if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+      return createErrorResponse('Resource already exists', 409);
+    }
   }
   
   return createErrorResponse('Database operation failed', 500);

@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { agents, tasks } from '@/lib/schema';
 import { updateAgentSchema } from '@/lib/validation';
+import { ZodError } from 'zod';
 import { 
   createErrorResponse, 
   createSuccessResponse, 
@@ -62,15 +63,15 @@ export async function PATCH(
     
     return createSuccessResponse(updatedAgent, 'Agent updated successfully');
   } catch (error: unknown) {
-    if (error?.message === 'Invalid ID parameter') {
+    if (error instanceof Error && error.message === 'Invalid ID parameter') {
       return createErrorResponse('Invalid agent ID', 400);
     }
     
-    if (error?.name === 'ZodError') {
+    if (error instanceof ZodError) {
       return handleZodError(error);
     }
     
-    if (error?.message === 'Invalid JSON in request body') {
+    if (error instanceof Error && error.message === 'Invalid JSON in request body') {
       return createErrorResponse('Invalid JSON in request body', 400);
     }
     

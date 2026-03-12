@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { tasks, agents, comments } from '@/lib/schema';
 import { addCommentSchema } from '@/lib/validation';
+import { ZodError } from 'zod';
 import { 
   createErrorResponse, 
   createSuccessResponse, 
@@ -78,15 +79,15 @@ export async function POST(
       201
     );
   } catch (error: unknown) {
-    if (error?.message === 'Invalid ID parameter') {
+    if (error instanceof Error && error.message === 'Invalid ID parameter') {
       return createErrorResponse('Invalid task ID', 400);
     }
     
-    if (error?.name === 'ZodError') {
+    if (error instanceof ZodError) {
       return handleZodError(error);
     }
     
-    if (error?.message === 'Invalid JSON in request body') {
+    if (error instanceof Error && error.message === 'Invalid JSON in request body') {
       return createErrorResponse('Invalid JSON in request body', 400);
     }
     
@@ -141,7 +142,7 @@ export async function GET(
     
     return createSuccessResponse(taskComments);
   } catch (error: unknown) {
-    if (error?.message === 'Invalid ID parameter') {
+    if (error instanceof Error && error.message === 'Invalid ID parameter') {
       return createErrorResponse('Invalid task ID', 400);
     }
     

@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { tasks, agents } from '@/lib/schema';
 import { moveTaskSchema } from '@/lib/validation';
+import { ZodError } from 'zod';
 import { 
   createErrorResponse, 
   createSuccessResponse, 
@@ -54,7 +55,7 @@ export async function POST(
     }
     
     // Update task status and optionally assigned agent
-    const updateData: { status: string; assignedAgent?: string | null } = {
+    const updateData: { status: 'backlog' | 'in-progress' | 'code-review' | 'testing' | 'deploying' | 'done' | 'blocked'; assignedAgent?: string | null } = {
       status: validatedData.status,
     };
     
@@ -73,15 +74,15 @@ export async function POST(
       `Task moved to ${validatedData.status}`
     );
   } catch (error: unknown) {
-    if (error?.message === 'Invalid ID parameter') {
+    if (error instanceof Error && error.message === 'Invalid ID parameter') {
       return createErrorResponse('Invalid task ID', 400);
     }
     
-    if (error?.name === 'ZodError') {
+    if (error instanceof ZodError) {
       return handleZodError(error);
     }
     
-    if (error?.message === 'Invalid JSON in request body') {
+    if (error instanceof Error && error.message === 'Invalid JSON in request body') {
       return createErrorResponse('Invalid JSON in request body', 400);
     }
     

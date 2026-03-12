@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { projects } from '@/lib/schema';
 import { createProjectSchema } from '@/lib/validation';
+import { ZodError } from 'zod';
 import { 
   createErrorResponse, 
   createSuccessResponse, 
@@ -50,11 +51,11 @@ export async function POST(request: NextRequest) {
     
     return createSuccessResponse(newProject, 'Project created successfully', 201);
   } catch (error: unknown) {
-    if (error?.name === 'ZodError') {
+    if (error instanceof ZodError) {
       return handleZodError(error);
     }
     
-    if (error?.message === 'Invalid JSON in request body') {
+    if (error instanceof Error && error.message === 'Invalid JSON in request body') {
       return createErrorResponse('Invalid JSON in request body', 400);
     }
     

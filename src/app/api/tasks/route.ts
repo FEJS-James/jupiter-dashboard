@@ -3,6 +3,7 @@ import { eq, and, desc } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { tasks, projects, agents } from '@/lib/schema';
 import { createTaskSchema, taskFiltersSchema } from '@/lib/validation';
+import { ZodError } from 'zod';
 import { 
   createErrorResponse, 
   createSuccessResponse, 
@@ -112,7 +113,7 @@ export async function GET(request: NextRequest) {
     
     return createSuccessResponse(tasksWithDetails);
   } catch (error: unknown) {
-    if (error?.name === 'ZodError') {
+    if (error instanceof ZodError) {
       return handleZodError(error);
     }
     
@@ -170,11 +171,11 @@ export async function POST(request: NextRequest) {
     
     return createSuccessResponse(newTask, 'Task created successfully', 201);
   } catch (error: unknown) {
-    if (error?.name === 'ZodError') {
+    if (error instanceof ZodError) {
       return handleZodError(error);
     }
     
-    if (error?.message === 'Invalid JSON in request body') {
+    if (error instanceof Error && error.message === 'Invalid JSON in request body') {
       return createErrorResponse('Invalid JSON in request body', 400);
     }
     

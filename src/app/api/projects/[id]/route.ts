@@ -3,6 +3,7 @@ import { eq, count } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { projects, tasks } from '@/lib/schema';
 import { updateProjectSchema } from '@/lib/validation';
+import { ZodError } from 'zod';
 import { 
   createErrorResponse, 
   createSuccessResponse, 
@@ -69,7 +70,7 @@ export async function GET(
     
     return createSuccessResponse(projectWithStats);
   } catch (error: unknown) {
-    if (error?.message === 'Invalid ID parameter') {
+    if (error instanceof Error && error.message === 'Invalid ID parameter') {
       return createErrorResponse('Invalid project ID', 400);
     }
     
@@ -119,15 +120,15 @@ export async function PATCH(
     
     return createSuccessResponse(updatedProject, 'Project updated successfully');
   } catch (error: unknown) {
-    if (error?.message === 'Invalid ID parameter') {
+    if (error instanceof Error && error.message === 'Invalid ID parameter') {
       return createErrorResponse('Invalid project ID', 400);
     }
     
-    if (error?.name === 'ZodError') {
+    if (error instanceof ZodError) {
       return handleZodError(error);
     }
     
-    if (error?.message === 'Invalid JSON in request body') {
+    if (error instanceof Error && error.message === 'Invalid JSON in request body') {
       return createErrorResponse('Invalid JSON in request body', 400);
     }
     
@@ -174,7 +175,7 @@ export async function DELETE(
       'Project archived successfully'
     );
   } catch (error: unknown) {
-    if (error?.message === 'Invalid ID parameter') {
+    if (error instanceof Error && error.message === 'Invalid ID parameter') {
       return createErrorResponse('Invalid project ID', 400);
     }
     

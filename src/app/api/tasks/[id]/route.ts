@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { tasks, projects, agents } from '@/lib/schema';
 import { updateTaskSchema } from '@/lib/validation';
+import { ZodError } from 'zod';
 import { 
   createErrorResponse, 
   createSuccessResponse, 
@@ -67,7 +68,7 @@ export async function GET(
     
     return createSuccessResponse(taskDetails[0]);
   } catch (error: unknown) {
-    if (error?.message === 'Invalid ID parameter') {
+    if (error instanceof Error && error.message === 'Invalid ID parameter') {
       return createErrorResponse('Invalid task ID', 400);
     }
     
@@ -133,15 +134,15 @@ export async function PATCH(
     
     return createSuccessResponse(updatedTask, 'Task updated successfully');
   } catch (error: unknown) {
-    if (error?.message === 'Invalid ID parameter') {
+    if (error instanceof Error && error.message === 'Invalid ID parameter') {
       return createErrorResponse('Invalid task ID', 400);
     }
     
-    if (error?.name === 'ZodError') {
+    if (error instanceof ZodError) {
       return handleZodError(error);
     }
     
-    if (error?.message === 'Invalid JSON in request body') {
+    if (error instanceof Error && error.message === 'Invalid JSON in request body') {
       return createErrorResponse('Invalid JSON in request body', 400);
     }
     
@@ -182,7 +183,7 @@ export async function DELETE(
     
     return createSuccessResponse(null, 'Task deleted successfully');
   } catch (error: unknown) {
-    if (error?.message === 'Invalid ID parameter') {
+    if (error instanceof Error && error.message === 'Invalid ID parameter') {
       return createErrorResponse('Invalid task ID', 400);
     }
     
