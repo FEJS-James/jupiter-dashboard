@@ -12,6 +12,7 @@ import {
   parseRequestBody,
   extractIdFromParams
 } from '@/lib/api-utils';
+import { websocketManager } from '@/lib/websocket-manager';
 
 /**
  * GET /api/tasks/[id] - Get task details
@@ -132,6 +133,9 @@ export async function PATCH(
       .where(eq(tasks.id, taskId))
       .returning();
     
+    // Emit real-time event for task update
+    websocketManager.emitTaskUpdated(updatedTask);
+    
     return createSuccessResponse(updatedTask, 'Task updated successfully');
   } catch (error: unknown) {
     if (error instanceof Error && error.message === 'Invalid ID parameter') {
@@ -180,6 +184,9 @@ export async function DELETE(
     await db
       .delete(tasks)
       .where(eq(tasks.id, taskId));
+    
+    // Emit real-time event for task deletion
+    websocketManager.emitTaskDeleted(taskId);
     
     return createSuccessResponse(null, 'Task deleted successfully');
   } catch (error: unknown) {

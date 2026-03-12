@@ -11,6 +11,7 @@ import {
   handleDatabaseError,
   parseRequestBody
 } from '@/lib/api-utils';
+import { websocketManager } from '@/lib/websocket-manager';
 
 /**
  * GET /api/tasks - List tasks with filters
@@ -168,6 +169,11 @@ export async function POST(request: NextRequest) {
       .insert(tasks)
       .values(taskData)
       .returning();
+    
+    // Emit real-time event for task creation
+    console.log('WebSocket manager ready status:', websocketManager.isReady());
+    console.log('WebSocket manager IO instance:', !!websocketManager.getIO());
+    websocketManager.emitTaskCreated(newTask);
     
     return createSuccessResponse(newTask, 'Task created successfully', 201);
   } catch (error: unknown) {

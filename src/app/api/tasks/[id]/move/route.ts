@@ -12,6 +12,7 @@ import {
   parseRequestBody,
   extractIdFromParams
 } from '@/lib/api-utils';
+import { websocketManager } from '@/lib/websocket-manager';
 
 /**
  * POST /api/tasks/[id]/move - Move task to new status/column
@@ -30,7 +31,7 @@ export async function POST(
     const body = await parseRequestBody(request);
     const validatedData = moveTaskSchema.parse(body);
     
-    // Check if task exists
+    // Check if task exists and get current status
     const existingTask = await db
       .select()
       .from(tasks)
@@ -40,6 +41,8 @@ export async function POST(
     if (existingTask.length === 0) {
       return createErrorResponse('Task not found', 404);
     }
+
+    const previousStatus = existingTask[0].status;
     
     // Verify assigned agent exists if provided
     if (validatedData.assignedAgent) {
@@ -68,6 +71,9 @@ export async function POST(
       .set(updateData)
       .where(eq(tasks.id, taskId))
       .returning();
+    
+    // Emit real-time event for task move
+    websocketManager.emitTaskMoved(taskId, previousStatus, validatedData.status, updatedTask);
     
     return createSuccessResponse(
       updatedTask, 

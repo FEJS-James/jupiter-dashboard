@@ -10,10 +10,11 @@ import { validateEventPayload, JoinEventSchema, LeaveEventSchema, TaskCreatedEve
          UpdatePresenceEventSchema } from './src/validation/websocket-schemas'
 import { RateLimiter } from './src/utils/rate-limiter'
 import { WebSocketAuth } from './src/utils/websocket-auth'
+import { websocketManager } from './src/lib/websocket-manager'
 
 const dev = process.env.NODE_ENV !== 'production'
 const hostname = 'localhost'
-const port = process.env.PORT || 3000
+const port = parseInt(process.env.PORT || '3000', 10)
 
 const app = next({ dev, hostname, port })
 const handle = app.getRequestHandler()
@@ -31,7 +32,7 @@ setInterval(() => {
 app.prepare().then(() => {
   const server = createServer((req, res) => {
     try {
-      const parsedUrl = parse(req.url, true)
+      const parsedUrl = parse(req.url || '/', true)
       handle(req, res, parsedUrl)
     } catch (err) {
       console.error('Error occurred handling', req.url, err)
@@ -50,6 +51,9 @@ app.prepare().then(() => {
     transports: ['websocket', 'polling'],
     allowEIO3: true
   })
+
+  // Initialize the WebSocket manager with the IO instance
+  websocketManager.initialize(io)
 
   // Add authentication middleware
   if (!dev) {

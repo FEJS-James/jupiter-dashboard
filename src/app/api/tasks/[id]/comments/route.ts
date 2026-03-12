@@ -12,6 +12,7 @@ import {
   parseRequestBody,
   extractIdFromParams
 } from '@/lib/api-utils';
+import { websocketManager } from '@/lib/websocket-manager';
 
 /**
  * POST /api/tasks/[id]/comments - Add comment to task
@@ -72,6 +73,9 @@ export async function POST(
         color: agent[0].color,
       },
     };
+    
+    // Emit real-time event for comment added
+    websocketManager.emitCommentAdded(taskId, commentWithAgent);
     
     return createSuccessResponse(
       commentWithAgent, 
