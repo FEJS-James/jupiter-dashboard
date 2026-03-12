@@ -1,7 +1,7 @@
 'use client'
 
 import { Suspense } from 'react'
-import TasksPageContent from './tasks-page-content'
+import TasksPageContentRealtime from './tasks-page-content-realtime'
 import { Skeleton } from '@/components/ui/skeleton'
 
 function TasksPageSkeleton() {
@@ -24,7 +24,7 @@ function TasksPageSkeleton() {
 export default function TasksPageWrapper() {
   return (
     <Suspense fallback={<TasksPageSkeleton />}>
-      <TasksPageContent />
+      <TasksPageContentRealtime />
     </Suspense>
   )
 }

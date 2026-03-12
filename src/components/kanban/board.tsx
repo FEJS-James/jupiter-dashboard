@@ -6,7 +6,7 @@ import { Task, TaskStatus } from '@/types'
 import { Column } from './column'
 
 interface BoardProps {
-  tasks: Task[]
+  tasks: (Task & { isOptimistic?: boolean })[]
   onCreateTask?: (status: TaskStatus) => void
   onEditTask?: (task: Task) => void
   onDeleteTask?: (task: Task) => void

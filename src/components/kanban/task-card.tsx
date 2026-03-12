@@ -9,7 +9,7 @@ import { formatDistanceToNow } from 'date-fns'
 import { Clock, AlertCircle, Edit, Trash2, GripVertical } from 'lucide-react'
 
 interface TaskCardProps {
-  task: Task
+  task: Task & { isOptimistic?: boolean }
   index: number
   onEdit?: (task: Task) => void
   onDelete?: (task: Task) => void
@@ -68,9 +68,16 @@ export function TaskCard({ task, index, onEdit, onDelete }: TaskCardProps) {
               </div>
               
               <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-medium text-slate-100 line-clamp-2 mb-1">
-                  {task.title}
-                </h3>
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 className="text-sm font-medium text-slate-100 line-clamp-2 flex-1">
+                    {task.title}
+                  </h3>
+                  {task.isOptimistic && (
+                    <div className="flex-shrink-0">
+                      <div className="w-2 h-2 bg-orange-400 rounded-full animate-pulse" />
+                    </div>
+                  )}
+                </div>
                 {task.description && (
                   <p className="text-xs text-slate-400 line-clamp-1">
                     {task.description}
