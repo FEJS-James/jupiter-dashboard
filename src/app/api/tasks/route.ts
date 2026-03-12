@@ -14,6 +14,33 @@ import {
 import { websocketManager } from '@/lib/websocket-manager';
 import { ActivityLogger } from '@/lib/activity-logger';
 import { NotificationService } from '@/lib/notification-service';
+import { Task, Project } from '@/types';
+
+// Convert database task to API task type (null to undefined)
+function convertDbTaskToApiTask(dbTask: any): Task {
+  return {
+    ...dbTask,
+    description: dbTask.description ?? undefined,
+    dueDate: dbTask.dueDate?.toISOString() ?? undefined,
+    assignedAgent: dbTask.assignedAgent ?? undefined,
+    effort: dbTask.effort ?? undefined,
+    tags: dbTask.tags ?? undefined,
+    createdAt: dbTask.createdAt.toISOString(),
+    updatedAt: dbTask.updatedAt.toISOString()
+  };
+}
+
+// Convert database project to API project type (null to undefined)
+function convertDbProjectToApiProject(dbProject: any): Project {
+  return {
+    ...dbProject,
+    description: dbProject.description ?? undefined,
+    techStack: dbProject.techStack ?? undefined,
+    repoUrl: dbProject.repoUrl ?? undefined,
+    createdAt: dbProject.createdAt.toISOString(),
+    updatedAt: dbProject.updatedAt.toISOString()
+  };
+}
 
 /**
  * GET /api/tasks - List tasks with filters
@@ -194,12 +221,12 @@ export async function POST(request: NextRequest) {
         .limit(1);
       
       if (assignedAgent.length > 0) {
-        await NotificationService.notifyTaskAssigned(newTask, assignedAgent[0].id);
+        await NotificationService.notifyTaskAssigned(convertDbTaskToApiTask(newTask), assignedAgent[0].id);
       }
     }
 
     // Create notifications for project team members about new task
-    await NotificationService.notifyProjectTaskAdded(newTask, project[0]);
+    await NotificationService.notifyProjectTaskAdded(convertDbTaskToApiTask(newTask), convertDbProjectToApiProject(project[0]));
     
     // Emit real-time event for task creation
     console.log('WebSocket manager ready status:', websocketManager.isReady());

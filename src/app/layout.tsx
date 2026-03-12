@@ -3,6 +3,7 @@ import { Inter } from "next/font/google"
 import "./globals.css"
 import { LayoutWrapper } from "@/components/layout/layout-wrapper"
 import { ThemeProvider } from "@/contexts/theme-context"
+import { UserPreferencesProvider } from "@/contexts/user-preferences-context"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -26,9 +27,11 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <ThemeProvider>
-          <LayoutWrapper>
-            {children}
-          </LayoutWrapper>
+          <UserPreferencesProvider agentId={1}>
+            <LayoutWrapper>
+              {children}
+            </LayoutWrapper>
+          </UserPreferencesProvider>
         </ThemeProvider>
       </body>
     </html>

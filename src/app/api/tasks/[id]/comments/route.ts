@@ -8,6 +8,7 @@ import {
   deleteCommentSchema, 
   commentFiltersSchema 
 } from '@/lib/validation';
+import { Task, Agent } from '@/types';
 import { ZodError } from 'zod';
 import { 
   createErrorResponse, 
@@ -306,17 +307,30 @@ export async function POST(
         metadata: validatedData.metadata || {},
         updatedAt: newComment.updatedAt,
         agent: commenterAgent,
-        agentId: commenterAgent.id,
-        deletedAt: null,
-        deletedByAgentId: null,
-        deletedByAgent: null,
+        deletedAt: undefined,
+        deletedByAgent: undefined,
         replies: [],
         reactions: [],
         editHistory: [],
         replyCount: 0,
       },
-      existingTask[0], // task
-      commenterAgent   // commenter
+      {
+        ...existingTask[0],
+        description: existingTask[0].description ?? undefined,
+        dueDate: existingTask[0].dueDate?.toISOString() ?? undefined,
+        assignedAgent: existingTask[0].assignedAgent ?? undefined,
+        effort: existingTask[0].effort ?? undefined,
+        tags: existingTask[0].tags ?? undefined,
+        createdAt: existingTask[0].createdAt.toISOString(),
+        updatedAt: existingTask[0].updatedAt.toISOString()
+      } as Task, // task
+      {
+        ...commenterAgent,
+        avatarUrl: commenterAgent.avatarUrl ?? undefined,
+        currentTaskId: commenterAgent.currentTaskId ?? undefined,
+        createdAt: commenterAgent.createdAt.toISOString(),
+        updatedAt: commenterAgent.updatedAt.toISOString()
+      } as Agent   // commenter
     );
     
     // Keep old comment notifications for backward compatibility (can be removed later)

@@ -144,9 +144,10 @@ describe('TaskFiltersComponent', () => {
     render(<TaskFiltersComponent {...defaultProps} />)
     
     const searchInput = screen.getByPlaceholderText('Search in title and description...')
+    await user.clear(searchInput)
     await user.type(searchInput, 'test search')
     
-    expect(defaultProps.onFiltersChange).toHaveBeenCalledWith({ search: 'test search' })
+    expect(defaultProps.onFiltersChange).toHaveBeenLastCalledWith({ search: 'test search' })
   })
 
   it('clears search when clear button is clicked', async () => {
@@ -158,8 +159,9 @@ describe('TaskFiltersComponent', () => {
     
     render(<TaskFiltersComponent {...propsWithSearch} />)
     
-    const clearButton = screen.getByRole('button')
-    await user.click(clearButton)
+    const clearButton = screen.getByText(/×/).closest('button')
+    expect(clearButton).toBeInTheDocument()
+    await user.click(clearButton!)
     
     expect(defaultProps.onFiltersChange).toHaveBeenCalledWith({ search: '' })
   })
@@ -225,7 +227,7 @@ describe('TaskFiltersComponent', () => {
     render(<TaskFiltersComponent {...defaultProps} filters={filtersWithSelections} />)
     
     expect(screen.getByText('2 selected')).toBeInTheDocument()
-    expect(screen.getByText('High')).toBeInTheDocument()
+    expect(screen.getAllByText('High').length).toBeGreaterThanOrEqual(1)
   })
 
   it('does not show tags filter when no tags exist', () => {

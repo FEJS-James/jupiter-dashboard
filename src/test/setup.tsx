@@ -23,79 +23,7 @@ vi.mock('@radix-ui/react-select', () => ({
   Icon: ({ children, ...props }: any) => React.createElement('span', { ...props, 'data-testid': 'select-icon' }, children),
 }))
 
-// Mock framer-motion - MUST be at the top for proper hoisting
-vi.mock('framer-motion', () => {
-  const createMockMotionComponent = (element: string) => {
-    return ({ children, ...props }: any) => {
-      // Remove animation-specific props to avoid warnings
-      const { 
-        animate, 
-        initial, 
-        exit, 
-        transition, 
-        whileHover, 
-        whileTap,
-        variants,
-        ...cleanProps 
-      } = props;
-      return React.createElement(element, cleanProps, children);
-    };
-  };
-  
-  return {
-    motion: {
-      div: createMockMotionComponent('div'),
-      span: createMockMotionComponent('span'),
-      button: createMockMotionComponent('button'),
-      input: createMockMotionComponent('input'),
-      form: createMockMotionComponent('form'),
-      nav: createMockMotionComponent('nav'),
-      header: createMockMotionComponent('header'),
-      section: createMockMotionComponent('section'),
-      article: createMockMotionComponent('article'),
-      aside: createMockMotionComponent('aside'),
-      main: createMockMotionComponent('main'),
-      ul: createMockMotionComponent('ul'),
-      li: createMockMotionComponent('li'),
-      p: createMockMotionComponent('p'),
-      h1: createMockMotionComponent('h1'),
-      h2: createMockMotionComponent('h2'),
-      h3: createMockMotionComponent('h3'),
-    },
-    AnimatePresence: ({ children }: { children?: React.ReactNode }) => children ? React.createElement(React.Fragment, null, children) : null,
-    useInView: () => true,
-    useAnimation: () => ({ 
-      start: vi.fn().mockResolvedValue(undefined), 
-      stop: vi.fn(),
-      set: vi.fn(),
-      mount: vi.fn(),
-      unmount: vi.fn()
-    }),
-    useSpring: () => ({ 
-      x: 0, 
-      y: 0, 
-      scale: 1, 
-      opacity: 1,
-      set: vi.fn(),
-      get: vi.fn()
-    }),
-    useTransform: (value: any, input: any, output: any) => output?.[0] || 0,
-    useMotionValue: (initialValue: any) => ({ 
-      get: () => initialValue,
-      set: vi.fn(),
-      onChange: vi.fn(),
-      destroy: vi.fn()
-    }),
-    useScroll: () => ({ 
-      scrollY: { get: () => 0, set: vi.fn(), onChange: vi.fn() },
-      scrollYProgress: { get: () => 0, set: vi.fn(), onChange: vi.fn() }
-    }),
-    useMotionTemplate: () => '',
-    animate: vi.fn().mockResolvedValue(undefined),
-    useDragControls: () => ({ start: vi.fn(), stop: vi.fn() }),
-    useMotionValueEvent: vi.fn(),
-  }
-})
+
 
 // Mock browser APIs
 Object.defineProperty(window, 'IntersectionObserver', {
@@ -283,6 +211,59 @@ vi.mock('../contexts/websocket-context', () => ({
     getConnectionStatus: () => 'connected',
     clearActivities: vi.fn(),
   })
+}))
+
+// Mock the drag and drop library
+vi.mock('@hello-pangea/dnd', () => ({
+  DragDropContext: ({ children }: { children: React.ReactNode }) => children,
+  Droppable: ({ children }: { children: (provided: any) => React.ReactNode }) => 
+    children({
+      droppableProps: {},
+      innerRef: () => {},
+      placeholder: null,
+    }),
+  Draggable: ({ children }: { children: (provided: any, snapshot: any) => React.ReactNode }) =>
+    children(
+      {
+        draggableProps: {},
+        dragHandleProps: {},
+        innerRef: () => {},
+      },
+      {
+        isDragging: false,
+        isDropAnimating: false,
+      }
+    ),
+}))
+
+// Mock ActivityLogger
+vi.mock('../lib/activity-logger', () => ({
+  ActivityLogger: {
+    logTaskCreated: vi.fn().mockResolvedValue(undefined),
+    logTaskUpdated: vi.fn().mockResolvedValue(undefined),
+    logTaskDeleted: vi.fn().mockResolvedValue(undefined),
+    logTaskMoved: vi.fn().mockResolvedValue(undefined),
+    logProjectCreated: vi.fn().mockResolvedValue(undefined),
+    logProjectUpdated: vi.fn().mockResolvedValue(undefined),
+    logProjectDeleted: vi.fn().mockResolvedValue(undefined),
+    logAgentCreated: vi.fn().mockResolvedValue(undefined),
+    logAgentUpdated: vi.fn().mockResolvedValue(undefined),
+    logAgentDeleted: vi.fn().mockResolvedValue(undefined),
+    logCommentCreated: vi.fn().mockResolvedValue(undefined),
+    logCommentUpdated: vi.fn().mockResolvedValue(undefined),
+    logCommentDeleted: vi.fn().mockResolvedValue(undefined),
+  }
+}))
+
+// Mock NotificationService
+vi.mock('../lib/notification-service', () => ({
+  NotificationService: {
+    createTaskAssignmentNotification: vi.fn().mockResolvedValue(undefined),
+    createTaskUpdateNotification: vi.fn().mockResolvedValue(undefined),
+    createCommentNotification: vi.fn().mockResolvedValue(undefined),
+    createProjectNotification: vi.fn().mockResolvedValue(undefined),
+    sendNotification: vi.fn().mockResolvedValue(undefined),
+  }
 }))
 
 

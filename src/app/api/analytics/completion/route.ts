@@ -189,10 +189,16 @@ export async function GET(request: NextRequest) {
       .from(tasks)
       .where(
         creationFilter 
-          ? and(sql`${tasks.status} != 'done'`, creationFilter)
-          : sql`${tasks.status} != 'done'`
+          ? and(
+              sql`${tasks.status} != 'done'`,
+              sql`julianday('now') - julianday(${tasks.updatedAt}) > 7`,
+              creationFilter
+            )
+          : and(
+              sql`${tasks.status} != 'done'`,
+              sql`julianday('now') - julianday(${tasks.updatedAt}) > 7`
+            )
       )
-      .having(sql`julianday('now') - julianday(${tasks.updatedAt}) > 7`) // Tasks stuck for more than 7 days
       .orderBy(sql`julianday('now') - julianday(${tasks.updatedAt}) DESC`)
 
     const stuckTasks = agingTasks.map(task => ({

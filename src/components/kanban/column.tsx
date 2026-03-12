@@ -33,7 +33,10 @@ export function Column({ title, status, tasks, color, isDragging, onCreateTask, 
     Math.max(0.1, Math.min(0.9, totalTasks > 0 ? 0.5 : 0))
 
   return (
-    <div className="flex-1 min-w-[300px] max-w-sm">
+    <div 
+      className="flex-1 min-w-[300px] max-w-sm" 
+      data-column-status={status}
+    >
       {/* Column Header */}
       <div className="mb-4">
         <div className="flex items-center justify-between mb-2">

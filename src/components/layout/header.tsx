@@ -14,13 +14,33 @@ import { cn } from '@/lib/utils'
 import { useTheme } from '@/contexts/theme-context'
 import { ThemeToggle } from '@/components/theme/theme-toggle'
 import { NotificationBell } from '@/components/notifications/notification-bell'
+import { MobileHeader } from './mobile-header'
 
 interface HeaderProps {
   className?: string
   sidebarCollapsed?: boolean
+  isMobile?: boolean
+  onToggleSidebar?: () => void
 }
 
-export function Header({ className, sidebarCollapsed = false }: HeaderProps) {
+export function Header({ 
+  className, 
+  sidebarCollapsed = false, 
+  isMobile = false, 
+  onToggleSidebar 
+}: HeaderProps) {
+  // Use mobile header when on mobile
+  if (isMobile) {
+    return (
+      <MobileHeader 
+        className={className}
+        sidebarCollapsed={sidebarCollapsed}
+        isMobile={isMobile}
+        onToggleSidebar={onToggleSidebar}
+      />
+    )
+  }
+
   const [searchFocused, setSearchFocused] = useState(false)
   const { actualTheme } = useTheme()
   

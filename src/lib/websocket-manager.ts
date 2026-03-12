@@ -203,6 +203,70 @@ class WebSocketManager {
   }
 
   /**
+   * Emit a bulk operation event to all connected clients
+   */
+  public emitBulkOperation(
+    operation: string,
+    taskIds: number[],
+    details: Record<string, unknown>,
+    boardId?: string
+  ): void {
+    if (!global.__socketIO) {
+      console.warn('WebSocket not initialized - cannot emit bulkOperation event');
+      return;
+    }
+
+    try {
+      const targetRoom = boardId || 'board-1';
+      global.__socketIO.to(targetRoom).emit('bulkOperation', {
+        operation,
+        taskIds,
+        details,
+        timestamp: new Date(),
+      });
+
+      // Also emit activity
+      const activity = {
+        id: randomUUID(),
+        type: 'bulk_operation',
+        operation,
+        taskCount: taskIds.length,
+        taskIds,
+        details,
+        timestamp: new Date(),
+      };
+      global.__socketIO.to(targetRoom).emit('activity', activity);
+
+      console.log(`Emitted bulkOperation (${operation}) event for ${taskIds.length} tasks to room ${targetRoom}`);
+    } catch (error) {
+      console.error(`Error emitting bulkOperation (${operation}) event:`, error);
+    }
+  }
+
+  /**
+   * Emit multiple tasks updated for bulk operations
+   */
+  public emitBulkTasksUpdated(tasks: any[], operation: string, boardId?: string): void {
+    if (!global.__socketIO) {
+      console.warn('WebSocket not initialized - cannot emit bulkTasksUpdated event');
+      return;
+    }
+
+    try {
+      const targetRoom = boardId || 'board-1';
+      global.__socketIO.to(targetRoom).emit('bulkTasksUpdated', {
+        tasks,
+        operation,
+        timestamp: new Date(),
+      });
+
+      console.log(`Emitted bulkTasksUpdated event for ${tasks.length} tasks (${operation}) to room ${targetRoom}`);
+    } catch (error) {
+      console.error(`Error emitting bulkTasksUpdated event:`, error);
+    }
+  }
+
+  /**
    * Emit a comment updated event to all connected clients
    */
   public emitCommentUpdated(taskId: number, commentId: number, comment: any, boardId?: string): void {

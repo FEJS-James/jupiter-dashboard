@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Keyboard Shortcuts Test Runner</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .button:hover {
+            background: #0056b3;
+        }
+        .button.secondary {
+            background: #6c757d;
+        }
+        .status {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 6px;
+            border-left: 4px solid;
+        }
+        .status.info {
+            background: #e3f2fd;
+            border-color: #2196f3;
+        }
+        .status.success {
+            background: #e8f5e8;
+            border-color: #4caf50;
+        }
+        .status.warning {
+            background: #fff3cd;
+            border-color: #ff9800;
+        }
+        .status.error {
+            background: #ffebee;
+            border-color: #f44336;
+        }
+        .console-output {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 6px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 14px;
+            height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            margin-top: 20px;
+        }
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .test-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+        }
+        .test-card h3 {
+            margin-top: 0;
+            color: #495057;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Keyboard Shortcuts Test Runner</h1>
+        <p>This test runner will help you verify the keyboard shortcuts functionality for TASK-020.</p>
+        
+        <div class="status info">
+            <strong>📋 Before Starting:</strong><br>
+            1. Make sure the dev server is running on <a href="http://localhost:3000/tasks" target="_blank">http://localhost:3000/tasks</a><br>
+            2. Open the tasks page in a new tab<br>
+            3. Run the test suite from the browser console or using the buttons below
+        </div>
+        
+        <div class="test-grid">
+            <div class="test-card">
+                <h3>🎯 Quick Test</h3>
+                <p>Run a basic functionality test to verify core shortcuts are working.</p>
+                <button class="button" onclick="runQuickTest()">Run Quick Test</button>
+            </div>
+            
+            <div class="test-card">
+                <h3>🔍 Comprehensive Test</h3>
+                <p>Run the full test suite including accessibility and performance testing.</p>
+                <button class="button" onclick="runComprehensiveTest()">Run Full Test Suite</button>
+            </div>
+            
+            <div class="test-card">
+                <h3>📖 Manual Test Guide</h3>
+                <p>Step-by-step guide for manual testing of all keyboard shortcuts.</p>
+                <button class="button secondary" onclick="showManualGuide()">Show Manual Guide</button>
+            </div>
+            
+            <div class="test-card">
+                <h3>🌐 Open Application</h3>
+                <p>Open the dev-dashboard application in a new tab.</p>
+                <a href="http://localhost:3000/tasks" target="_blank" class="button secondary">Open Tasks Page</a>
+            </div>
+        </div>
+        
+        <div id="output" class="console-output" style="display: none;"></div>
+        
+        <div id="manual-guide" style="display: none; margin-top: 20px;">
+            <h2>📖 Manual Testing Guide</h2>
+            <div class="status warning">
+                <strong>⚠️ Important:</strong> Navigate to <a href="http://localhost:3000/tasks" target="_blank">http://localhost:3000/tasks</a> before testing!
+            </div>
+            
+            <h3>1. Global Navigation Shortcuts</h3>
+            <ul>
+                <li><code>?</code> - Opens help modal with searchable shortcuts</li>
+                <li><code>Ctrl+K</code> - Opens command palette</li>
+                <li><code>g + d</code> - Navigate to Dashboard</li>
+                <li><code>g + b</code> - Navigate to Board/Tasks</li>
+                <li><code>g + p</code> - Navigate to Projects</li>
+                <li><code>g + a</code> - Navigate to Analytics</li>
+                <li><code>g + n</code> - Navigate to Notifications</li>
+            </ul>
+            
+            <h3>2. Kanban Board Navigation</h3>
+            <ul>
+                <li><code>j</code>/<code>k</code> - Navigate down/up through tasks</li>
+                <li><code>h</code>/<code>l</code> - Navigate left/right between columns</li>
+                <li><code>Enter</code> - Open selected task details</li>
+                <li><code>1-6</code> - Switch between columns</li>
+            </ul>
+            
+            <h3>3. Task Management</h3>
+            <ul>
+                <li><code>n</code> - Create new task</li>
+                <li><code>e</code> - Edit selected task</li>
+                <li><code>d</code> - Delete selected task</li>
+                <li><code>f</code> - Focus search input</li>
+                <li><code>m</code> - Move task to next status</li>
+                <li><code>Ctrl+D</code> - Duplicate task</li>
+            </ul>
+            
+            <h3>4. Advanced Features</h3>
+            <ul>
+                <li><code>Ctrl+T</code> - Toggle theme</li>
+                <li><code>Escape</code> - Cancel/close modals, clear selections</li>
+                <li><code>Shift+←/→</code> - Move task to previous/next status</li>
+            </ul>
+            
+            <h3>✅ Expected Behaviors</h3>
+            <ul>
+                <li>Visual feedback when tasks are selected (highlighting/rings)</li>
+                <li>Help modal is searchable and well-organized</li>
+                <li>Command palette provides quick access to actions</li>
+                <li>Shortcuts respect input focus (don't interfere with typing)</li>
+                <li>Accessibility: proper focus management and ARIA labels</li>
+                <li>Performance: no lag when using shortcuts rapidly</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const output = document.getElementById('output');
+        const manualGuide = document.getElementById('manual-guide');
+        
+        function log(message) {
+            if (output.style.display === 'none') {
+                output.style.display = 'block';
+            }
+            output.textContent += new Date().toLocaleTimeString() + ': ' + message + '\n';
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        function runQuickTest() {
+            output.textContent = '';
+            output.style.display = 'block';
+            log('🚀 Starting Quick Test...');
+            log('📝 Opening tasks page in new window...');
+            
+            const tasksWindow = window.open('http://localhost:3000/tasks', '_blank');
+            
+            if (!tasksWindow) {
+                log('❌ Failed to open tasks page. Please allow popups or open manually.');
+                return;
+            }
+            
+            setTimeout(() => {
+                log('⚡ Running basic keyboard shortcuts test...');
+                
+                // Inject test script into the tasks page
+                try {
+                    tasksWindow.eval(`
+                        console.log('🚀 Running Quick Keyboard Test...');
+                        let passed = 0, failed = 0;
+                        
+                        function quickTest(name, condition, message) {
+                            if (condition) {
+                                passed++;
+                                console.log('✅ ' + name + ': ' + message);
+                            } else {
+                                failed++;
+                                console.log('❌ ' + name + ': ' + message);
+                            }
+                        }
+                        
+                        // Test help modal
+                        const helpBefore = document.querySelector('[role="dialog"]');
+                        document.dispatchEvent(new KeyboardEvent('keydown', { key: '?', bubbles: true }));
+                        
+                        setTimeout(() => {
+                            const helpAfter = document.querySelector('[role="dialog"]');
+                            quickTest('Help Modal', !helpBefore && !!helpAfter, helpAfter ? 'Opened successfully' : 'Not found');
+                            
+                            // Close help modal
+                            if (helpAfter) {
+                                document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+                            }
+                            
+                            setTimeout(() => {
+                                // Test command palette
+                                document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true }));
+                                
+                                setTimeout(() => {
+                                    const commandPalette = document.querySelector('[role="dialog"] input');
+                                    quickTest('Command Palette', !!commandPalette, commandPalette ? 'Opened successfully' : 'Not found');
+                                    
+                                    if (commandPalette) {
+                                        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+                                    }
+                                    
+                                    setTimeout(() => {
+                                        // Test task navigation
+                                        const tasks = document.querySelectorAll('[data-task-id]');
+                                        quickTest('Tasks Available', tasks.length > 0, 'Found ' + tasks.length + ' tasks');
+                                        
+                                        if (tasks.length > 0) {
+                                            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'j', bubbles: true }));
+                                            
+                                            setTimeout(() => {
+                                                const selected = document.querySelector('[data-selected="true"]');
+                                                quickTest('Task Selection', !!selected, selected ? 'Task selected successfully' : 'No selection');
+                                                
+                                                // Test search focus
+                                                document.dispatchEvent(new KeyboardEvent('keydown', { key: 'f', bubbles: true }));
+                                                
+                                                setTimeout(() => {
+                                                    const activeElement = document.activeElement;
+                                                    const searchFocused = activeElement && (activeElement.type === 'text' || activeElement.placeholder?.toLowerCase().includes('search'));
+                                                    quickTest('Search Focus', searchFocused, searchFocused ? 'Search input focused' : 'Search not focused');
+                                                    
+                                                    console.log('\\n📊 Quick Test Results:');
+                                                    console.log('✅ Passed: ' + passed);
+                                                    console.log('❌ Failed: ' + failed);
+                                                    const rate = Math.round((passed / (passed + failed)) * 100);
+                                                    console.log('📈 Success Rate: ' + rate + '%');
+                                                    
+                                                    if (rate >= 80) {
+                                                        console.log('🎉 QUICK TEST PASS - Core functionality working!');
+                                                    } else {
+                                                        console.log('⚠️ QUICK TEST ISSUES - Some functionality may need attention');
+                                                    }
+                                                    
+                                                    // Send results back to parent window
+                                                    window.quickTestResults = { passed, failed, rate };
+                                                }, 300);
+                                            }, 300);
+                                        }
+                                    }, 300);
+                                }, 300);
+                            }, 300);
+                        }, 500);
+                    `);
+                    
+                    log('✅ Test script injected successfully');
+                    log('📊 Check the tasks page console for detailed results');
+                    
+                } catch (error) {
+                    log('❌ Error running test: ' + error.message);
+                }
+                
+            }, 3000);
+        }
+        
+        function runComprehensiveTest() {
+            output.textContent = '';
+            output.style.display = 'block';
+            log('🚀 Starting Comprehensive Test Suite...');
+            log('📝 Opening tasks page...');
+            
+            const tasksWindow = window.open('http://localhost:3000/tasks', '_blank');
+            
+            if (!tasksWindow) {
+                log('❌ Failed to open tasks page. Please allow popups or open manually.');
+                return;
+            }
+            
+            setTimeout(() => {
+                log('📥 Loading comprehensive test suite...');
+                
+                // Load and inject the comprehensive test suite
+                fetch('./browser-keyboard-test-suite.js')
+                    .then(response => response.text())
+                    .then(script => {
+                        tasksWindow.eval(script);
+                        log('✅ Comprehensive test suite loaded and running');
+                        log('📊 Check the tasks page console for detailed results');
+                    })
+                    .catch(error => {
+                        log('❌ Failed to load comprehensive test suite: ' + error.message);
+                        log('💡 Try running the quick test or test manually');
+                    });
+                    
+            }, 3000);
+        }
+        
+        function showManualGuide() {
+            if (manualGuide.style.display === 'none') {
+                manualGuide.style.display = 'block';
+            } else {
+                manualGuide.style.display = 'none';
+            }
+        }
+        
+        // Initial setup
+        log('🏁 Test Runner Ready');
+        log('📋 Select a test type to begin verification of TASK-020 keyboard shortcuts');
+    </script>
+</body>
+</html>

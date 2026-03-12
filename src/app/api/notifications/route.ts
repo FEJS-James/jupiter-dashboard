@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { notifications, agents, tasks, projects, comments } from '@/lib/schema'
-import { eq, desc, and, isNull, or, sql, count, type SQL } from 'drizzle-orm'
+import { eq, desc, and, isNull, or, sql, count, type SQL, type InferInsertModel } from 'drizzle-orm'
 import { NotificationType, NotificationPriority } from '@/types'
 import { requireAuth, validateUserAccess, forbiddenResponse } from '@/lib/auth'
 import { z } from 'zod'
@@ -9,12 +9,14 @@ import { z } from 'zod'
 // Input validation schemas
 const CreateNotificationSchema = z.object({
   recipientId: z.number().positive(),
-  type: z.string().min(1),
+  type: z.enum(['task_assigned', 'task_reassigned', 'task_status_changed', 'task_priority_changed', 
+                'comment_added', 'comment_mention', 'comment_reply', 'project_task_added', 
+                'project_updated', 'system_announcement']),
   title: z.string().min(1).max(255),
   message: z.string().min(1).max(1000),
-  entityType: z.string().optional(),
+  entityType: z.enum(['task', 'project', 'comment', 'system']).optional(),
   entityId: z.number().positive().optional(),
-  relatedEntityType: z.string().optional(),
+  relatedEntityType: z.enum(['task', 'project', 'comment', 'agent']).optional(),
   relatedEntityId: z.number().positive().optional(),
   actionUrl: z.string().url().optional().or(z.literal('')),
   metadata: z.record(z.string(), z.any()).optional(),
@@ -264,22 +266,24 @@ export async function POST(request: NextRequest) {
     const sanitizedMessage = message.replace(/<[^>]*>/g, '').trim()
 
     // Create notification
+    const notificationData: InferInsertModel<typeof notifications>[] = [{
+      recipientId,
+      type,
+      title: sanitizedTitle,
+      message: sanitizedMessage,
+      entityType,
+      entityId,
+      relatedEntityType,
+      relatedEntityId,
+      actionUrl,
+      metadata,
+      priority,
+      expiresAt: expiresAt ? new Date(expiresAt) : undefined,
+    }]
+    
     const newNotification = await db
       .insert(notifications)
-      .values({
-        recipientId,
-        type,
-        title: sanitizedTitle,
-        message: sanitizedMessage,
-        entityType,
-        entityId,
-        relatedEntityType,
-        relatedEntityId,
-        actionUrl,
-        metadata,
-        priority,
-        expiresAt: expiresAt ? new Date(expiresAt) : undefined,
-      })
+      .values(notificationData)
       .returning()
 
     // Fetch the created notification with relations

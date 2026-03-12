@@ -39,7 +39,7 @@ export function Sidebar({ className, onCollapseChange }: SidebarProps) {
     { icon: Layers, label: 'Projects', href: '/projects' },
     { icon: Users, label: 'Agents', href: '/agents' },
     { icon: BarChart3, label: 'Analytics', href: '/analytics' },
-    { icon: Settings, label: 'Settings', href: '/settings' },
+    { icon: Settings, label: 'Preferences', href: '/preferences' },
   ]
 
   const projects = [

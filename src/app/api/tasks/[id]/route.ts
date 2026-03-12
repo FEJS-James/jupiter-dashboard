@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { tasks, projects, agents } from '@/lib/schema';
 import { updateTaskSchema } from '@/lib/validation';
+import { Task } from '@/types';
 import { ZodError } from 'zod';
 import { 
   createErrorResponse, 
@@ -14,6 +15,20 @@ import {
 } from '@/lib/api-utils';
 import { websocketManager } from '@/lib/websocket-manager';
 import { NotificationService } from '@/lib/notification-service';
+
+// Convert database task to API task type (null to undefined)
+function convertDbTaskToApiTask(dbTask: any): Task {
+  return {
+    ...dbTask,
+    description: dbTask.description ?? undefined,
+    dueDate: dbTask.dueDate?.toISOString() ?? undefined,
+    assignedAgent: dbTask.assignedAgent ?? undefined,
+    effort: dbTask.effort ?? undefined,
+    tags: dbTask.tags ?? undefined,
+    createdAt: dbTask.createdAt.toISOString(),
+    updatedAt: dbTask.updatedAt.toISOString()
+  };
+}
 
 /**
  * GET /api/tasks/[id] - Get task details
@@ -165,13 +180,13 @@ export async function PATCH(
           if (oldTask.assignedAgent) {
             // Reassignment
             await NotificationService.notifyTaskReassigned(
-              updatedTask, 
+              convertDbTaskToApiTask(updatedTask), 
               newAssignee[0].id, 
               previousAssigneeId
             );
           } else {
             // New assignment
-            await NotificationService.notifyTaskAssigned(updatedTask, newAssignee[0].id);
+            await NotificationService.notifyTaskAssigned(convertDbTaskToApiTask(updatedTask), newAssignee[0].id);
           }
         }
       }
@@ -180,7 +195,7 @@ export async function PATCH(
     // Handle status changes
     if (validatedData.status !== undefined && validatedData.status !== oldTask.status) {
       await NotificationService.notifyTaskStatusChanged(
-        updatedTask,
+        convertDbTaskToApiTask(updatedTask),
         oldTask.status,
         validatedData.status
       );
@@ -189,16 +204,17 @@ export async function PATCH(
     // Handle priority changes
     if (validatedData.priority !== undefined && validatedData.priority !== oldTask.priority) {
       await NotificationService.notifyTaskPriorityChanged(
-        updatedTask,
+        convertDbTaskToApiTask(updatedTask),
         oldTask.priority,
         validatedData.priority
       );
     }
     
     // Emit real-time event for task update
-    websocketManager.emitTaskUpdated(updatedTask);
+    const apiTask = convertDbTaskToApiTask(updatedTask);
+    websocketManager.emitTaskUpdated(apiTask);
     
-    return createSuccessResponse(updatedTask, 'Task updated successfully');
+    return createSuccessResponse(apiTask, 'Task updated successfully');
   } catch (error: unknown) {
     if (error instanceof Error && error.message === 'Invalid ID parameter') {
       return createErrorResponse('Invalid task ID', 400);

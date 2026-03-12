@@ -244,7 +244,11 @@ export function TaskFiltersComponent({
             <Filter className="w-5 h-5" />
             Advanced Filters
             {isLoading && (
-              <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+              <div 
+                role="status" 
+                aria-label="Loading filters"
+                className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" 
+              />
             )}
           </div>
           <div className="flex items-center gap-2 text-sm">

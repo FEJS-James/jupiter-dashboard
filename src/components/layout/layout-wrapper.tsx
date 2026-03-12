@@ -4,10 +4,14 @@ import { useState, useEffect } from "react"
 import { Sidebar } from "./sidebar"
 import { Header } from "./header"
 import { Footer } from "./footer"
+import { MobileLayoutWrapper } from "./mobile-layout-wrapper"
 import { WebSocketProvider } from "@/contexts/websocket-context"
 import { WebSocketErrorBoundary } from "@/components/error-boundary"
 import { useTheme } from "@/contexts/theme-context"
 import { Toaster } from "sonner"
+import { KeyboardShortcutsProvider } from "@/contexts/keyboard-shortcuts-context"
+import { KeyboardShortcutsHelp } from "@/components/ui/keyboard-shortcuts-help"
+import { useMediaQuery } from "@/hooks/use-media-query"
 
 interface LayoutWrapperProps {
   children: React.ReactNode
@@ -16,6 +20,12 @@ interface LayoutWrapperProps {
 export function LayoutWrapper({ children }: LayoutWrapperProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const { actualTheme } = useTheme()
+  const isMobile = useMediaQuery('(max-width: 768px)')
+
+  // Use mobile layout on mobile devices
+  if (isMobile) {
+    return <MobileLayoutWrapper>{children}</MobileLayoutWrapper>
+  }
 
   // Listen for sidebar collapse changes
   useEffect(() => {
@@ -32,9 +42,10 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
   }, [])
 
   return (
-    <WebSocketErrorBoundary>
-      <WebSocketProvider>
-        <div className="flex h-screen overflow-hidden bg-background text-foreground transition-colors duration-300">
+    <KeyboardShortcutsProvider>
+      <WebSocketErrorBoundary>
+        <WebSocketProvider>
+          <div className="flex h-screen overflow-hidden bg-background text-foreground transition-colors duration-300">
         {/* Sidebar */}
         <Sidebar onCollapseChange={setSidebarCollapsed} />
 
@@ -61,26 +72,30 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
 
           {/* Footer */}
           <Footer sidebarCollapsed={sidebarCollapsed} />
-        </div>
-        </div>
-        
-        {/* Global toast notifications */}
-        <Toaster 
-          theme={actualTheme} 
-          position="top-right"
-          toastOptions={{
-            style: actualTheme === 'dark' ? {
-              background: 'rgb(30 41 59)',
-              border: '1px solid rgb(51 65 85)',
-              color: 'rgb(226 232 240)'
-            } : {
-              background: 'rgb(255 255 255)',
-              border: '1px solid rgb(226 232 240)',
-              color: 'rgb(30 41 59)'
-            }
-          }}
-        />
-      </WebSocketProvider>
-    </WebSocketErrorBoundary>
+          </div>
+          </div>
+          
+          {/* Keyboard shortcuts help modal */}
+          <KeyboardShortcutsHelp />
+          
+          {/* Global toast notifications */}
+          <Toaster 
+            theme={actualTheme} 
+            position="top-right"
+            toastOptions={{
+              style: actualTheme === 'dark' ? {
+                background: 'rgb(30 41 59)',
+                border: '1px solid rgb(51 65 85)',
+                color: 'rgb(226 232 240)'
+              } : {
+                background: 'rgb(255 255 255)',
+                border: '1px solid rgb(226 232 240)',
+                color: 'rgb(30 41 59)'
+              }
+            }}
+          />
+        </WebSocketProvider>
+      </WebSocketErrorBoundary>
+    </KeyboardShortcutsProvider>
   )
 }

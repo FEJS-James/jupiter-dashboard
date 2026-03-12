@@ -460,3 +460,215 @@ export type NewNotification = typeof notifications.$inferInsert;
 
 export type NotificationPreference = typeof notificationPreferences.$inferSelect;
 export type NewNotificationPreference = typeof notificationPreferences.$inferInsert;
+
+/**
+ * User preferences table - comprehensive user preferences system
+ */
+export const userPreferences = sqliteTable('user_preferences', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  agentId: integer('agent_id')
+    .notNull()
+    .references(() => agents.id, { onDelete: 'cascade' }),
+  version: integer('version')
+    .notNull()
+    .default(1), // For schema migration support
+  
+  // Dashboard & View Preferences
+  defaultLandingPage: text('default_landing_page', { 
+    enum: ['dashboard', 'kanban', 'projects', 'analytics'] 
+  }).notNull().default('dashboard'),
+  defaultTaskView: text('default_task_view', { 
+    enum: ['list', 'kanban', 'calendar'] 
+  }).notNull().default('kanban'),
+  tasksPerPage: integer('tasks_per_page')
+    .notNull()
+    .default(20),
+  sidebarCollapsed: integer('sidebar_collapsed', { mode: 'boolean' })
+    .notNull()
+    .default(false),
+  kanbanColumnsVisible: text('kanban_columns_visible', { mode: 'json' })
+    .$type<string[]>()
+    .default(sql`'["backlog", "in-progress", "code-review", "testing", "deploying", "done"]'`),
+  kanbanColumnOrder: text('kanban_column_order', { mode: 'json' })
+    .$type<string[]>()
+    .default(sql`'["backlog", "in-progress", "code-review", "testing", "deploying", "done"]'`),
+  defaultDateRange: text('default_date_range', { 
+    enum: ['week', 'month', 'quarter', 'year'] 
+  }).notNull().default('month'),
+  
+  // Display & Theme Preferences
+  fontSize: text('font_size', { enum: ['small', 'medium', 'large'] })
+    .notNull()
+    .default('medium'),
+  interfaceDensity: text('interface_density', { enum: ['compact', 'comfortable', 'spacious'] })
+    .notNull()
+    .default('comfortable'),
+  accentColor: text('accent_color')
+    .notNull()
+    .default('#3b82f6'),
+  customThemeVariant: text('custom_theme_variant'),
+  reducedMotion: integer('reduced_motion', { mode: 'boolean' })
+    .notNull()
+    .default(false),
+  locale: text('locale')
+    .notNull()
+    .default('en'),
+  
+  // Accessibility Preferences
+  screenReaderOptimized: integer('screen_reader_optimized', { mode: 'boolean' })
+    .notNull()
+    .default(false),
+  highContrastMode: integer('high_contrast_mode', { mode: 'boolean' })
+    .notNull()
+    .default(false),
+  keyboardNavigationEnabled: integer('keyboard_navigation_enabled', { mode: 'boolean' })
+    .notNull()
+    .default(true),
+  focusIndicatorEnhanced: integer('focus_indicator_enhanced', { mode: 'boolean' })
+    .notNull()
+    .default(false),
+  textScaling: real('text_scaling')
+    .notNull()
+    .default(1.0),
+  audioFeedbackEnabled: integer('audio_feedback_enabled', { mode: 'boolean' })
+    .notNull()
+    .default(false),
+  
+  // Productivity Preferences
+  defaultTaskPriority: text('default_task_priority', { 
+    enum: ['low', 'medium', 'high', 'urgent'] 
+  }).notNull().default('medium'),
+  defaultProjectId: integer('default_project_id')
+    .references(() => projects.id, { onDelete: 'set null' }),
+  autoSaveEnabled: integer('auto_save_enabled', { mode: 'boolean' })
+    .notNull()
+    .default(true),
+  quickActionButtons: text('quick_action_buttons', { mode: 'json' })
+    .$type<string[]>()
+    .default(sql`'["create-task", "assign-task", "change-status"]'`),
+  defaultExportFormat: text('default_export_format', { 
+    enum: ['json', 'csv', 'xlsx', 'pdf'] 
+  }).notNull().default('json'),
+  
+  // Notification Preferences (extended)
+  notificationFrequency: text('notification_frequency', { 
+    enum: ['immediate', 'batched', 'digest'] 
+  }).notNull().default('immediate'),
+  quietHoursStart: text('quiet_hours_start').default('22:00'),
+  quietHoursEnd: text('quiet_hours_end').default('08:00'),
+  quietHoursEnabled: integer('quiet_hours_enabled', { mode: 'boolean' })
+    .notNull()
+    .default(false),
+  
+  // Advanced Preferences (JSON storage for extensibility)
+  keyboardShortcuts: text('keyboard_shortcuts', { mode: 'json' })
+    .$type<Record<string, string>>()
+    .default(sql`'{}'`),
+  analyticsPreferences: text('analytics_preferences', { mode: 'json' })
+    .$type<Record<string, unknown>>()
+    .default(sql`'{}'`),
+  exportPreferences: text('export_preferences', { mode: 'json' })
+    .$type<Record<string, unknown>>()
+    .default(sql`'{}'`),
+  customSettings: text('custom_settings', { mode: 'json' })
+    .$type<Record<string, unknown>>()
+    .default(sql`'{}'`),
+  
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .notNull()
+    .default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' })
+    .notNull()
+    .default(sql`(unixepoch())`)
+    .$onUpdate(() => sql`(unixepoch())`),
+}, (table) => ({
+  // Unique constraint - one preference record per agent
+  agentIdUnique: index('user_preferences_agent_id_unique').on(table.agentId),
+  versionIdx: index('user_preferences_version_idx').on(table.version),
+}));
+
+/**
+ * Preference categories table - for organizing preferences into logical groups
+ */
+export const preferenceCategories = sqliteTable('preference_categories', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  name: text('name').notNull().unique(),
+  displayName: text('display_name').notNull(),
+  description: text('description'),
+  icon: text('icon'),
+  sortOrder: integer('sort_order').notNull().default(0),
+  isActive: integer('is_active', { mode: 'boolean' })
+    .notNull()
+    .default(true),
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .notNull()
+    .default(sql`(unixepoch())`),
+});
+
+/**
+ * Preference history table - tracks changes for auditing and rollback
+ */
+export const preferenceHistory = sqliteTable('preference_history', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userPreferenceId: integer('user_preference_id')
+    .notNull()
+    .references(() => userPreferences.id, { onDelete: 'cascade' }),
+  fieldName: text('field_name').notNull(),
+  previousValue: text('previous_value'),
+  newValue: text('new_value'),
+  changedAt: integer('changed_at', { mode: 'timestamp' })
+    .notNull()
+    .default(sql`(unixepoch())`),
+}, (table) => ({
+  userPreferenceIdIdx: index('preference_history_user_preference_id_idx').on(table.userPreferenceId),
+  changedAtIdx: index('preference_history_changed_at_idx').on(table.changedAt),
+}));
+
+/**
+ * User preferences relations
+ */
+export const userPreferencesRelations = relations(userPreferences, ({ one, many }) => ({
+  agent: one(agents, {
+    fields: [userPreferences.agentId],
+    references: [agents.id],
+  }),
+  defaultProject: one(projects, {
+    fields: [userPreferences.defaultProjectId],
+    references: [projects.id],
+  }),
+  history: many(preferenceHistory),
+}));
+
+export const preferenceCategoriesRelations = relations(preferenceCategories, ({ many }) => ({
+  // Future: preference items if we need more granular control
+}));
+
+export const preferenceHistoryRelations = relations(preferenceHistory, ({ one }) => ({
+  userPreference: one(userPreferences, {
+    fields: [preferenceHistory.userPreferenceId],
+    references: [userPreferences.id],
+  }),
+}));
+
+// Update agents relations to include preferences
+export const agentsRelationsWithPreferences = relations(agents, ({ one, many }) => ({
+  currentTask: one(tasks, {
+    fields: [agents.currentTaskId],
+    references: [tasks.id],
+  }),
+  assignedTasks: many(tasks),
+  comments: many(comments),
+  activities: many(activity),
+  notifications: many(notifications),
+  notificationPreferences: many(notificationPreferences),
+  userPreferences: one(userPreferences),
+}));
+
+export type UserPreferences = typeof userPreferences.$inferSelect;
+export type NewUserPreferences = typeof userPreferences.$inferInsert;
+
+export type PreferenceCategory = typeof preferenceCategories.$inferSelect;
+export type NewPreferenceCategory = typeof preferenceCategories.$inferInsert;
+
+export type PreferenceHistory = typeof preferenceHistory.$inferSelect;
+export type NewPreferenceHistory = typeof preferenceHistory.$inferInsert;

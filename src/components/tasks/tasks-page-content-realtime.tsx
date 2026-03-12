@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Board } from '@/components/kanban/board'
+import { EnhancedBoard } from '@/components/kanban/enhanced-board'
 import { TaskFormDialog } from '@/components/kanban/task-form-dialog'
 import { DeleteTaskDialog } from '@/components/kanban/delete-task-dialog'
 import { TaskFiltersComponent } from '@/components/tasks/task-filters'
@@ -310,15 +310,17 @@ export default function TasksPageContentRealtime() {
         >
           <Card className="bg-slate-800/30 border-slate-700">
             <CardContent className="p-6">
-              <Board 
+              <EnhancedBoard 
                 tasks={filteredTasks.map(task => ({
                   ...task,
                   isOptimistic: isOptimistic(task.id)
                 }))}
+                agents={agents}
                 onCreateTask={handleCreateTask}
                 onEditTask={handleEditTask}
                 onDeleteTask={handleDeleteTask}
                 onMoveTask={handleMoveTask}
+                onTasksUpdated={fetchData}
               />
             </CardContent>
           </Card>

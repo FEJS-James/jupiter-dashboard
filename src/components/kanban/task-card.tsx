@@ -46,8 +46,10 @@ export function TaskCard({ task, index, onEdit, onDelete }: TaskCardProps) {
         <Card 
           ref={provided.innerRef}
           {...provided.draggableProps}
+          data-task-id={task.id}
+          tabIndex={0}
           className={`
-            p-4 mb-3 cursor-pointer transition-all duration-200 
+            task-card p-4 mb-3 cursor-pointer transition-all duration-200 
             bg-slate-900/50 border-slate-800 backdrop-blur-sm
             hover:bg-slate-900/70 hover:border-slate-700
             border-l-4 ${priorityColors[task.priority]}

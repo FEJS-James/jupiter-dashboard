@@ -2,6 +2,7 @@ import { db } from '@/lib/db'
 import { notifications, notificationPreferences, agents, tasks, projects, comments } from '@/lib/schema'
 import { eq, and, inArray } from 'drizzle-orm'
 import { NotificationType, NotificationPriority, Agent, Task, Project, TaskComment } from '@/types'
+import type { InferInsertModel } from 'drizzle-orm'
 
 interface NotificationData {
   recipientId: number
@@ -89,7 +90,7 @@ export class NotificationService {
         }
 
         // Create the notification
-        await tx.insert(notifications).values({
+        const singleNotificationData: InferInsertModel<typeof notifications> = {
           recipientId: sanitizedData.recipientId,
           type: sanitizedData.type,
           title: sanitizedData.title,
@@ -102,7 +103,8 @@ export class NotificationService {
           metadata: sanitizedData.metadata,
           priority: sanitizedData.priority || 'normal',
           expiresAt: sanitizedData.expiresAt,
-        })
+        }
+        await tx.insert(notifications).values(singleNotificationData)
       })
     })
   }
@@ -145,7 +147,7 @@ export class NotificationService {
         const sanitizedMessage = baseData.message.replace(/<[^>]*>/g, '').trim()
 
         // Create notifications for enabled recipients
-        const notificationData = enabledRecipients.map(recipientId => ({
+        const notificationData: InferInsertModel<typeof notifications>[] = enabledRecipients.map(recipientId => ({
           recipientId,
           type: baseData.type,
           title: sanitizedTitle,

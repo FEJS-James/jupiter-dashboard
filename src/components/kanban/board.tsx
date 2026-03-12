@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { DragDropContext, DropResult } from '@hello-pangea/dnd'
 import { Task, TaskStatus } from '@/types'
 import { Column } from './column'
+import { MobileBoard } from './mobile-board'
+import { useMediaQuery } from '@/hooks/use-media-query'
 
 interface BoardProps {
   tasks: (Task & { isOptimistic?: boolean })[]
@@ -29,6 +31,20 @@ const columnConfig: Array<{
 export function Board({ tasks, onCreateTask, onEditTask, onDeleteTask, onMoveTask }: BoardProps) {
   const [isDragging, setIsDragging] = useState(false)
   const [draggedTask, setDraggedTask] = useState<Task | null>(null)
+  const isMobile = useMediaQuery('(max-width: 768px)')
+
+  // Use mobile board on mobile devices
+  if (isMobile) {
+    return (
+      <MobileBoard 
+        tasks={tasks}
+        onCreateTask={onCreateTask}
+        onEditTask={onEditTask}
+        onDeleteTask={onDeleteTask}
+        onMoveTask={onMoveTask}
+      />
+    )
+  }
 
   // Group tasks by status
   const tasksByStatus = tasks.reduce((acc, task) => {

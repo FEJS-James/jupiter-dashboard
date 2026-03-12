@@ -132,4 +132,42 @@ export const successResponseSchema = z.object({
   success: z.boolean(),
   data: z.any().optional(),
   message: z.string().optional(),
+})
+
+// Bulk operation schemas
+export const bulkMoveSchema = z.object({
+  taskIds: z.array(z.number().int().positive()).min(1, 'At least one task ID is required'),
+  status: z.enum(['backlog', 'in-progress', 'code-review', 'testing', 'deploying', 'done', 'blocked']),
+  preserveAssignments: z.boolean().optional().default(true),
+})
+
+export const bulkAssignSchema = z.object({
+  taskIds: z.array(z.number().int().positive()).min(1, 'At least one task ID is required'),
+  assignedAgent: z.string().nullable(), // null to unassign
+})
+
+export const bulkPrioritySchema = z.object({
+  taskIds: z.array(z.number().int().positive()).min(1, 'At least one task ID is required'),
+  priority: z.enum(['low', 'medium', 'high', 'urgent']),
+})
+
+export const bulkDeleteSchema = z.object({
+  taskIds: z.array(z.number().int().positive()).min(1, 'At least one task ID is required'),
+  reason: z.string().optional(),
+})
+
+export const bulkTagSchema = z.object({
+  taskIds: z.array(z.number().int().positive()).min(1, 'At least one task ID is required'),
+  tags: z.array(z.string()).min(1, 'At least one tag is required'),
+  action: z.enum(['add', 'remove', 'replace']),
+})
+
+export const bulkEditSchema = z.object({
+  taskIds: z.array(z.number().int().positive()).min(1, 'At least one task ID is required'),
+  updates: z.object({
+    description: z.string().optional(),
+    dueDate: z.string().datetime().optional().or(z.null()),
+    effort: z.number().optional(),
+    tags: z.array(z.string()).optional(),
+  }).strict(),
 });

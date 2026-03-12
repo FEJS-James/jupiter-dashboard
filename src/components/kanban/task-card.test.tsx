@@ -67,8 +67,7 @@ describe('TaskCard Component', () => {
     render(<TaskCard task={mockTask} index={0} />)
     
     // Urgent priority should have red icon
-    const priorityIcon = document.querySelector('.text-red-500')
-    expect(priorityIcon).toBeInTheDocument()
+    expect(container.querySelector('.text-red-500')).toBeInTheDocument()
   })
 
   it('renders up to 3 tags with overflow indicator', () => {
@@ -113,7 +112,15 @@ describe('TaskCard Component', () => {
   })
 
   it('renders correctly without optional fields', () => {
-    render(<TaskCard task={mockTask} index={0} />)
+    const taskWithoutOptionals = {
+      ...mockTask,
+      description: '',
+      effort: undefined,
+      dueDate: undefined,
+      tags: []
+    }
+    
+    render(<TaskCard task={taskWithoutOptionals} index={0} />)
     
     expect(screen.getByText('Implement user authentication')).toBeInTheDocument()
     expect(screen.queryByText(/Add login and signup functionality/)).not.toBeInTheDocument()
