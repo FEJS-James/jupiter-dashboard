@@ -23,6 +23,14 @@
   --border: #334155;
   --input: #334155;
   --ring: #3b82f6;
+  
+  /* Agent-specific colors */
+  --coder: #10b981;         /* emerald-500 */
+  --coder-foreground: #ffffff;
+  --reviewer: #f59e0b;      /* amber-500 */
+  --reviewer-foreground: #ffffff;
+  --devops: #0ea5e9;        /* sky-500 */
+  --devops-foreground: #ffffff;
 }
 
 @theme inline {
@@ -45,6 +53,12 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-coder: var(--coder);
+  --color-coder-foreground: var(--coder-foreground);
+  --color-reviewer: var(--reviewer);
+  --color-reviewer-foreground: var(--reviewer-foreground);
+  --color-devops: var(--devops);
+  --color-devops-foreground: var(--devops-foreground);
   --font-sans: var(--font-inter);
   --font-mono: ui-monospace, 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
 }
