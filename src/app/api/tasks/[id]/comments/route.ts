@@ -18,6 +18,7 @@ import {
   extractIdFromParams
 } from '@/lib/api-utils';
 import { websocketManager } from '@/lib/websocket-manager';
+import { ActivityLogger } from '@/lib/activity-logger';
 
 /**
  * GET /api/tasks/[id]/comments - Get comments for a task with enhanced features
@@ -269,6 +270,20 @@ export async function POST(
       .returning();
     
     const newComment = (insertResult as any[])[0];
+    
+    // Log activity for comment creation
+    await ActivityLogger.logCommentAdded(
+      taskId,
+      existingTask[0].projectId,
+      newComment.id,
+      validatedData.agentId,
+      {
+        contentType: validatedData.contentType,
+        isReply: !!validatedData.parentId,
+        hasMentions: !!(validatedData.mentions && validatedData.mentions.length > 0),
+        hasAttachments: !!(validatedData.attachments && validatedData.attachments.length > 0),
+      }
+    );
     
     // Create notifications for mentions
     if (validatedData.mentions && validatedData.mentions.length > 0) {

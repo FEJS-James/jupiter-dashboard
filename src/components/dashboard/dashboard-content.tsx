@@ -27,6 +27,7 @@ import {
 } from 'lucide-react'
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts'
 import { formatDistanceToNow } from 'date-fns'
+import { ActivityFeed } from '@/components/activity/activity-feed'
 
 interface DashboardStats {
   totalProjects: number
@@ -417,14 +418,16 @@ export function DashboardContent() {
             Browse Projects
           </Button>
         </Link>
-        <Button 
-          variant="outline" 
-          className="border-slate-600 text-slate-200 hover:bg-slate-800"
-          aria-label="View activity log"
-        >
-          <Activity className="w-4 h-4 mr-2" aria-hidden="true" />
-          View Activity
-        </Button>
+        <Link href="/activity">
+          <Button 
+            variant="outline" 
+            className="border-slate-600 text-slate-200 hover:bg-slate-800"
+            aria-label="View activity log"
+          >
+            <Activity className="w-4 h-4 mr-2" aria-hidden="true" />
+            View Activity
+          </Button>
+        </Link>
         <Button 
           variant="outline" 
           className="border-slate-600 text-slate-200 hover:bg-slate-800"
@@ -824,6 +827,23 @@ export function DashboardContent() {
           </Card>
         </motion.div>
       </div>
+
+      {/* Recent Activity Feed */}
+      <motion.section
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.7 }}
+      >
+        <ActivityFeed
+          maxItems={10}
+          showFilters={false}
+          compact={true}
+          realTime={true}
+          title="Recent Activity"
+          description="Latest updates from all projects"
+          className="lg:max-w-4xl mx-auto"
+        />
+      </motion.section>
     </main>
   )
 }

@@ -12,6 +12,7 @@ import {
   parseRequestBody
 } from '@/lib/api-utils';
 import { websocketManager } from '@/lib/websocket-manager';
+import { ActivityLogger } from '@/lib/activity-logger';
 
 /**
  * GET /api/tasks - List tasks with filters
@@ -169,6 +170,19 @@ export async function POST(request: NextRequest) {
       .insert(tasks)
       .values(taskData)
       .returning();
+    
+    // Log activity for task creation
+    await ActivityLogger.logTaskCreated(
+      newTask.id, 
+      newTask.projectId, 
+      undefined, // No specific agent ID for creation, could be system
+      {
+        title: newTask.title,
+        status: newTask.status,
+        priority: newTask.priority,
+        assignedAgent: newTask.assignedAgent,
+      }
+    );
     
     // Emit real-time event for task creation
     console.log('WebSocket manager ready status:', websocketManager.isReady());

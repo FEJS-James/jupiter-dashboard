@@ -13,6 +13,7 @@ import {
   extractIdFromParams
 } from '@/lib/api-utils';
 import { websocketManager } from '@/lib/websocket-manager';
+import { ActivityLogger } from '@/lib/activity-logger';
 
 /**
  * POST /api/tasks/[id]/move - Move task to new status/column
@@ -71,6 +72,19 @@ export async function POST(
       .set(updateData)
       .where(eq(tasks.id, taskId))
       .returning();
+    
+    // Log activity for task move
+    await ActivityLogger.logTaskMoved(
+      taskId,
+      existingTask[0].projectId,
+      previousStatus,
+      validatedData.status,
+      undefined, // No specific agent ID, could be system or derived from assignedAgent
+      {
+        assignedAgent: validatedData.assignedAgent,
+        previousAssignedAgent: existingTask[0].assignedAgent,
+      }
+    );
     
     // Emit real-time event for task move
     websocketManager.emitTaskMoved(taskId, previousStatus, validatedData.status, updatedTask);
