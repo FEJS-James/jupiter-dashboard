@@ -25,22 +25,34 @@ interface ThemeProviderProps {
   children: React.ReactNode
 }
 
+// Initialize theme state properly without effects
+const getInitialTheme = (): Theme => {
+  if (typeof window === 'undefined') return 'system'
+  return (localStorage.getItem('theme') as Theme) || 'system'
+}
+
+// Get system theme preference
+const getSystemTheme = (): 'light' | 'dark' => {
+  if (typeof window === 'undefined') return 'dark'
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+}
+
+// Calculate actual theme from theme preference
+const calculateActualTheme = (themeValue: Theme): 'light' | 'dark' => {
+  return themeValue === 'system' ? getSystemTheme() : themeValue
+}
+
 export function ThemeProvider({ children }: ThemeProviderProps) {
-  const [theme, setThemeState] = useState<Theme>('system')
-  const [actualTheme, setActualTheme] = useState<'light' | 'dark'>('light')
+  // Initialize state with proper values - no useEffect needed for initial state
+  const [theme, setThemeState] = useState<Theme>(() => getInitialTheme())
+  const [actualTheme, setActualTheme] = useState<'light' | 'dark'>(() => 
+    calculateActualTheme(getInitialTheme())
+  )
 
-  // Get system theme preference
-  const getSystemTheme = (): 'light' | 'dark' => {
-    if (typeof window === 'undefined') return 'dark'
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-  }
-
-  // Update actual theme based on theme setting and system preference
-  const updateActualTheme = useCallback((themeValue: Theme) => {
-    const newActualTheme = themeValue === 'system' ? getSystemTheme() : themeValue
-    setActualTheme(newActualTheme)
+  // Update DOM classes based on actual theme
+  const applyThemeToDOM = useCallback((newActualTheme: 'light' | 'dark') => {
+    if (typeof window === 'undefined') return
     
-    // Update HTML class and CSS variables
     const html = document.documentElement
     
     if (newActualTheme === 'dark') {
@@ -52,7 +64,14 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     }
   }, [])
 
-  // Set theme with localStorage persistence
+  // Update actual theme and DOM together
+  const updateActualTheme = useCallback((themeValue: Theme) => {
+    const newActualTheme = calculateActualTheme(themeValue)
+    setActualTheme(newActualTheme)
+    applyThemeToDOM(newActualTheme)
+  }, [applyThemeToDOM])
+
+  // Set theme with localStorage persistence and update actual theme
   const setTheme = useCallback((newTheme: Theme) => {
     setThemeState(newTheme)
     localStorage.setItem('theme', newTheme)
@@ -71,24 +90,28 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     }
   }, [theme, actualTheme, setTheme])
 
-  // Initialize theme on mount
+  // Single effect for system theme changes only - no setState inside effect body
   useEffect(() => {
-    // Get saved theme from localStorage or default to system
-    const savedTheme = localStorage.getItem('theme') as Theme
-    const initialTheme = savedTheme || 'system'
-    
-    setThemeState(initialTheme)
-    updateActualTheme(initialTheme)
+    if (typeof window === 'undefined') return
+
+    // Apply initial theme to DOM on mount
+    applyThemeToDOM(actualTheme)
 
     // Listen for system theme changes
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    
     const handleSystemThemeChange = () => {
-      // Use the current theme state by checking it directly
+      // Only update if currently using system theme
       setThemeState(currentTheme => {
         if (currentTheme === 'system') {
-          updateActualTheme('system')
+          const newActualTheme = getSystemTheme()
+          // Schedule DOM update after state update
+          setTimeout(() => {
+            setActualTheme(newActualTheme)
+            applyThemeToDOM(newActualTheme)
+          }, 0)
         }
-        return currentTheme
+        return currentTheme // Return same value to avoid unnecessary re-render
       })
     }
 
@@ -97,12 +120,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     return () => {
       mediaQuery.removeEventListener('change', handleSystemThemeChange)
     }
-  }, [updateActualTheme])
-
-  // Update actual theme when theme state changes
-  useEffect(() => {
-    updateActualTheme(theme)
-  }, [theme, updateActualTheme])
+  }, [actualTheme, applyThemeToDOM]) // Stable dependencies
 
   return (
     <ThemeContext.Provider value={{
