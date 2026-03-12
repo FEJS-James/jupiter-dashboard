@@ -19,50 +19,96 @@ interface NotificationData {
 }
 
 export class NotificationService {
+  private static readonly MAX_RETRIES = 3
+  private static readonly RETRY_DELAY = 1000 // 1 second
+
   /**
-   * Create a single notification
+   * Retry a database operation with exponential backoff
    */
-  static async createNotification(data: NotificationData): Promise<void> {
-    try {
-      // Check if recipient has this notification type enabled
-      const preference = await db
-        .select()
-        .from(notificationPreferences)
-        .where(
-          and(
-            eq(notificationPreferences.agentId, data.recipientId),
-            eq(notificationPreferences.notificationType, data.type)
-          )
-        )
-        .limit(1)
-
-      // If preference exists and is disabled, don't create notification
-      if (preference.length > 0 && !preference[0].enabled) {
-        return
+  private static async withRetry<T>(
+    operation: () => Promise<T>,
+    maxRetries: number = this.MAX_RETRIES,
+    baseDelay: number = this.RETRY_DELAY
+  ): Promise<T> {
+    let lastError: Error
+    
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        return await operation()
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error))
+        
+        // Don't retry certain errors
+        if (error instanceof Error && error.message.includes('UNIQUE constraint')) {
+          throw lastError // Don't retry unique constraint violations
+        }
+        
+        if (attempt === maxRetries) {
+          break // Last attempt, don't wait
+        }
+        
+        // Wait with exponential backoff
+        const delay = baseDelay * Math.pow(2, attempt)
+        await new Promise(resolve => setTimeout(resolve, delay))
       }
-
-      // Create the notification
-      await db.insert(notifications).values({
-        recipientId: data.recipientId,
-        type: data.type,
-        title: data.title,
-        message: data.message,
-        entityType: data.entityType,
-        entityId: data.entityId,
-        relatedEntityType: data.relatedEntityType,
-        relatedEntityId: data.relatedEntityId,
-        actionUrl: data.actionUrl,
-        metadata: data.metadata,
-        priority: data.priority || 'normal',
-        expiresAt: data.expiresAt,
-      })
-    } catch (error) {
-      console.error('Error creating notification:', error)
     }
+    
+    console.error(`Operation failed after ${maxRetries + 1} attempts:`, lastError)
+    throw lastError
   }
 
   /**
-   * Create notifications for multiple recipients
+   * Create a single notification with retry logic and transaction support
+   */
+  static async createNotification(data: NotificationData): Promise<void> {
+    return this.withRetry(async () => {
+      // Use a transaction to ensure atomicity
+      await db.transaction(async (tx) => {
+        // Check if recipient has this notification type enabled
+        const preference = await tx
+          .select()
+          .from(notificationPreferences)
+          .where(
+            and(
+              eq(notificationPreferences.agentId, data.recipientId),
+              eq(notificationPreferences.notificationType, data.type)
+            )
+          )
+          .limit(1)
+
+        // If preference exists and is disabled, don't create notification
+        if (preference.length > 0 && !preference[0].enabled) {
+          return
+        }
+
+        // Sanitize content to prevent XSS
+        const sanitizedData = {
+          ...data,
+          title: data.title.replace(/<[^>]*>/g, '').trim(),
+          message: data.message.replace(/<[^>]*>/g, '').trim(),
+        }
+
+        // Create the notification
+        await tx.insert(notifications).values({
+          recipientId: sanitizedData.recipientId,
+          type: sanitizedData.type,
+          title: sanitizedData.title,
+          message: sanitizedData.message,
+          entityType: sanitizedData.entityType,
+          entityId: sanitizedData.entityId,
+          relatedEntityType: sanitizedData.relatedEntityType,
+          relatedEntityId: sanitizedData.relatedEntityId,
+          actionUrl: sanitizedData.actionUrl,
+          metadata: sanitizedData.metadata,
+          priority: sanitizedData.priority || 'normal',
+          expiresAt: sanitizedData.expiresAt,
+        })
+      })
+    })
+  }
+
+  /**
+   * Create notifications for multiple recipients with retry logic and transaction support
    */
   static async createNotifications(
     recipientIds: number[],
@@ -70,48 +116,58 @@ export class NotificationService {
   ): Promise<void> {
     if (recipientIds.length === 0) return
 
-    try {
-      // Get preferences for all recipients
-      const preferences = await db
-        .select()
-        .from(notificationPreferences)
-        .where(
-          and(
-            inArray(notificationPreferences.agentId, recipientIds),
-            eq(notificationPreferences.notificationType, baseData.type)
+    return this.withRetry(async () => {
+      // Use a transaction to ensure all notifications are created atomically
+      await db.transaction(async (tx) => {
+        // Get preferences for all recipients
+        const preferences = await tx
+          .select()
+          .from(notificationPreferences)
+          .where(
+            and(
+              inArray(notificationPreferences.agentId, recipientIds),
+              eq(notificationPreferences.notificationType, baseData.type)
+            )
           )
+
+        // Create a set of recipients who have disabled this notification type
+        const disabledRecipients = new Set(
+          preferences.filter(p => !p.enabled).map(p => p.agentId)
         )
 
-      // Create a set of recipients who have disabled this notification type
-      const disabledRecipients = new Set(
-        preferences.filter(p => !p.enabled).map(p => p.agentId)
-      )
+        // Filter recipients who should receive the notification
+        const enabledRecipients = recipientIds.filter(id => !disabledRecipients.has(id))
 
-      // Filter recipients who should receive the notification
-      const enabledRecipients = recipientIds.filter(id => !disabledRecipients.has(id))
+        if (enabledRecipients.length === 0) return
 
-      if (enabledRecipients.length === 0) return
+        // Sanitize content to prevent XSS
+        const sanitizedTitle = baseData.title.replace(/<[^>]*>/g, '').trim()
+        const sanitizedMessage = baseData.message.replace(/<[^>]*>/g, '').trim()
 
-      // Create notifications for enabled recipients
-      const notificationData = enabledRecipients.map(recipientId => ({
-        recipientId,
-        type: baseData.type,
-        title: baseData.title,
-        message: baseData.message,
-        entityType: baseData.entityType,
-        entityId: baseData.entityId,
-        relatedEntityType: baseData.relatedEntityType,
-        relatedEntityId: baseData.relatedEntityId,
-        actionUrl: baseData.actionUrl,
-        metadata: baseData.metadata,
-        priority: baseData.priority || 'normal',
-        expiresAt: baseData.expiresAt,
-      }))
+        // Create notifications for enabled recipients
+        const notificationData = enabledRecipients.map(recipientId => ({
+          recipientId,
+          type: baseData.type,
+          title: sanitizedTitle,
+          message: sanitizedMessage,
+          entityType: baseData.entityType,
+          entityId: baseData.entityId,
+          relatedEntityType: baseData.relatedEntityType,
+          relatedEntityId: baseData.relatedEntityId,
+          actionUrl: baseData.actionUrl,
+          metadata: baseData.metadata,
+          priority: baseData.priority || 'normal',
+          expiresAt: baseData.expiresAt,
+        }))
 
-      await db.insert(notifications).values(notificationData)
-    } catch (error) {
-      console.error('Error creating notifications:', error)
-    }
+        // Process in smaller batches to avoid database limits
+        const BATCH_SIZE = 50
+        for (let i = 0; i < notificationData.length; i += BATCH_SIZE) {
+          const batch = notificationData.slice(i, i + BATCH_SIZE)
+          await tx.insert(notifications).values(batch)
+        }
+      })
+    })
   }
 
   /**

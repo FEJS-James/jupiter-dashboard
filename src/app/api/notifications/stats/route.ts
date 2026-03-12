@@ -2,11 +2,16 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { notifications } from '@/lib/schema'
 import { eq, count, and, sql, or, isNull } from 'drizzle-orm'
+import { requireAuth, validateUserAccess, forbiddenResponse } from '@/lib/auth'
 
 /**
  * GET /api/notifications/stats - Get notification statistics for a user
  */
 export async function GET(request: NextRequest) {
+  // Require authentication
+  const { session, error } = requireAuth(request)
+  if (error) return error
+
   try {
     const searchParams = request.nextUrl.searchParams
     const recipientId = searchParams.get('recipientId')
@@ -19,6 +24,18 @@ export async function GET(request: NextRequest) {
     }
 
     const recipientIdNum = parseInt(recipientId)
+
+    if (isNaN(recipientIdNum)) {
+      return NextResponse.json(
+        { error: 'Invalid recipientId format' },
+        { status: 400 }
+      )
+    }
+
+    // Ensure user can only access their own statistics
+    if (!validateUserAccess(session, recipientIdNum)) {
+      return forbiddenResponse('You can only access your own notification statistics')
+    }
 
     // Base condition - only non-expired notifications for this user
     const baseConditions = [

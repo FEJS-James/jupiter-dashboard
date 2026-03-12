@@ -2,20 +2,45 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { notifications } from '@/lib/schema'
 import { eq, and } from 'drizzle-orm'
+import { requireAuth, validateUserAccess, forbiddenResponse } from '@/lib/auth'
+import { z } from 'zod'
+
+// Request schema
+const ReadAllSchema = z.object({
+  recipientId: z.number().positive(),
+})
 
 /**
  * PUT /api/notifications/read-all - Mark all notifications as read for a specific user
  */
 export async function PUT(request: NextRequest) {
+  // Require authentication
+  const { session, error } = requireAuth(request)
+  if (error) return error
+
   try {
     const body = await request.json()
-    const { recipientId } = body
-
-    if (!recipientId) {
+    
+    // Validate input
+    const validation = ReadAllSchema.safeParse(body)
+    if (!validation.success) {
       return NextResponse.json(
-        { error: 'recipientId is required' },
+        { 
+          error: 'Invalid input data',
+          details: validation.error.issues.map(issue => ({
+            path: issue.path.join('.'),
+            message: issue.message
+          }))
+        },
         { status: 400 }
       )
+    }
+
+    const { recipientId } = validation.data
+
+    // Ensure user can only mark their own notifications as read
+    if (!validateUserAccess(session, recipientId)) {
+      return forbiddenResponse('You can only mark your own notifications as read')
     }
 
     // Mark all unread notifications as read

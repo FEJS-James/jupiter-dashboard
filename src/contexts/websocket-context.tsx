@@ -420,9 +420,24 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     
     // Cleanup on unmount
     return () => {
-      disconnect()
+      // Clean up all timers and pending operations
+      for (const [operationId, timer] of rollbackTimersRef.current) {
+        clearTimeout(timer)
+      }
+      rollbackTimersRef.current.clear()
+      pendingOperationsRef.current.clear()
+      
+      // Disconnect socket
+      if (socket) {
+        socket.disconnect()
+        socket.removeAllListeners()
+      }
+      setSocket(null)
+      setConnectionStatus('disconnected')
+      setConnectedUsers([])
+      setActivities([])
     }
-  }, []) // Only run on mount/unmount
+  }, []) // Only run on mount/unmount - DO NOT include connect/disconnect to avoid infinite loops
 
   const value: WebSocketContextValue = {
     socket,

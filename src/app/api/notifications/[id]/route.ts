@@ -2,16 +2,28 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { notifications, agents } from '@/lib/schema'
 import { eq, and } from 'drizzle-orm'
+import { requireAuth, validateUserAccess, forbiddenResponse } from '@/lib/auth'
+import { z } from 'zod'
+
+// Update notification schema
+const UpdateNotificationSchema = z.object({
+  isRead: z.boolean().optional(),
+})
 
 /**
  * GET /api/notifications/[id] - Get a specific notification
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  // Require authentication
+  const { session, error } = requireAuth(request)
+  if (error) return error
+
   try {
-    const notificationId = parseInt(params.id)
+    const resolvedParams = await params
+    const notificationId = parseInt(resolvedParams.id)
 
     if (isNaN(notificationId)) {
       return NextResponse.json(
@@ -43,6 +55,11 @@ export async function GET(
       )
     }
 
+    // Ensure user can only access their own notifications
+    if (!validateUserAccess(session, notification[0].notification.recipientId)) {
+      return forbiddenResponse('You can only access your own notifications')
+    }
+
     return NextResponse.json({
       ...notification[0].notification,
       recipient: notification[0].recipient,
@@ -61,12 +78,15 @@ export async function GET(
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  // Require authentication
+  const { session, error } = requireAuth(request)
+  if (error) return error
+
   try {
-    const notificationId = parseInt(params.id)
-    const body = await request.json()
-    const { isRead } = body
+    const resolvedParams = await params
+    const notificationId = parseInt(resolvedParams.id)
 
     if (isNaN(notificationId)) {
       return NextResponse.json(
@@ -74,6 +94,25 @@ export async function PUT(
         { status: 400 }
       )
     }
+
+    // Validate input
+    const body = await request.json()
+    const validation = UpdateNotificationSchema.safeParse(body)
+    
+    if (!validation.success) {
+      return NextResponse.json(
+        { 
+          error: 'Invalid input data',
+          details: validation.error.issues.map(issue => ({
+            path: issue.path.join('.'),
+            message: issue.message
+          }))
+        },
+        { status: 400 }
+      )
+    }
+
+    const { isRead } = validation.data
 
     // Check if notification exists
     const existingNotification = await db
@@ -87,6 +126,11 @@ export async function PUT(
         { error: 'Notification not found' },
         { status: 404 }
       )
+    }
+
+    // Ensure user can only update their own notifications
+    if (!validateUserAccess(session, existingNotification[0].recipientId)) {
+      return forbiddenResponse('You can only update your own notifications')
     }
 
     // Update notification
@@ -118,10 +162,15 @@ export async function PUT(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  // Require authentication
+  const { session, error } = requireAuth(request)
+  if (error) return error
+
   try {
-    const notificationId = parseInt(params.id)
+    const resolvedParams = await params
+    const notificationId = parseInt(resolvedParams.id)
 
     if (isNaN(notificationId)) {
       return NextResponse.json(
@@ -142,6 +191,11 @@ export async function DELETE(
         { error: 'Notification not found' },
         { status: 404 }
       )
+    }
+
+    // Ensure user can only delete their own notifications
+    if (!validateUserAccess(session, existingNotification[0].recipientId)) {
+      return forbiddenResponse('You can only delete your own notifications')
     }
 
     // Delete notification

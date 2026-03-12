@@ -10,6 +10,14 @@ import {
   handleDatabaseError,
   extractIdFromParams
 } from '@/lib/api-utils';
+import { requireAuth, validateUserAccess, forbiddenResponse } from '@/lib/auth';
+import { z } from 'zod';
+
+// Patch request schema
+const PatchNotificationsSchema = z.object({
+  notificationIds: z.array(z.number().positive()).optional(),
+  markAll: z.boolean().optional(),
+})
 
 /**
  * GET /api/agents/[id]/notifications - Get notifications for an agent
@@ -18,9 +26,18 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // Require authentication
+  const { session, error } = requireAuth(request)
+  if (error) return error
+
   try {
     const { id } = await params;
     const agentId = extractIdFromParams({ id });
+
+    // Ensure user can only access their own agent notifications
+    if (!validateUserAccess(session, agentId)) {
+      return forbiddenResponse('You can only access your own notifications')
+    }
     
     // Parse query parameters
     const url = new URL(request.url);
@@ -163,12 +180,28 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // Require authentication
+  const { session, error } = requireAuth(request)
+  if (error) return error
+
   try {
     const { id } = await params;
     const agentId = extractIdFromParams({ id });
+
+    // Ensure user can only update their own notifications
+    if (!validateUserAccess(session, agentId)) {
+      return forbiddenResponse('You can only update your own notifications')
+    }
     
     const body = await request.json();
-    const { notificationIds, markAll } = body;
+    
+    // Validate input
+    const validation = PatchNotificationsSchema.safeParse(body)
+    if (!validation.success) {
+      return createErrorResponse('Invalid input data', 400)
+    }
+
+    const { notificationIds, markAll } = validation.data;
     
     // Verify agent exists
     const agent = await db

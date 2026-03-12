@@ -372,9 +372,11 @@ export const notifications = sqliteTable('notifications', {
   typeIdx: index('notifications_type_idx').on(table.type),
   createdAtIdx: index('notifications_created_at_idx').on(table.createdAt),
   isReadIdx: index('notifications_is_read_idx').on(table.isRead),
+  expiresAtIdx: index('notifications_expires_at_idx').on(table.expiresAt), // For expiration cleanup queries
   // Composite indexes
   recipientUnreadIdx: index('notifications_recipient_unread_idx').on(table.recipientId, table.isRead),
   recipientCreatedIdx: index('notifications_recipient_created_idx').on(table.recipientId, table.createdAt),
+  recipientTypeIdx: index('notifications_recipient_type_idx').on(table.recipientId, table.type),
 }));
 
 /**

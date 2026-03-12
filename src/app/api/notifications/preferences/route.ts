@@ -3,6 +3,19 @@ import { db } from '@/lib/db'
 import { notificationPreferences, agents } from '@/lib/schema'
 import { eq, and } from 'drizzle-orm'
 import { NotificationType } from '@/types'
+import { requireAuth, validateUserAccess, forbiddenResponse } from '@/lib/auth'
+import { z } from 'zod'
+
+// Preference update schema
+const PreferenceUpdateSchema = z.object({
+  agentId: z.number().positive(),
+  preferences: z.array(z.object({
+    notificationType: z.string(),
+    enabled: z.boolean().optional(),
+    emailEnabled: z.boolean().optional(),
+    pushEnabled: z.boolean().optional(),
+  }))
+})
 
 // Default notification preferences
 const DEFAULT_PREFERENCES: Array<{
@@ -27,6 +40,10 @@ const DEFAULT_PREFERENCES: Array<{
  * GET /api/notifications/preferences - Get user's notification preferences
  */
 export async function GET(request: NextRequest) {
+  // Require authentication
+  const { session, error } = requireAuth(request)
+  if (error) return error
+
   try {
     const searchParams = request.nextUrl.searchParams
     const agentId = searchParams.get('agentId')
@@ -39,6 +56,18 @@ export async function GET(request: NextRequest) {
     }
 
     const agentIdNum = parseInt(agentId)
+    
+    if (isNaN(agentIdNum)) {
+      return NextResponse.json(
+        { error: 'Invalid agentId format' },
+        { status: 400 }
+      )
+    }
+
+    // Ensure user can only access their own preferences
+    if (!validateUserAccess(session, agentIdNum)) {
+      return forbiddenResponse('You can only access your own notification preferences')
+    }
 
     // Check if agent exists
     const agent = await db
@@ -97,15 +126,33 @@ export async function GET(request: NextRequest) {
  * PUT /api/notifications/preferences - Update user's notification preferences
  */
 export async function PUT(request: NextRequest) {
+  // Require authentication
+  const { session, error } = requireAuth(request)
+  if (error) return error
+
   try {
     const body = await request.json()
-    const { agentId, preferences } = body
-
-    if (!agentId || !Array.isArray(preferences)) {
+    
+    // Validate input
+    const validation = PreferenceUpdateSchema.safeParse(body)
+    if (!validation.success) {
       return NextResponse.json(
-        { error: 'agentId and preferences array are required' },
+        { 
+          error: 'Invalid input data',
+          details: validation.error.issues.map(issue => ({
+            path: issue.path.join('.'),
+            message: issue.message
+          }))
+        },
         { status: 400 }
       )
+    }
+
+    const { agentId, preferences } = validation.data
+
+    // Ensure user can only update their own preferences
+    if (!validateUserAccess(session, agentId)) {
+      return forbiddenResponse('You can only update your own notification preferences')
     }
 
     // Check if agent exists
