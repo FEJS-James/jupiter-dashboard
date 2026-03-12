@@ -1,5 +1,6 @@
 'use client'
 
+import { Droppable } from '@hello-pangea/dnd'
 import { Task, TaskStatus } from '@/types'
 import { TaskCard } from './task-card'
 import { Plus } from 'lucide-react'
@@ -9,6 +10,7 @@ interface ColumnProps {
   status: TaskStatus
   tasks: Task[]
   color: string
+  isDragging?: boolean
   onCreateTask?: (status: TaskStatus) => void
   onEditTask?: (task: Task) => void
   onDeleteTask?: (task: Task) => void
@@ -24,7 +26,7 @@ const statusIcons: Record<TaskStatus, string> = {
   blocked: '🚫',
 }
 
-export function Column({ title, status, tasks, color, onCreateTask, onEditTask, onDeleteTask }: ColumnProps) {
+export function Column({ title, status, tasks, color, isDragging, onCreateTask, onEditTask, onDeleteTask }: ColumnProps) {
   const totalTasks = tasks.length
   const completionRatio = status === 'done' ? 1 : 
     status === 'blocked' ? 0 : 
@@ -64,25 +66,43 @@ export function Column({ title, status, tasks, color, onCreateTask, onEditTask, 
       </div>
 
       {/* Tasks Container */}
-      <div className="space-y-0 min-h-[200px]">
-        {tasks.length > 0 ? (
-          tasks.map((task) => (
-            <TaskCard 
-              key={task.id} 
-              task={task}
-              onEdit={onEditTask}
-              onDelete={onDeleteTask}
-            />
-          ))
-        ) : (
-          <div className="text-center py-8 text-slate-500">
-            <div className="text-3xl mb-2">
-              {statusIcons[status]}
-            </div>
-            <p className="text-sm">No tasks in {title.toLowerCase()}</p>
+      <Droppable droppableId={status}>
+        {(provided, snapshot) => (
+          <div 
+            ref={provided.innerRef}
+            {...provided.droppableProps}
+            className={`
+              space-y-0 min-h-[200px] transition-all duration-200 rounded-lg p-2
+              ${snapshot.isDraggingOver ? 'bg-slate-800/30 border-2 border-dashed border-slate-600' : ''}
+              ${isDragging ? 'border border-slate-700/50' : ''}
+            `}
+          >
+            {tasks.length > 0 ? (
+              tasks.map((task, index) => (
+                <TaskCard 
+                  key={task.id} 
+                  task={task}
+                  index={index}
+                  onEdit={onEditTask}
+                  onDelete={onDeleteTask}
+                />
+              ))
+            ) : (
+              <div className={`text-center py-8 text-slate-500 transition-all duration-200 ${
+                snapshot.isDraggingOver ? 'text-slate-400' : ''
+              }`}>
+                <div className="text-3xl mb-2">
+                  {statusIcons[status]}
+                </div>
+                <p className="text-sm">
+                  {snapshot.isDraggingOver ? 'Drop task here' : `No tasks in ${title.toLowerCase()}`}
+                </p>
+              </div>
+            )}
+            {provided.placeholder}
           </div>
         )}
-      </div>
+      </Droppable>
     </div>
   )
 }

@@ -15,6 +15,7 @@ import { motion } from 'framer-motion'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { toast } from 'sonner'
+import { useTaskOperations } from '@/hooks/use-task-operations'
 
 export default function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>([])
@@ -38,6 +39,19 @@ export default function TasksPage() {
 
   // Debounced search term to prevent excessive filtering
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
+
+  // Task operations hook for drag and drop
+  const { moveTask, isMoving, error: moveError } = useTaskOperations({
+    onTaskMoved: (updatedTask) => {
+      setTasks(prev => prev.map(task => 
+        task.id === updatedTask.id ? updatedTask : task
+      ))
+      toast.success(`Task moved to ${updatedTask.status}`)
+    },
+    onError: (error) => {
+      toast.error(`Failed to move task: ${error.message}`)
+    }
+  })
 
   // Debounce search input
   useEffect(() => {
@@ -117,6 +131,10 @@ export default function TasksPage() {
   const handleDeleteTask = (task: Task) => {
     setDeletingTask(task)
     setShowDeleteDialog(true)
+  }
+
+  const handleMoveTask = async (taskId: number, newStatus: TaskStatus) => {
+    await moveTask(taskId, newStatus)
   }
 
   const submitTaskForm = async (taskData: Partial<Task>) => {
@@ -412,6 +430,7 @@ export default function TasksPage() {
           onCreateTask={handleCreateTask}
           onEditTask={handleEditTask}
           onDeleteTask={handleDeleteTask}
+          onMoveTask={handleMoveTask}
         />
       </motion.div>
 

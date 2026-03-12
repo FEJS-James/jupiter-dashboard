@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
-import { Task, Project } from '@/types'
+import { Task, Project, TaskStatus } from '@/types'
 import { Board } from '@/components/kanban/board'
 import { Skeleton } from '@/components/ui/skeleton'
 import { AlertCircle, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { useTaskOperations } from '@/hooks/use-task-operations'
+import { toast } from 'sonner'
 
 interface ApiResponse<T> {
   success: boolean
@@ -32,6 +34,19 @@ export default function ProjectBoardPage() {
   const [project, setProject] = useState<Project | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  // Task operations hook for drag and drop
+  const { moveTask, isMoving } = useTaskOperations({
+    onTaskMoved: (updatedTask) => {
+      setTasks(prev => prev.map(task => 
+        task.id === updatedTask.id ? updatedTask : task
+      ))
+      toast.success(`Task moved to ${updatedTask.status}`)
+    },
+    onError: (error) => {
+      toast.error(`Failed to move task: ${error.message}`)
+    }
+  })
 
   const fetchProjectData = async () => {
     setLoading(true)
@@ -72,6 +87,10 @@ export default function ProjectBoardPage() {
       fetchProjectData()
     }
   }, [projectId, fetchProjectData])
+
+  const handleMoveTask = async (taskId: number, newStatus: TaskStatus) => {
+    await moveTask(taskId, newStatus)
+  }
 
   if (loading) {
     return (
@@ -188,7 +207,10 @@ export default function ProjectBoardPage() {
         )}
 
         {/* Kanban Board */}
-        <Board tasks={tasks} />
+        <Board 
+          tasks={tasks} 
+          onMoveTask={handleMoveTask}
+        />
       </div>
     </div>
   )

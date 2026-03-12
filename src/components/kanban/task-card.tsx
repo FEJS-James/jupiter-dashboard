@@ -1,14 +1,16 @@
 'use client'
 
+import { Draggable } from '@hello-pangea/dnd'
 import { Task, TaskPriority } from '@/types'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar } from '@/components/ui/avatar'
 import { formatDistanceToNow } from 'date-fns'
-import { Clock, AlertCircle, Edit, Trash2 } from 'lucide-react'
+import { Clock, AlertCircle, Edit, Trash2, GripVertical } from 'lucide-react'
 
 interface TaskCardProps {
   task: Task
+  index: number
   onEdit?: (task: Task) => void
   onDelete?: (task: Task) => void
 }
@@ -34,40 +36,56 @@ const agentColors: Record<string, string> = {
   manager: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
 }
 
-export function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
+export function TaskCard({ task, index, onEdit, onDelete }: TaskCardProps) {
   const dueDate = task.dueDate ? new Date(task.dueDate) : null
   const isOverdue = dueDate && dueDate < new Date()
 
   return (
-    <Card 
-      className={`
-        p-4 mb-3 cursor-pointer transition-all duration-200 
-        bg-slate-900/50 border-slate-800 backdrop-blur-sm
-        hover:bg-slate-900/70 hover:border-slate-700
-        border-l-4 ${priorityColors[task.priority]}
-        group
-      `}
-    >
-      {/* Task Header */}
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-medium text-slate-100 line-clamp-2 mb-1">
-            {task.title}
-          </h3>
-          {task.description && (
-            <p className="text-xs text-slate-400 line-clamp-1">
-              {task.description}
-            </p>
-          )}
-        </div>
-        
-        {/* Priority indicator */}
-        {priorityIcons[task.priority] && (
-          <div className="ml-2 flex-shrink-0">
-            {priorityIcons[task.priority]}
+    <Draggable draggableId={task.id.toString()} index={index}>
+      {(provided, snapshot) => (
+        <Card 
+          ref={provided.innerRef}
+          {...provided.draggableProps}
+          className={`
+            p-4 mb-3 cursor-pointer transition-all duration-200 
+            bg-slate-900/50 border-slate-800 backdrop-blur-sm
+            hover:bg-slate-900/70 hover:border-slate-700
+            border-l-4 ${priorityColors[task.priority]}
+            group select-none
+            ${snapshot.isDragging ? 'shadow-xl shadow-slate-900/50 rotate-1 scale-105' : ''}
+            ${snapshot.isDragging ? 'bg-slate-900/90 border-slate-600' : ''}
+          `}
+        >
+          {/* Task Header */}
+          <div className="flex items-start justify-between mb-3">
+            <div className="flex items-start gap-2 flex-1 min-w-0">
+              {/* Drag Handle */}
+              <div
+                {...provided.dragHandleProps}
+                className="mt-1 text-slate-500 hover:text-slate-400 transition-colors opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing"
+              >
+                <GripVertical className="w-3 h-3" />
+              </div>
+              
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-medium text-slate-100 line-clamp-2 mb-1">
+                  {task.title}
+                </h3>
+                {task.description && (
+                  <p className="text-xs text-slate-400 line-clamp-1">
+                    {task.description}
+                  </p>
+                )}
+              </div>
+            </div>
+            
+            {/* Priority indicator */}
+            {priorityIcons[task.priority] && (
+              <div className="ml-2 flex-shrink-0">
+                {priorityIcons[task.priority]}
+              </div>
+            )}
           </div>
-        )}
-      </div>
 
       {/* Tags */}
       {task.tags && task.tags.length > 0 && (
@@ -161,6 +179,8 @@ export function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
           </div>
         </div>
       </div>
-    </Card>
+        </Card>
+      )}
+    </Draggable>
   )
 }
