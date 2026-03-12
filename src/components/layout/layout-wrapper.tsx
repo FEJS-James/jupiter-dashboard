@@ -5,6 +5,7 @@ import { Sidebar } from "./sidebar"
 import { Header } from "./header"
 import { Footer } from "./footer"
 import { WebSocketProvider } from "@/contexts/websocket-context"
+import { WebSocketErrorBoundary } from "@/components/error-boundary"
 import { Toaster } from "sonner"
 
 interface LayoutWrapperProps {
@@ -29,8 +30,9 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
   }, [])
 
   return (
-    <WebSocketProvider>
-      <div className="flex h-screen overflow-hidden">
+    <WebSocketErrorBoundary>
+      <WebSocketProvider>
+        <div className="flex h-screen overflow-hidden">
         {/* Sidebar */}
         <Sidebar onCollapseChange={setSidebarCollapsed} />
 
@@ -54,20 +56,21 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
           {/* Footer */}
           <Footer sidebarCollapsed={sidebarCollapsed} />
         </div>
-      </div>
-      
-      {/* Global toast notifications */}
-      <Toaster 
-        theme="dark" 
-        position="top-right"
-        toastOptions={{
-          style: {
-            background: 'rgb(30 41 59)',
-            border: '1px solid rgb(51 65 85)',
-            color: 'rgb(226 232 240)'
-          }
-        }}
-      />
-    </WebSocketProvider>
+        </div>
+        
+        {/* Global toast notifications */}
+        <Toaster 
+          theme="dark" 
+          position="top-right"
+          toastOptions={{
+            style: {
+              background: 'rgb(30 41 59)',
+              border: '1px solid rgb(51 65 85)',
+              color: 'rgb(226 232 240)'
+            }
+          }}
+        />
+      </WebSocketProvider>
+    </WebSocketErrorBoundary>
   )
 }

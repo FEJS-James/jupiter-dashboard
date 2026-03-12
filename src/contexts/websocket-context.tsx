@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react'
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react'
 import io, { Socket } from 'socket.io-client'
 import { Task, TaskStatus } from '@/types'
 
@@ -47,11 +47,11 @@ interface WebSocketContextValue {
   joinBoard: (boardId: string, user: ConnectedUser) => void
   leaveBoard: (boardId: string) => void
   
-  // Task operation methods
-  emitTaskCreated: (task: Task) => void
-  emitTaskUpdated: (task: Task) => void
-  emitTaskDeleted: (taskId: number) => void
-  emitTaskMoved: (taskId: number, fromStatus: TaskStatus, toStatus: TaskStatus, task: Task) => void
+  // Task operation methods (with optimistic updates support)
+  emitTaskCreated: (task: Task, optimistic?: boolean) => void
+  emitTaskUpdated: (task: Task, optimistic?: boolean) => void
+  emitTaskDeleted: (taskId: number, optimistic?: boolean) => void
+  emitTaskMoved: (taskId: number, fromStatus: TaskStatus, toStatus: TaskStatus, task: Task, optimistic?: boolean) => void
   
   // Presence methods
   updatePresence: (presence: UserPresence) => void
@@ -61,6 +61,9 @@ interface WebSocketContextValue {
   onTaskUpdated: (callback: (task: Task) => void) => () => void
   onTaskDeleted: (callback: (taskId: number) => void) => () => void
   onTaskMoved: (callback: (taskId: number, fromStatus: TaskStatus, toStatus: TaskStatus, task: Task) => void) => () => void
+  
+  // Operation management
+  clearRollbackTimer: (operationId: string) => void
   
   // Clear activities
   clearActivities: () => void
@@ -89,44 +92,102 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('disconnected')
   const [connectedUsers, setConnectedUsers] = useState<ConnectedUser[]>([])
   const [activities, setActivities] = useState<ActivityEvent[]>([])
+  
+  // Refs for race condition handling
+  const rollbackTimersRef = useRef<Map<string, NodeJS.Timeout>>(new Map())
+  const pendingOperationsRef = useRef<Map<string, any>>(new Map())
+  const connectionAttemptsRef = useRef<number>(0)
+
+  // Clear rollback timer when server confirms success
+  const clearRollbackTimer = useCallback((operationId: string) => {
+    const timer = rollbackTimersRef.current.get(operationId)
+    if (timer) {
+      clearTimeout(timer)
+      rollbackTimersRef.current.delete(operationId)
+    }
+    pendingOperationsRef.current.delete(operationId)
+  }, [])
+
+  // Set rollback timer for optimistic updates
+  const setRollbackTimer = useCallback((operationId: string, rollbackFn: () => void, timeoutMs: number = 5000) => {
+    const timer = setTimeout(() => {
+      console.warn(`Operation ${operationId} timed out, rolling back`)
+      rollbackFn()
+      rollbackTimersRef.current.delete(operationId)
+      pendingOperationsRef.current.delete(operationId)
+    }, timeoutMs)
+    
+    rollbackTimersRef.current.set(operationId, timer)
+  }, [])
 
   const connect = useCallback(() => {
     if (socket?.connected) return
 
     setConnectionStatus('connecting')
+    connectionAttemptsRef.current++
     
     const newSocket = io(url, {
       path: '/api/socket',
       transports: ['websocket', 'polling'],
       reconnection: true,
-      reconnectionDelay: 1000,
+      reconnectionDelay: Math.min(1000 * Math.pow(2, connectionAttemptsRef.current - 1), 30000), // Exponential backoff
       reconnectionAttempts: 5,
       timeout: 20000,
+      auth: {
+        // Add authentication token if available
+        token: typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null
+      }
     })
 
     newSocket.on('connect', () => {
       console.log('WebSocket connected')
       setConnectionStatus('connected')
+      connectionAttemptsRef.current = 0 // Reset on successful connection
     })
 
     newSocket.on('disconnect', (reason) => {
       console.log('WebSocket disconnected:', reason)
       setConnectionStatus('disconnected')
+      
+      // Clear all pending operations on disconnect
+      for (const [operationId, timer] of rollbackTimersRef.current) {
+        clearTimeout(timer)
+      }
+      rollbackTimersRef.current.clear()
+      pendingOperationsRef.current.clear()
     })
 
-    newSocket.on('reconnecting', () => {
-      console.log('WebSocket reconnecting...')
+    newSocket.on('reconnecting', (attempt) => {
+      console.log(`WebSocket reconnecting... (attempt ${attempt})`)
       setConnectionStatus('reconnecting')
     })
 
-    newSocket.on('reconnect', () => {
-      console.log('WebSocket reconnected')
+    newSocket.on('reconnect', (attempt) => {
+      console.log(`WebSocket reconnected after ${attempt} attempts`)
       setConnectionStatus('connected')
+      connectionAttemptsRef.current = 0
     })
 
     newSocket.on('connect_error', (error) => {
       console.error('WebSocket connection error:', error)
       setConnectionStatus('error')
+      
+      // Handle specific error types
+      if (error.message.includes('Authentication')) {
+        console.error('Authentication failed, clearing token')
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('auth_token')
+        }
+      }
+    })
+
+    // Handle server errors
+    newSocket.on('error', (error) => {
+      console.error('WebSocket server error:', error)
+      // Handle validation errors from server
+      if (error.message) {
+        console.warn('Server validation error:', error.message)
+      }
     })
 
     // User presence events
@@ -147,6 +208,18 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
       setActivities(prev => [activity, ...prev].slice(0, 100)) // Keep last 100 activities
     })
 
+    // Operation confirmations (to clear rollback timers)
+    newSocket.on('operationConfirmed', (operationId: string) => {
+      clearRollbackTimer(operationId)
+    })
+
+    // Operation failed (handle rollback)
+    newSocket.on('operationFailed', (operationId: string, error: string) => {
+      console.error(`Operation ${operationId} failed:`, error)
+      clearRollbackTimer(operationId)
+      // The consuming component should handle the rollback based on the operation type
+    })
+
     setSocket(newSocket)
   }, [url, socket])
 
@@ -156,6 +229,13 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
       setSocket(null)
       setConnectionStatus('disconnected')
       setConnectedUsers([])
+      
+      // Clean up all timers
+      for (const [operationId, timer] of rollbackTimersRef.current) {
+        clearTimeout(timer)
+      }
+      rollbackTimersRef.current.clear()
+      pendingOperationsRef.current.clear()
     }
   }, [socket])
 
@@ -171,29 +251,69 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     }
   }, [socket])
 
-  const emitTaskCreated = useCallback((task: Task) => {
+  const emitTaskCreated = useCallback((task: Task, optimistic: boolean = false) => {
     if (socket?.connected) {
-      socket.emit('taskCreated', task)
+      const operationId = `taskCreated_${task.id}_${Date.now()}`
+      
+      if (optimistic) {
+        // Store operation for potential rollback
+        pendingOperationsRef.current.set(operationId, { type: 'create', task })
+        
+        // Set rollback timer
+        setRollbackTimer(operationId, () => {
+          // Rollback logic would be handled by the consuming component
+          console.warn(`Task creation ${task.id} was not confirmed by server`)
+        })
+      }
+      
+      socket.emit('taskCreated', task, operationId)
     }
-  }, [socket])
+  }, [socket, setRollbackTimer])
 
-  const emitTaskUpdated = useCallback((task: Task) => {
+  const emitTaskUpdated = useCallback((task: Task, optimistic: boolean = false) => {
     if (socket?.connected) {
-      socket.emit('taskUpdated', task)
+      const operationId = `taskUpdated_${task.id}_${Date.now()}`
+      
+      if (optimistic) {
+        pendingOperationsRef.current.set(operationId, { type: 'update', task })
+        setRollbackTimer(operationId, () => {
+          console.warn(`Task update ${task.id} was not confirmed by server`)
+        })
+      }
+      
+      socket.emit('taskUpdated', task, operationId)
     }
-  }, [socket])
+  }, [socket, setRollbackTimer])
 
-  const emitTaskDeleted = useCallback((taskId: number) => {
+  const emitTaskDeleted = useCallback((taskId: number, optimistic: boolean = false) => {
     if (socket?.connected) {
-      socket.emit('taskDeleted', taskId)
+      const operationId = `taskDeleted_${taskId}_${Date.now()}`
+      
+      if (optimistic) {
+        pendingOperationsRef.current.set(operationId, { type: 'delete', taskId })
+        setRollbackTimer(operationId, () => {
+          console.warn(`Task deletion ${taskId} was not confirmed by server`)
+        })
+      }
+      
+      socket.emit('taskDeleted', taskId, operationId)
     }
-  }, [socket])
+  }, [socket, setRollbackTimer])
 
-  const emitTaskMoved = useCallback((taskId: number, fromStatus: TaskStatus, toStatus: TaskStatus, task: Task) => {
+  const emitTaskMoved = useCallback((taskId: number, fromStatus: TaskStatus, toStatus: TaskStatus, task: Task, optimistic: boolean = false) => {
     if (socket?.connected) {
-      socket.emit('taskMoved', taskId, fromStatus, toStatus, task)
+      const operationId = `taskMoved_${taskId}_${Date.now()}`
+      
+      if (optimistic) {
+        pendingOperationsRef.current.set(operationId, { type: 'move', taskId, fromStatus, toStatus, task })
+        setRollbackTimer(operationId, () => {
+          console.warn(`Task move ${taskId} was not confirmed by server`)
+        })
+      }
+      
+      socket.emit('taskMoved', taskId, fromStatus, toStatus, task, operationId)
     }
-  }, [socket])
+  }, [socket, setRollbackTimer])
 
   const updatePresence = useCallback((presence: UserPresence) => {
     if (socket?.connected) {
@@ -262,6 +382,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     onTaskUpdated,
     onTaskDeleted,
     onTaskMoved,
+    clearRollbackTimer,
     clearActivities
   }
 
