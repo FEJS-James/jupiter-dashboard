@@ -49,14 +49,14 @@ const mockTaskMinimal: Task = {
 
 describe('TaskCard Component', () => {
   it('renders task title and description', () => {
-    render(<TaskCard task={mockTask} />)
+    render(<TaskCard task={mockTask} index={0} />)
     
     expect(screen.getByText('Implement user authentication')).toBeInTheDocument()
     expect(screen.getByText(/Add login and signup functionality/)).toBeInTheDocument()
   })
 
   it('displays priority indicators correctly', () => {
-    render(<TaskCard task={mockTask} />)
+    render(<TaskCard task={mockTask} index={0} />)
     
     // High priority should have an alert icon with orange color
     const priorityIcon = document.querySelector('.text-orange-500')
@@ -64,7 +64,7 @@ describe('TaskCard Component', () => {
   })
 
   it('shows urgent priority with red icon', () => {
-    render(<TaskCard task={mockTaskOverdue} />)
+    render(<TaskCard task={mockTask} index={0} />)
     
     // Urgent priority should have red icon
     const priorityIcon = document.querySelector('.text-red-500')
@@ -72,7 +72,7 @@ describe('TaskCard Component', () => {
   })
 
   it('renders up to 3 tags with overflow indicator', () => {
-    render(<TaskCard task={mockTask} />)
+    render(<TaskCard task={mockTask} index={0} />)
     
     expect(screen.getByText('authentication')).toBeInTheDocument()
     expect(screen.getByText('security')).toBeInTheDocument()
@@ -81,20 +81,20 @@ describe('TaskCard Component', () => {
   })
 
   it('displays effort points when available', () => {
-    render(<TaskCard task={mockTask} />)
+    render(<TaskCard task={mockTask} index={0} />)
     
     expect(screen.getByText('8pt')).toBeInTheDocument()
   })
 
   it('shows agent avatar and initial when agent is assigned', () => {
-    render(<TaskCard task={mockTask} />)
+    render(<TaskCard task={mockTask} index={0} />)
     
     const avatar = screen.getByText('C') // First letter of CodeAgent
     expect(avatar).toBeInTheDocument()
   })
 
   it('displays due date and shows overdue status', () => {
-    render(<TaskCard task={mockTaskOverdue} />)
+    render(<TaskCard task={mockTask} index={0} />)
     
     expect(screen.getByText('Overdue')).toBeInTheDocument()
   })
@@ -104,7 +104,7 @@ describe('TaskCard Component', () => {
     const mockDate = new Date('2024-03-20T00:00:00.000Z')
     vi.setSystemTime(mockDate)
     
-    render(<TaskCard task={mockTask} />)
+    render(<TaskCard task={mockTask} index={0} />)
     
     // Should show "in X days" format
     expect(screen.getByText(/in \d+ days/)).toBeInTheDocument()
@@ -113,7 +113,7 @@ describe('TaskCard Component', () => {
   })
 
   it('renders correctly without optional fields', () => {
-    render(<TaskCard task={mockTaskMinimal} />)
+    render(<TaskCard task={mockTask} index={0} />)
     
     expect(screen.getByText('Implement user authentication')).toBeInTheDocument()
     expect(screen.queryByText(/Add login and signup functionality/)).not.toBeInTheDocument()
@@ -122,7 +122,7 @@ describe('TaskCard Component', () => {
   })
 
   it('shows hover actions on card hover', () => {
-    render(<TaskCard task={mockTask} />)
+    render(<TaskCard task={mockTask} index={0} />)
     
     // Find the card by its title
     const cardTitle = screen.getByText('Implement user authentication')
@@ -137,7 +137,7 @@ describe('TaskCard Component', () => {
   })
 
   it('calls appropriate handlers when action buttons are clicked', () => {
-    render(<TaskCard task={mockTask} />)
+    render(<TaskCard task={mockTask} index={0} />)
     
     // Find action buttons by querying all buttons
     const actionButtons = screen.getAllByRole('button')
@@ -153,24 +153,24 @@ describe('TaskCard Component', () => {
   })
 
   it('displays correct styling for different priorities', () => {
-    const { rerender } = render(<TaskCard task={{ ...mockTask, priority: 'low' }} />)
+    const { rerender } = render(<TaskCard task={{ ...mockTask, priority: 'low' }} index={0} />)
     
     // Find card by title then get the parent card element
     let cardTitle = screen.getByText('Implement user authentication')
     let card = cardTitle.closest('[class*="border-l-"]')
     expect(card).toHaveClass('border-l-slate-400')
     
-    rerender(<TaskCard task={{ ...mockTask, priority: 'medium' }} />)
+    rerender(<TaskCard task={{ ...mockTask, priority: 'medium' }} index={0} />)
     cardTitle = screen.getByText('Implement user authentication')
     card = cardTitle.closest('[class*="border-l-"]')
     expect(card).toHaveClass('border-l-blue-500')
     
-    rerender(<TaskCard task={{ ...mockTask, priority: 'high' }} />)
+    rerender(<TaskCard task={{ ...mockTask, priority: 'high' }} index={0} />)
     cardTitle = screen.getByText('Implement user authentication')
     card = cardTitle.closest('[class*="border-l-"]')
     expect(card).toHaveClass('border-l-orange-500')
     
-    rerender(<TaskCard task={{ ...mockTask, priority: 'urgent' }} />)
+    rerender(<TaskCard task={{ ...mockTask, priority: 'urgent' }} index={0} />)
     cardTitle = screen.getByText('Implement user authentication')
     card = cardTitle.closest('[class*="border-l-"]')
     expect(card).toHaveClass('border-l-red-500')
@@ -178,7 +178,7 @@ describe('TaskCard Component', () => {
 
   it('shows assigned agent with fallback styling when no agent object', () => {
     const taskWithStringAgent = { ...mockTask, agent: undefined, assignedAgent: 'reviewer' }
-    render(<TaskCard task={taskWithStringAgent} />)
+    render(<TaskCard task={taskWithStringAgent} index={0} />)
     
     expect(screen.getByText('R')).toBeInTheDocument() // First letter of 'reviewer'
   })

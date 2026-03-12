@@ -164,9 +164,49 @@ export async function PATCH(
       return createErrorResponse('Editor agent not found', 400);
     }
     
-    // Content validation
-    if (validatedData.content.length > 10000) {
-      return createErrorResponse('Comment content is too long', 400);
+    // Enhanced spam detection and content validation
+    const contentLength = validatedData.content.length;
+    
+    // Strict length check (redundant with Zod but explicit)
+    if (contentLength > 10000) {
+      return createErrorResponse('Comment content exceeds maximum length of 10,000 characters', 400);
+    }
+    
+    // Enhanced spam detection
+    const spamPatterns = [
+      /(.)\1{9,}/g, // Excessive repeated characters (10+ total: 1 + 9 repeats)
+      /(https?:\/\/[^\s]+){5,}/g, // Multiple URLs (5+)
+      /(.{1,10})\1{5,}/g, // Repeated short patterns (5+ times)
+      /[^\w\s]{10,}/g, // Excessive special characters
+      /^(.)\1*$/, // Content that is entirely one character repeated
+    ];
+    
+    const hasSpam = spamPatterns.some(pattern => pattern.test(validatedData.content));
+    if (hasSpam) {
+      return createErrorResponse('Comment appears to be spam and violates content policies', 400);
+    }
+    
+    // Additional content quality checks
+    const excessiveNewlines = (validatedData.content.match(/\n/g) || []).length;
+    if (excessiveNewlines > 100) {
+      return createErrorResponse('Comment contains excessive line breaks', 400);
+    }
+    
+    // Check for excessive repetition of words
+    const words = validatedData.content.toLowerCase().split(/\s+/);
+    const wordCounts = new Map<string, number>();
+    for (const word of words) {
+      if (word.length > 3) { // Only check meaningful words
+        wordCounts.set(word, (wordCounts.get(word) || 0) + 1);
+      }
+    }
+    
+    // Flag if any single word appears more than 20% of total words (likely spam)
+    const totalWords = words.length;
+    for (const [word, count] of wordCounts) {
+      if (count > totalWords * 0.2 && count > 10) {
+        return createErrorResponse('Comment appears to contain excessive repetition', 400);
+      }
     }
     
     // Store edit history if content changed
