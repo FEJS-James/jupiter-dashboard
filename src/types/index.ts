@@ -66,3 +66,40 @@ export interface TaskWithRelations extends Task {
   project: Project
   agent?: Agent
 }
+
+export interface TaskComment {
+  id: number
+  taskId: number
+  content: string
+  timestamp: string
+  agent: {
+    id: number
+    name: string
+    role: string
+    color: string
+  }
+}
+
+export interface TaskActivity {
+  id: number
+  action: string
+  details: Record<string, unknown>
+  timestamp: string
+  agent?: {
+    id: number
+    name: string
+    role: string
+    color: string
+  }
+}
+
+export interface TaskAttachment {
+  id: number
+  taskId: number
+  filename: string
+  originalName: string
+  fileSize: number
+  mimeType: string
+  uploadedBy: number
+  uploadedAt: string
+}
