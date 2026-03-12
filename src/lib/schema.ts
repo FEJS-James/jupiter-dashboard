@@ -97,7 +97,7 @@ export const activity = sqliteTable('activity', {
 });
 
 /**
- * Comments table - stores task comments
+ * Comments table - stores task comments with enhanced features
  */
 export const comments = sqliteTable('comments', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -107,8 +107,87 @@ export const comments = sqliteTable('comments', {
   agentId: integer('agent_id')
     .notNull()
     .references(() => agents.id, { onDelete: 'cascade' }),
+  parentId: integer('parent_id'), // For nested replies - self-reference will be handled in relations
   content: text('content').notNull(),
+  contentType: text('content_type', { enum: ['plain', 'markdown', 'rich'] })
+    .notNull()
+    .default('plain'),
+  isEdited: integer('is_edited', { mode: 'boolean' })
+    .notNull()
+    .default(false),
+  isDeleted: integer('is_deleted', { mode: 'boolean' })
+    .notNull()
+    .default(false),
+  deletedAt: integer('deleted_at', { mode: 'timestamp' }),
+  deletedByAgentId: integer('deleted_by_agent_id')
+    .references(() => agents.id, { onDelete: 'set null' }),
+  mentions: text('mentions'), // JSON string of mentioned agent IDs
+  attachments: text('attachments'), // JSON string of attachment URLs/paths
+  metadata: text('metadata'), // JSON string of additional metadata
   timestamp: integer('timestamp', { mode: 'timestamp' })
+    .notNull()
+    .default(sql`(unixepoch())`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' })
+    .notNull()
+    .default(sql`(unixepoch())`)
+    .$onUpdate(() => sql`(unixepoch())`),
+});
+
+/**
+ * Comment edit history table - tracks comment modifications
+ */
+export const commentHistory = sqliteTable('comment_history', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  commentId: integer('comment_id')
+    .notNull()
+    .references(() => comments.id, { onDelete: 'cascade' }),
+  previousContent: text('previous_content').notNull(),
+  editReason: text('edit_reason'), // Optional reason for edit
+  editedByAgentId: integer('edited_by_agent_id')
+    .notNull()
+    .references(() => agents.id, { onDelete: 'cascade' }),
+  editedAt: integer('edited_at', { mode: 'timestamp' })
+    .notNull()
+    .default(sql`(unixepoch())`),
+});
+
+/**
+ * Comment reactions table - stores reactions/votes on comments
+ */
+export const commentReactions = sqliteTable('comment_reactions', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  commentId: integer('comment_id')
+    .notNull()
+    .references(() => comments.id, { onDelete: 'cascade' }),
+  agentId: integer('agent_id')
+    .notNull()
+    .references(() => agents.id, { onDelete: 'cascade' }),
+  reaction: text('reaction').notNull(), // 'like', 'dislike', 'helpful', etc.
+  timestamp: integer('timestamp', { mode: 'timestamp' })
+    .notNull()
+    .default(sql`(unixepoch())`),
+});
+
+/**
+ * Comment notifications table - tracks comment mentions and replies
+ */
+export const commentNotifications = sqliteTable('comment_notifications', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  recipientAgentId: integer('recipient_agent_id')
+    .notNull()
+    .references(() => agents.id, { onDelete: 'cascade' }),
+  commentId: integer('comment_id')
+    .notNull()
+    .references(() => comments.id, { onDelete: 'cascade' }),
+  taskId: integer('task_id')
+    .notNull()
+    .references(() => tasks.id, { onDelete: 'cascade' }),
+  type: text('type', { enum: ['mention', 'reply', 'assigned'] }).notNull(),
+  isRead: integer('is_read', { mode: 'boolean' })
+    .notNull()
+    .default(false),
+  readAt: integer('read_at', { mode: 'timestamp' }),
+  createdAt: integer('created_at', { mode: 'timestamp' })
     .notNull()
     .default(sql`(unixepoch())`),
 });
@@ -159,7 +238,7 @@ export const activityRelations = relations(activity, ({ one }) => ({
   }),
 }));
 
-export const commentsRelations = relations(comments, ({ one }) => ({
+export const commentsRelations = relations(comments, ({ one, many }) => ({
   task: one(tasks, {
     fields: [comments.taskId],
     references: [tasks.id],
@@ -167,6 +246,58 @@ export const commentsRelations = relations(comments, ({ one }) => ({
   agent: one(agents, {
     fields: [comments.agentId],
     references: [agents.id],
+  }),
+  parent: one(comments, {
+    fields: [comments.parentId],
+    references: [comments.id],
+    relationName: 'parentComment',
+  }),
+  replies: many(comments, {
+    relationName: 'parentComment',
+  }),
+  deletedByAgent: one(agents, {
+    fields: [comments.deletedByAgentId],
+    references: [agents.id],
+  }),
+  editHistory: many(commentHistory),
+  reactions: many(commentReactions),
+  notifications: many(commentNotifications),
+}));
+
+export const commentHistoryRelations = relations(commentHistory, ({ one }) => ({
+  comment: one(comments, {
+    fields: [commentHistory.commentId],
+    references: [comments.id],
+  }),
+  editedByAgent: one(agents, {
+    fields: [commentHistory.editedByAgentId],
+    references: [agents.id],
+  }),
+}));
+
+export const commentReactionsRelations = relations(commentReactions, ({ one }) => ({
+  comment: one(comments, {
+    fields: [commentReactions.commentId],
+    references: [comments.id],
+  }),
+  agent: one(agents, {
+    fields: [commentReactions.agentId],
+    references: [agents.id],
+  }),
+}));
+
+export const commentNotificationsRelations = relations(commentNotifications, ({ one }) => ({
+  recipientAgent: one(agents, {
+    fields: [commentNotifications.recipientAgentId],
+    references: [agents.id],
+  }),
+  comment: one(comments, {
+    fields: [commentNotifications.commentId],
+    references: [comments.id],
+  }),
+  task: one(tasks, {
+    fields: [commentNotifications.taskId],
+    references: [tasks.id],
   }),
 }));
 
@@ -185,3 +316,12 @@ export type NewActivity = typeof activity.$inferInsert;
 
 export type Comment = typeof comments.$inferSelect;
 export type NewComment = typeof comments.$inferInsert;
+
+export type CommentHistory = typeof commentHistory.$inferSelect;
+export type NewCommentHistory = typeof commentHistory.$inferInsert;
+
+export type CommentReaction = typeof commentReactions.$inferSelect;
+export type NewCommentReaction = typeof commentReactions.$inferInsert;
+
+export type CommentNotification = typeof commentNotifications.$inferSelect;
+export type NewCommentNotification = typeof commentNotifications.$inferInsert;

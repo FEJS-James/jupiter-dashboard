@@ -61,9 +61,39 @@ export const moveTaskSchema = z.object({
   assignedAgent: z.string().optional().or(z.null()),
 });
 
+// Enhanced comment schemas
 export const addCommentSchema = z.object({
-  content: z.string().min(1, 'Comment content is required'),
+  content: z.string().min(1, 'Comment content is required').max(10000, 'Comment too long'),
   agentId: z.number().int().positive(),
+  parentId: z.number().int().positive().optional(), // For nested replies
+  contentType: z.enum(['plain', 'markdown', 'rich']).default('plain'),
+  mentions: z.array(z.number().int().positive()).optional(), // Array of mentioned agent IDs
+  attachments: z.array(z.string()).optional(), // Array of attachment URLs
+  metadata: z.record(z.string(), z.unknown()).optional(), // Additional metadata
+});
+
+export const updateCommentSchema = z.object({
+  content: z.string().min(1, 'Comment content is required').max(10000, 'Comment too long'),
+  editReason: z.string().max(200, 'Edit reason too long').optional(),
+  contentType: z.enum(['plain', 'markdown', 'rich']).optional(),
+  mentions: z.array(z.number().int().positive()).optional(),
+  attachments: z.array(z.string()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+});
+
+export const deleteCommentSchema = z.object({
+  reason: z.string().max(200, 'Delete reason too long').optional(),
+});
+
+export const addCommentReactionSchema = z.object({
+  reaction: z.enum(['like', 'dislike', 'helpful', 'resolved', 'question']),
+});
+
+export const commentFiltersSchema = z.object({
+  parentId: z.string().transform(Number).optional(), // Get replies for a specific comment
+  includeDeleted: z.string().transform((val) => val === 'true').optional().default(false),
+  limit: z.string().transform(Number).optional().default(50),
+  offset: z.string().transform(Number).optional().default(0),
 });
 
 // Agent schemas

@@ -31,6 +31,7 @@ import {
 } from 'lucide-react'
 import { Task, TaskPriority, TaskStatus, Project, Agent } from '@/types'
 import { TaskFormDialog } from '@/components/kanban/task-form-dialog'
+import { CommentsSection } from '@/components/comments/comments-section'
 import { toast } from 'sonner'
 import { motion } from 'framer-motion'
 
@@ -132,16 +133,12 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
   const [error, setError] = useState<string | null>(null)
   const [showEditDialog, setShowEditDialog] = useState(false)
   
-  // Comment form state
-  const [newComment, setNewComment] = useState('')
-  const [commentLoading, setCommentLoading] = useState(false)
-  const [selectedAgent, setSelectedAgent] = useState<number>(1) // Default to first agent
-
   // File upload state
   const [uploadedFiles, setUploadedFiles] = useState<string[]>([])
   
   // Related tasks state
   const [relatedTasks, setRelatedTasks] = useState<Task[]>([])
+  const [selectedAgent, setSelectedAgent] = useState<number>(1) // For edit dialog
 
   // Extract ID from params
   const [taskId, setTaskId] = useState<string | null>(null)
@@ -295,37 +292,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
     }
   }
 
-  const handleAddComment = async () => {
-    if (!newComment.trim() || !taskId) return
 
-    setCommentLoading(true)
-    try {
-      const response = await fetch(`/api/tasks/${taskId}/comments`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          content: newComment.trim(),
-          agentId: selectedAgent
-        })
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to add comment')
-      }
-
-      const result = await response.json()
-      if (result.success) {
-        setComments(prev => [...prev, result.data])
-        setNewComment('')
-        toast.success('Comment added successfully')
-      }
-    } catch (error) {
-      console.error('Failed to add comment:', error)
-      toast.error('Failed to add comment')
-    } finally {
-      setCommentLoading(false)
-    }
-  }
 
   const handleEditTask = async (taskData: Partial<Task>) => {
     if (!task) return
@@ -569,95 +536,14 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
             </CardContent>
           </Card>
 
-          {/* Comments Section */}
-          <Card className="bg-slate-800/50 border-slate-700">
-            <CardHeader>
-              <CardTitle className="text-slate-100 flex items-center gap-2">
-                <MessageSquare className="w-5 h-5" />
-                Comments ({comments.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Add Comment Form */}
-              <div className="space-y-3">
-                <Textarea
-                  placeholder="Add a comment..."
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  className="bg-slate-700 border-slate-600 text-slate-100 min-h-[80px]"
-                />
-                <div className="flex items-center justify-between">
-                  <select
-                    value={selectedAgent}
-                    onChange={(e) => setSelectedAgent(Number(e.target.value))}
-                    className="bg-slate-700 border-slate-600 text-slate-100 text-sm rounded px-2 py-1"
-                  >
-                    {agents.map(agent => (
-                      <option key={agent.id} value={agent.id}>
-                        {agent.name} ({agent.role})
-                      </option>
-                    ))}
-                  </select>
-                  <Button
-                    onClick={handleAddComment}
-                    disabled={!newComment.trim() || commentLoading}
-                    size="sm"
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    {commentLoading ? (
-                      'Posting...'
-                    ) : (
-                      <>
-                        <Send className="w-4 h-4 mr-2" />
-                        Post Comment
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
-
-              {/* Comments List */}
-              <div className="space-y-4">
-                {comments.length === 0 ? (
-                  <p className="text-slate-400 text-center py-8">No comments yet</p>
-                ) : (
-                  comments.map(comment => (
-                    <motion.div
-                      key={comment.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="flex gap-3 p-4 bg-slate-700/30 rounded-lg"
-                    >
-                      <Avatar className="w-8 h-8 flex-shrink-0">
-                        <div 
-                          className="w-full h-full rounded-full flex items-center justify-center text-white text-xs font-medium"
-                          style={{ backgroundColor: comment.agent.color }}
-                        >
-                          {comment.agent.name.charAt(0).toUpperCase()}
-                        </div>
-                      </Avatar>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-sm font-medium text-slate-200">
-                            {comment.agent.name}
-                          </span>
-                          <Badge variant="outline" className="text-xs">
-                            {comment.agent.role}
-                          </Badge>
-                          <span className="text-xs text-slate-400">
-                            {formatRelativeTime(comment.timestamp)}
-                          </span>
-                        </div>
-                        <p className="text-slate-100 text-sm whitespace-pre-wrap">
-                          {comment.content}
-                        </p>
-                      </div>
-                    </motion.div>
-                  ))
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          {/* Enhanced Comments Section */}
+          {taskId && (
+            <CommentsSection
+              taskId={parseInt(taskId)}
+              agents={agents}
+              currentAgent={agents.find(a => a.id === selectedAgent)}
+            />
+          )}
         </div>
 
         {/* Sidebar */}

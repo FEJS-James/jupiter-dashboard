@@ -8,7 +8,7 @@ export const ConnectedUserSchema = z.object({
   email: z.string().email().max(255),
   avatar: z.string().url().optional(),
   color: z.string().regex(/^#[0-9A-F]{6}$/i, 'Color must be a valid hex color'),
-  lastSeen: z.date(),
+  lastSeen: z.union([z.date(), z.string().transform(str => new Date(str))]),
   boardId: z.string().min(1).max(100).optional()
 })
 
@@ -34,7 +34,7 @@ export const UserPresenceSchema = z.object({
   userId: z.string().min(1).max(100),
   status: z.enum(['viewing', 'editing', 'idle'] as const),
   taskId: z.number().int().positive().optional(),
-  timestamp: z.date()
+  timestamp: z.union([z.date(), z.string().transform(str => new Date(str))])
 })
 
 // WebSocket event payload schemas

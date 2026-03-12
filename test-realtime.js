@@ -7,8 +7,8 @@
 
 const io = require('socket.io-client');
 
-const BASE_URL = 'http://localhost:7000';
-const WEBSOCKET_URL = 'http://localhost:7000';
+const BASE_URL = 'http://localhost:9000';
+const WEBSOCKET_URL = 'http://localhost:9000';
 
 // Test configuration
 const TEST_CONFIG = {
@@ -19,7 +19,7 @@ const TEST_CONFIG = {
   reconnectAttempts: 3
 };
 
-// Mock user data
+// Mock user data - Note: Date objects will be serialized properly over WebSocket
 const MOCK_USERS = [
   {
     id: 'user-1',
@@ -310,7 +310,7 @@ class RealtimeTestSuite {
       socket.emit('updatePresence', {
         userId: MOCK_USERS[0].id,
         status: 'viewing',
-        timestamp: new Date()
+        timestamp: new Date().toISOString()
       });
 
       setTimeout(() => {
@@ -393,7 +393,7 @@ class RealtimeTestSuite {
           socket.emit('updatePresence', {
             userId: 'test-spam-user',
             status: 'viewing',
-            timestamp: new Date()
+            timestamp: new Date().toISOString()
           });
           await this.delay(10);
         }
@@ -448,7 +448,7 @@ class RealtimeTestSuite {
             userId: MOCK_USERS[0].id,
             status: 'editing',
             taskId: 1,
-            timestamp: new Date()
+            timestamp: new Date().toISOString()
           });
         }
       };

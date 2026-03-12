@@ -70,7 +70,53 @@ export interface TaskWithRelations extends Task {
 export interface TaskComment {
   id: number
   taskId: number
+  parentId?: number
   content: string
+  contentType: 'plain' | 'markdown' | 'rich'
+  isEdited: boolean
+  isDeleted: boolean
+  deletedAt?: string
+  mentions?: number[]
+  attachments?: string[]
+  metadata?: Record<string, unknown>
+  timestamp: string
+  updatedAt: string
+  agent: {
+    id: number
+    name: string
+    role: string
+    color: string
+  }
+  deletedByAgent?: {
+    id: number
+    name: string
+    role: string
+    color: string
+  }
+  replies?: TaskComment[]
+  reactions?: CommentReaction[]
+  editHistory?: CommentEditHistory[]
+  replyCount?: number
+}
+
+export interface CommentEditHistory {
+  id: number
+  commentId: number
+  previousContent: string
+  editReason?: string
+  editedAt: string
+  editedByAgent: {
+    id: number
+    name: string
+    role: string
+    color: string
+  }
+}
+
+export interface CommentReaction {
+  id: number
+  commentId: number
+  reaction: string
   timestamp: string
   agent: {
     id: number
@@ -78,6 +124,19 @@ export interface TaskComment {
     role: string
     color: string
   }
+}
+
+export interface CommentNotification {
+  id: number
+  recipientAgentId: number
+  commentId: number
+  taskId: number
+  type: 'mention' | 'reply' | 'assigned'
+  isRead: boolean
+  readAt?: string
+  createdAt: string
+  comment?: TaskComment
+  task?: Task
 }
 
 export interface TaskActivity {

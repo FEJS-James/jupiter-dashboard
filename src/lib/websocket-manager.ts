@@ -203,6 +203,105 @@ class WebSocketManager {
   }
 
   /**
+   * Emit a comment updated event to all connected clients
+   */
+  public emitCommentUpdated(taskId: number, commentId: number, comment: any, boardId?: string): void {
+    if (!global.__socketIO) {
+      console.warn('WebSocket not initialized - cannot emit commentUpdated event');
+      return;
+    }
+
+    try {
+      const targetRoom = boardId || 'board-1';
+      global.__socketIO.to(targetRoom).emit('commentUpdated', taskId, commentId, comment);
+
+      // Also emit activity
+      const activity = {
+        id: randomUUID(),
+        type: 'comment_updated',
+        taskId: taskId,
+        commentId: commentId,
+        content: comment.content.substring(0, 100) + (comment.content.length > 100 ? '...' : ''),
+        timestamp: new Date(),
+        data: comment
+      };
+      global.__socketIO.to(targetRoom).emit('activity', activity);
+
+      console.log(`Emitted commentUpdated event for comment ${commentId} in task ${taskId} to room ${targetRoom}`);
+    } catch (error) {
+      console.error('Error emitting commentUpdated event:', error);
+    }
+  }
+
+  /**
+   * Emit a comment deleted event to all connected clients
+   */
+  public emitCommentDeleted(taskId: number, commentId: number, hardDelete: boolean, boardId?: string): void {
+    if (!global.__socketIO) {
+      console.warn('WebSocket not initialized - cannot emit commentDeleted event');
+      return;
+    }
+
+    try {
+      const targetRoom = boardId || 'board-1';
+      global.__socketIO.to(targetRoom).emit('commentDeleted', taskId, commentId, hardDelete);
+
+      // Also emit activity
+      const activity = {
+        id: randomUUID(),
+        type: 'comment_deleted',
+        taskId: taskId,
+        commentId: commentId,
+        timestamp: new Date(),
+        data: { hardDelete }
+      };
+      global.__socketIO.to(targetRoom).emit('activity', activity);
+
+      console.log(`Emitted commentDeleted event for comment ${commentId} in task ${taskId} to room ${targetRoom}`);
+    } catch (error) {
+      console.error('Error emitting commentDeleted event:', error);
+    }
+  }
+
+  /**
+   * Emit a comment reply event to all connected clients
+   */
+  public emitCommentReply(parentCommentId: number, reply: any, boardId?: string): void {
+    if (!global.__socketIO) {
+      console.warn('WebSocket not initialized - cannot emit commentReply event');
+      return;
+    }
+
+    try {
+      const targetRoom = boardId || 'board-1';
+      global.__socketIO.to(targetRoom).emit('commentReply', parentCommentId, reply);
+
+      console.log(`Emitted commentReply event for parent comment ${parentCommentId} to room ${targetRoom}`);
+    } catch (error) {
+      console.error('Error emitting commentReply event:', error);
+    }
+  }
+
+  /**
+   * Emit a comment reaction event to all connected clients
+   */
+  public emitCommentReaction(taskId: number, commentId: number, reaction: any, action: 'added' | 'removed', boardId?: string): void {
+    if (!global.__socketIO) {
+      console.warn('WebSocket not initialized - cannot emit commentReaction event');
+      return;
+    }
+
+    try {
+      const targetRoom = boardId || 'board-1';
+      global.__socketIO.to(targetRoom).emit('commentReaction', taskId, commentId, reaction, action);
+
+      console.log(`Emitted commentReaction event (${action}) for comment ${commentId} in task ${taskId} to room ${targetRoom}`);
+    } catch (error) {
+      console.error('Error emitting commentReaction event:', error);
+    }
+  }
+
+  /**
    * Emit a user presence update
    */
   public emitUserPresence(boardId: string, users: any[]): void {
