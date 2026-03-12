@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge'
 import { Calendar, X, Plus } from 'lucide-react'
 import { Task, TaskPriority, TaskStatus, Project, Agent } from '@/types'
+import { EnhancedAgentSelect } from '@/components/agents/enhanced-agent-select'
 
 interface TaskFormDialogProps {
   open: boolean
@@ -290,28 +291,14 @@ export function TaskFormDialog({
               <Label htmlFor="assignedAgent" className="text-slate-200">
                 Assigned Agent
               </Label>
-              <Select
+              <EnhancedAgentSelect
                 value={formData.assignedAgent}
                 onValueChange={(value) => setFormData(prev => ({ ...prev, assignedAgent: value }))}
-              >
-                <SelectTrigger className="bg-slate-800 border-slate-600 text-slate-100">
-                  <SelectValue placeholder="Select agent" />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-600">
-                  <SelectItem value="unassigned" className="text-slate-100">No assignment</SelectItem>
-                  {agents.map(agent => (
-                    <SelectItem key={agent.id} value={agent.name} className="text-slate-100">
-                      <div className="flex items-center gap-2">
-                        <div 
-                          className="w-2 h-2 rounded-full"
-                          style={{ backgroundColor: agent.color }}
-                        />
-                        {agent.name} ({agent.role})
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                agents={agents}
+                placeholder="Select agent..."
+                showWorkload={true}
+                className="bg-slate-800 border-slate-600 text-slate-100"
+              />
             </div>
           </div>
 

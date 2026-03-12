@@ -67,9 +67,29 @@ export const addCommentSchema = z.object({
 });
 
 // Agent schemas
+export const createAgentSchema = z.object({
+  name: z.string().min(1, 'Agent name is required').max(50),
+  role: z.enum(['coder', 'reviewer', 'devops', 'manager', 'tester']),
+  color: z.string().regex(/^#[0-9A-F]{6}$/i, 'Color must be a valid hex color').default('#3b82f6'),
+  avatarUrl: z.string().url().optional().or(z.literal('')),
+  status: z.enum(['available', 'busy', 'offline']).default('available'),
+});
+
 export const updateAgentSchema = z.object({
+  name: z.string().min(1).max(50).optional(),
+  role: z.enum(['coder', 'reviewer', 'devops', 'manager', 'tester']).optional(),
+  color: z.string().regex(/^#[0-9A-F]{6}$/i, 'Color must be a valid hex color').optional(),
+  avatarUrl: z.string().url().optional().or(z.literal('')),
   status: z.enum(['available', 'busy', 'offline']).optional(),
   currentTaskId: z.number().int().positive().optional().or(z.null()),
+});
+
+export const agentFiltersSchema = z.object({
+  role: z.enum(['coder', 'reviewer', 'devops', 'manager', 'tester']).optional(),
+  status: z.enum(['available', 'busy', 'offline']).optional(),
+  search: z.string().optional(),
+  limit: z.string().transform(Number).optional(),
+  offset: z.string().transform(Number).optional(),
 });
 
 // Common response schemas

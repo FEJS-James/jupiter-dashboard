@@ -36,9 +36,21 @@ async function seed() {
         status: 'available',
       },
       {
+        name: 'tester',
+        role: 'tester',
+        color: '#f97316', // orange-500
+        status: 'available',
+      },
+      {
         name: 'devops',
         role: 'devops',
         color: '#ef4444', // red-500
+        status: 'available',
+      },
+      {
+        name: 'manager',
+        role: 'manager',
+        color: '#8b5cf6', // violet-500
         status: 'available',
       },
     ]).returning();

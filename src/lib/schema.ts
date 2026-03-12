@@ -29,7 +29,7 @@ export const projects = sqliteTable('projects', {
 export const agents = sqliteTable('agents', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   name: text('name').notNull().unique(),
-  role: text('role', { enum: ['coder', 'reviewer', 'devops', 'manager'] }).notNull(),
+  role: text('role', { enum: ['coder', 'reviewer', 'devops', 'manager', 'tester'] }).notNull(),
   color: text('color').notNull().default('#3b82f6'),
   avatarUrl: text('avatar_url'),
   status: text('status', { enum: ['available', 'busy', 'offline'] })
