@@ -1,19 +1,19 @@
-const { createServer } = require('http')
-const { parse } = require('url')
-const next = require('next')
-const { Server } = require('socket.io')
-const crypto = require('crypto')
+import { createServer } from 'http'
+import { parse } from 'url'
+import next from 'next'
+import { Server } from 'socket.io'
+import { randomUUID } from 'crypto'
+
+// Import validation schemas and utilities from TypeScript source
+import { validateEventPayload, JoinEventSchema, LeaveEventSchema, TaskCreatedEventSchema, 
+         TaskUpdatedEventSchema, TaskDeletedEventSchema, TaskMovedEventSchema, 
+         UpdatePresenceEventSchema } from './src/validation/websocket-schemas'
+import { RateLimiter } from './src/utils/rate-limiter'
+import { WebSocketAuth } from './src/utils/websocket-auth'
 
 const dev = process.env.NODE_ENV !== 'production'
 const hostname = 'localhost'
 const port = process.env.PORT || 3000
-
-// Import validation schemas and utilities
-const { validateEventPayload, JoinEventSchema, LeaveEventSchema, TaskCreatedEventSchema, 
-        TaskUpdatedEventSchema, TaskDeletedEventSchema, TaskMovedEventSchema, 
-        UpdatePresenceEventSchema } = require('./dist/src/validation/websocket-schemas.js')
-const { RateLimiter } = require('./dist/src/utils/rate-limiter.js')
-const { WebSocketAuth } = require('./dist/src/utils/websocket-auth.js')
 
 const app = next({ dev, hostname, port })
 const handle = app.getRequestHandler()
@@ -62,8 +62,8 @@ app.prepare().then(() => {
   const previousPresenceState = new Map() // For optimized presence updates
 
   // Rate limiting middleware for socket events
-  const createRateLimitedHandler = (handler) => {
-    return (...args) => {
+  const createRateLimitedHandler = (handler: Function) => {
+    return (...args: any[]) => {
       const socketId = args[0]?.id || 'unknown'
       
       if (eventRateLimiter.isRateLimited(socketId)) {
@@ -87,7 +87,7 @@ app.prepare().then(() => {
     }
     
     // Handle user joining a board with validation
-    socket.on('join', createRateLimitedHandler((boardId, user) => {
+    socket.on('join', createRateLimitedHandler((boardId: string, user: any) => {
       // Validate input
       const validation = validateEventPayload(JoinEventSchema, { boardId, user })
       if (!validation.success) {
@@ -105,14 +105,14 @@ app.prepare().then(() => {
       
       // Send current users to the newly joined user (optimized - only users in this board)
       const boardUsers = Array.from(connectedUsers.values())
-        .filter(u => u.boardId === data.boardId && u.id !== data.user.id)
+        .filter((u: any) => u.boardId === data.boardId && u.id !== data.user.id)
       socket.emit('userPresence', boardUsers)
       
       console.log(`User ${data.user.name} joined board ${data.boardId}`)
     }))
 
     // Handle user leaving a board with validation
-    socket.on('leave', createRateLimitedHandler((boardId) => {
+    socket.on('leave', createRateLimitedHandler((boardId: string) => {
       // Validate input
       const validation = validateEventPayload(LeaveEventSchema, { boardId })
       if (!validation.success) {
@@ -130,7 +130,7 @@ app.prepare().then(() => {
     }))
 
     // Handle presence updates with validation and optimization
-    socket.on('updatePresence', createRateLimitedHandler((presence) => {
+    socket.on('updatePresence', createRateLimitedHandler((presence: any) => {
       // Validate input
       const validation = validateEventPayload(UpdatePresenceEventSchema, { presence })
       if (!validation.success) {
@@ -146,7 +146,7 @@ app.prepare().then(() => {
       
       // Optimized presence updates - only send changes
       const currentBoardUsers = Array.from(connectedUsers.values())
-        .filter(u => u.boardId === user.boardId)
+        .filter((u: any) => u.boardId === user.boardId)
       
       const previousState = previousPresenceState.get(user.boardId) || []
       const hasChanges = JSON.stringify(currentBoardUsers) !== JSON.stringify(previousState)
@@ -158,7 +158,7 @@ app.prepare().then(() => {
     }))
 
     // Handle task operations with validation
-    socket.on('taskCreated', createRateLimitedHandler((task, operationId) => {
+    socket.on('taskCreated', createRateLimitedHandler((task: any, operationId?: string) => {
       // Validate input
       const validation = validateEventPayload(TaskCreatedEventSchema, { task })
       if (!validation.success) {
@@ -175,7 +175,7 @@ app.prepare().then(() => {
         socket.to(user.boardId).emit('taskCreated', validation.data.task)
         
         const activity = {
-          id: crypto.randomUUID(), // Fixed: Use crypto.randomUUID() instead of Date.now()
+          id: randomUUID(), // Fixed: Use randomUUID() instead of Date.now()
           type: 'task_created',
           userId: user.id,
           userName: user.name,
@@ -192,7 +192,7 @@ app.prepare().then(() => {
       }
     }))
 
-    socket.on('taskUpdated', createRateLimitedHandler((task, operationId) => {
+    socket.on('taskUpdated', createRateLimitedHandler((task: any, operationId?: string) => {
       // Validate input
       const validation = validateEventPayload(TaskUpdatedEventSchema, { task })
       if (!validation.success) {
@@ -209,7 +209,7 @@ app.prepare().then(() => {
         socket.to(user.boardId).emit('taskUpdated', validation.data.task)
         
         const activity = {
-          id: crypto.randomUUID(), // Fixed: Use crypto.randomUUID() instead of Date.now()
+          id: randomUUID(), // Fixed: Use randomUUID() instead of Date.now()
           type: 'task_updated',
           userId: user.id,
           userName: user.name,
@@ -226,7 +226,7 @@ app.prepare().then(() => {
       }
     }))
 
-    socket.on('taskDeleted', createRateLimitedHandler((taskId, operationId) => {
+    socket.on('taskDeleted', createRateLimitedHandler((taskId: number, operationId?: string) => {
       // Validate input
       const validation = validateEventPayload(TaskDeletedEventSchema, { taskId })
       if (!validation.success) {
@@ -243,7 +243,7 @@ app.prepare().then(() => {
         socket.to(user.boardId).emit('taskDeleted', validation.data.taskId)
         
         const activity = {
-          id: crypto.randomUUID(), // Fixed: Use crypto.randomUUID() instead of Date.now()
+          id: randomUUID(), // Fixed: Use randomUUID() instead of Date.now()
           type: 'task_deleted',
           userId: user.id,
           userName: user.name,
@@ -259,7 +259,7 @@ app.prepare().then(() => {
       }
     }))
 
-    socket.on('taskMoved', createRateLimitedHandler((taskId, fromStatus, toStatus, task, operationId) => {
+    socket.on('taskMoved', createRateLimitedHandler((taskId: number, fromStatus: string, toStatus: string, task: any, operationId?: string) => {
       // Validate input
       const validation = validateEventPayload(TaskMovedEventSchema, { taskId, fromStatus, toStatus, task })
       if (!validation.success) {
@@ -277,7 +277,7 @@ app.prepare().then(() => {
         socket.to(user.boardId).emit('taskMoved', taskId, fromStatus, toStatus, task)
         
         const activity = {
-          id: crypto.randomUUID(), // Fixed: Use crypto.randomUUID() instead of Date.now()
+          id: randomUUID(), // Fixed: Use randomUUID() instead of Date.now()
           type: 'task_moved',
           userId: user.id,
           userName: user.name,
@@ -304,7 +304,7 @@ app.prepare().then(() => {
         
         // Clean up presence state for this board
         const remainingBoardUsers = Array.from(connectedUsers.values())
-          .filter(u => u.boardId === user.boardId && u.id !== user.id)
+          .filter((u: any) => u.boardId === user.boardId && u.id !== user.id)
         if (remainingBoardUsers.length === 0) {
           previousPresenceState.delete(user.boardId)
         } else {
@@ -320,12 +320,12 @@ app.prepare().then(() => {
     })
 
     // Handle socket errors
-    socket.on('error', (error) => {
+    socket.on('error', (error: any) => {
       console.error(`Socket ${socket.id} error:`, error)
     })
   })
 
-  server.listen(port, (err) => {
+  server.listen(port, (err?: any) => {
     if (err) throw err
     console.log(`> Ready on http://${hostname}:${port}`)
     console.log('> Socket.IO server ready')
