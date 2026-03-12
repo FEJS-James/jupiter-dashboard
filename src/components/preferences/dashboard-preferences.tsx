@@ -129,11 +129,11 @@ export function DashboardPreferences() {
   } = useDashboardPreferences()
   
   const handleColumnVisibilityToggle = (columnId: string) => {
-    const newVisible = kanbanColumnsVisible.includes(columnId)
-      ? kanbanColumnsVisible.filter(id => id !== columnId)
-      : [...kanbanColumnsVisible, columnId]
+    const newVisible = preferences.kanbanColumnsVisible.includes(columnId)
+      ? preferences.kanbanColumnsVisible.filter(id => id !== columnId)
+      : [...preferences.kanbanColumnsVisible, columnId]
     
-    setKanbanColumnsVisible(newVisible)
+    updatePreferences({ kanbanColumnsVisible: newVisible })
   }
   
   const sensors = useSensors(
@@ -147,11 +147,11 @@ export function DashboardPreferences() {
     const { active, over } = event
     
     if (over && active.id !== over.id) {
-      const oldIndex = kanbanColumnOrder.indexOf(active.id as string)
-      const newIndex = kanbanColumnOrder.indexOf(over.id as string)
+      const oldIndex = preferences.kanbanColumnOrder.indexOf(active.id as string)
+      const newIndex = preferences.kanbanColumnOrder.indexOf(over.id as string)
       
-      const newOrder = arrayMove(kanbanColumnOrder, oldIndex, newIndex)
-      setKanbanColumnOrder(newOrder)
+      const newOrder = arrayMove(preferences.kanbanColumnOrder, oldIndex, newIndex)
+      updatePreferences({ kanbanColumnOrder: newOrder })
     }
   }
   
@@ -171,7 +171,7 @@ export function DashboardPreferences() {
               <label
                 key={option.value}
                 className={`flex items-center space-x-3 p-4 border rounded-lg cursor-pointer transition-colors ${
-                  defaultLandingPage === option.value
+                  preferences.landingPage === option.value
                     ? 'border-primary bg-primary/5'
                     : 'border-border hover:bg-accent'
                 }`}
@@ -180,16 +180,16 @@ export function DashboardPreferences() {
                   type="radio"
                   name="landing-page"
                   value={option.value}
-                  checked={defaultLandingPage === option.value}
-                  onChange={() => setDefaultLandingPage(option.value)}
+                  checked={preferences.landingPage === option.value}
+                  onChange={() => updatePreferences({ landingPage: option.value })}
                   className="sr-only"
                 />
                 <div className={`w-4 h-4 rounded-full border-2 ${
-                  defaultLandingPage === option.value
+                  preferences.landingPage === option.value
                     ? 'border-primary bg-primary'
                     : 'border-gray-300'
                 }`}>
-                  {defaultLandingPage === option.value && (
+                  {preferences.landingPage === option.value && (
                     <div className="w-2 h-2 bg-white rounded-full m-0.5" />
                   )}
                 </div>
@@ -215,7 +215,7 @@ export function DashboardPreferences() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="default-task-view">Default Task View</Label>
-              <Select value={defaultTaskView} onValueChange={setDefaultTaskView}>
+              <Select value={preferences.taskView} onValueChange={(value) => updatePreferences({ taskView: value as any })}>
                 <SelectTrigger id="default-task-view">
                   <SelectValue />
                 </SelectTrigger>
@@ -234,7 +234,7 @@ export function DashboardPreferences() {
             
             <div className="space-y-2">
               <Label htmlFor="tasks-per-page">Tasks Per Page</Label>
-              <Select value={tasksPerPage.toString()} onValueChange={(value) => setTasksPerPage(parseInt(value))}>
+              <Select value={preferences.tasksPerPage.toString()} onValueChange={(value) => updatePreferences({ tasksPerPage: parseInt(value) })}>
                 <SelectTrigger id="tasks-per-page">
                   <SelectValue />
                 </SelectTrigger>
@@ -271,13 +271,13 @@ export function DashboardPreferences() {
               collisionDetection={closestCenter}
               onDragEnd={handleDragEnd}
             >
-              <SortableContext items={kanbanColumnOrder} strategy={verticalListSortingStrategy}>
+              <SortableContext items={preferences.kanbanColumnOrder} strategy={verticalListSortingStrategy}>
                 <div className="space-y-2">
-                  {kanbanColumnOrder.map((columnId) => {
+                  {preferences.kanbanColumnOrder.map((columnId) => {
                     const column = KANBAN_COLUMNS.find(col => col.id === columnId)
                     if (!column) return null
                     
-                    const isVisible = kanbanColumnsVisible.includes(columnId)
+                    const isVisible = preferences.kanbanColumnsVisible.includes(columnId)
                     
                     return (
                       <SortableKanbanColumn
@@ -315,14 +315,14 @@ export function DashboardPreferences() {
             </div>
             <Switch
               id="sidebar-collapsed"
-              checked={sidebarCollapsed}
-              onCheckedChange={setSidebarCollapsed}
+              checked={preferences.sidebarCollapsed}
+              onCheckedChange={(checked) => updatePreferences({ sidebarCollapsed: checked })}
             />
           </div>
           
           <div className="space-y-2">
             <Label htmlFor="default-date-range">Default Date Range for Reports</Label>
-            <Select value={defaultDateRange} onValueChange={setDefaultDateRange}>
+            <Select value={preferences.dateRange} onValueChange={(value) => updatePreferences({ dateRange: value as any })}>
               <SelectTrigger id="default-date-range" className="w-full md:w-48">
                 <SelectValue />
               </SelectTrigger>

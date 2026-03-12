@@ -12,6 +12,10 @@ export interface DashboardPreferences {
   showStats: boolean
   compactView: boolean
   widgetOrder: string[]
+  kanbanColumnsVisible: string[]
+  kanbanColumnOrder: string[]
+  sidebarCollapsed: boolean
+  tasksPerPage: number
 }
 
 export interface DisplayPreferences {
@@ -22,6 +26,11 @@ export interface DisplayPreferences {
   columnWidths: Record<string, number>
   fontSize: 'small' | 'medium' | 'large' | 'extra-large'
   colorScheme: string
+  interfaceDensity: 'compact' | 'comfortable' | 'spacious'
+  accentColor: string
+  customThemeVariant?: string
+  reducedMotion: boolean
+  locale: string
 }
 
 export interface NotificationPreferences {
@@ -109,7 +118,11 @@ const defaultDashboardPreferences: DashboardPreferences = {
   refreshInterval: 30,
   showStats: true,
   compactView: false,
-  widgetOrder: ['stats', 'activity', 'tasks']
+  widgetOrder: ['stats', 'activity', 'tasks'],
+  kanbanColumnsVisible: ['backlog', 'in-progress', 'code-review', 'testing', 'deploying', 'done'],
+  kanbanColumnOrder: ['backlog', 'in-progress', 'code-review', 'testing', 'deploying', 'done', 'blocked'],
+  sidebarCollapsed: false,
+  tasksPerPage: 20
 }
 
 const defaultDisplayPreferences: DisplayPreferences = {
@@ -119,7 +132,12 @@ const defaultDisplayPreferences: DisplayPreferences = {
   showAnimations: true,
   columnWidths: {},
   fontSize: 'medium',
-  colorScheme: 'default'
+  colorScheme: 'default',
+  interfaceDensity: 'comfortable',
+  accentColor: '#3b82f6',
+  customThemeVariant: undefined,
+  reducedMotion: false,
+  locale: 'en'
 }
 
 const defaultNotificationPreferences: NotificationPreferences = {

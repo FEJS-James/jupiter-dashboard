@@ -54,32 +54,21 @@ const LOCALE_OPTIONS = [
 
 export function DisplayPreferences() {
   const {
-    theme,
-    fontSize,
-    interfaceDensity,
-    accentColor,
-    customThemeVariant,
-    reducedMotion,
-    locale,
-    setTheme,
-    setFontSize,
-    setInterfaceDensity,
-    setAccentColor,
-    setCustomThemeVariant,
-    setReducedMotion,
-    setLocale,
+    preferences,
+    updatePreferences,
+    isLoading
   } = useDisplayPreferences()
   
-  const [customColor, setCustomColor] = useState(accentColor)
-  const [showCustomColorInput, setShowCustomColorInput] = useState(!ACCENT_COLORS.some(color => color.value === accentColor))
+  const [customColor, setCustomColor] = useState(preferences.accentColor)
+  const [showCustomColorInput, setShowCustomColorInput] = useState(!ACCENT_COLORS.some(color => color.value === preferences.accentColor))
   
   const handleCustomColorChange = (color: string) => {
     setCustomColor(color)
-    setAccentColor(color)
+    updatePreferences({ accentColor: color })
   }
   
   const handleAccentColorSelect = (color: string) => {
-    setAccentColor(color)
+    updatePreferences({ accentColor: color })
     setCustomColor(color)
     setShowCustomColorInput(false)
   }
@@ -105,7 +94,7 @@ export function DisplayPreferences() {
                 <label
                   key={option.value}
                   className={`flex flex-col items-center p-4 border-2 rounded-lg cursor-pointer transition-all hover:border-primary/50 ${
-                    theme === option.value
+                    preferences.theme === option.value
                       ? 'border-primary bg-primary/5'
                       : 'border-border'
                   }`}
@@ -114,12 +103,12 @@ export function DisplayPreferences() {
                     type="radio"
                     name="theme"
                     value={option.value}
-                    checked={theme === option.value}
-                    onChange={() => setTheme(option.value as 'light' | 'dark' | 'system')}
+                    checked={preferences.theme === option.value}
+                    onChange={() => updatePreferences({ theme: option.value as 'light' | 'dark' | 'system' })}
                     className="sr-only"
                   />
                   <Icon className={`h-8 w-8 mb-2 ${
-                    theme === option.value ? 'text-primary' : 'text-gray-500'
+                    preferences.theme === option.value ? 'text-primary' : 'text-gray-500'
                   }`} />
                   <div className="font-medium">{option.label}</div>
                   <div className="text-sm text-gray-600 text-center">{option.description}</div>
@@ -149,7 +138,7 @@ export function DisplayPreferences() {
                 <label
                   key={option.value}
                   className={`flex flex-col items-center p-4 border rounded-lg cursor-pointer transition-colors ${
-                    fontSize === option.value
+                    preferences.fontSize === option.value
                       ? 'border-primary bg-primary/5'
                       : 'border-border hover:bg-accent'
                   }`}
