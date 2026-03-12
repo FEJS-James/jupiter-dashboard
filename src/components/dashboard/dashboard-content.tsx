@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { useEffect, useState, useCallback, useRef } from 'react'
+import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -397,21 +398,25 @@ export function DashboardContent() {
         transition={{ duration: 0.5, delay: 0.1 }}
         aria-label="Quick actions"
       >
-        <Button 
-          className="bg-blue-600 hover:bg-blue-700"
-          aria-label="Create new project"
-        >
-          <Plus className="w-4 h-4 mr-2" aria-hidden="true" />
-          New Project
-        </Button>
-        <Button 
-          variant="outline" 
-          className="border-slate-600 text-slate-200 hover:bg-slate-800"
-          aria-label="Browse existing projects"
-        >
-          <FolderOpen className="w-4 h-4 mr-2" aria-hidden="true" />
-          Browse Projects
-        </Button>
+        <Link href="/projects/new">
+          <Button 
+            className="bg-blue-600 hover:bg-blue-700"
+            aria-label="Create new project"
+          >
+            <Plus className="w-4 h-4 mr-2" aria-hidden="true" />
+            New Project
+          </Button>
+        </Link>
+        <Link href="/projects">
+          <Button 
+            variant="outline" 
+            className="border-slate-600 text-slate-200 hover:bg-slate-800"
+            aria-label="Browse existing projects"
+          >
+            <FolderOpen className="w-4 h-4 mr-2" aria-hidden="true" />
+            Browse Projects
+          </Button>
+        </Link>
         <Button 
           variant="outline" 
           className="border-slate-600 text-slate-200 hover:bg-slate-800"
