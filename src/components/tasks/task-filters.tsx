@@ -154,7 +154,7 @@ function MultiSelectFilter({
                   >
                     <Checkbox
                       checked={values.includes(option.value)}
-                      onChange={() => handleToggle(option.value)}
+                      onCheckedChange={() => handleToggle(option.value)}
                     />
                     <div className="flex items-center gap-2 flex-1">
                       {option.color && (
