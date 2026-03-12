@@ -21,14 +21,14 @@ export async function GET(request: NextRequest) {
     
     // Parse and validate query parameters
     const parsed = querySchema.safeParse({
-      page: searchParams.get('page'),
-      limit: searchParams.get('limit'),
-      project: searchParams.get('project'),
-      agent: searchParams.get('agent'),
-      activityType: searchParams.get('activityType'),
-      search: searchParams.get('search'),
-      startDate: searchParams.get('startDate'),
-      endDate: searchParams.get('endDate'),
+      page: searchParams.get('page') || undefined,
+      limit: searchParams.get('limit') || undefined,
+      project: searchParams.get('project') || undefined,
+      agent: searchParams.get('agent') || undefined,
+      activityType: searchParams.get('activityType') || undefined,
+      search: searchParams.get('search') || undefined,
+      startDate: searchParams.get('startDate') || undefined,
+      endDate: searchParams.get('endDate') || undefined,
     })
 
     if (!parsed.success) {
