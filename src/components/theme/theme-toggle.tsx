@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Sun, Moon, Monitor, ChevronDown } from 'lucide-react'
 import { useTheme } from '@/contexts/theme-context'

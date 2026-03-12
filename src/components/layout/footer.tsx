@@ -11,7 +11,6 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useTheme } from '@/contexts/theme-context'
-import { useTheme } from '@/contexts/theme-context'
 
 interface FooterProps {
   className?: string
