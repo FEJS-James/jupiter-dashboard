@@ -4,6 +4,25 @@ import { beforeAll, afterEach, afterAll, vi } from 'vitest'
 import { server } from './mocks/server'
 import { mockWebsocketManager } from './mocks/websocket-manager'
 
+// Mock Radix UI Select to prevent pointer capture issues
+vi.mock('@radix-ui/react-select', () => ({
+  Root: ({ children, ...props }: any) => React.createElement('div', { ...props, 'data-testid': 'select-root' }, children),
+  Group: ({ children, ...props }: any) => React.createElement('div', { ...props, 'data-testid': 'select-group' }, children),
+  Value: ({ children, ...props }: any) => React.createElement('span', { ...props, 'data-testid': 'select-value' }, children),
+  Trigger: ({ children, ...props }: any) => React.createElement('button', { ...props, 'data-testid': 'select-trigger' }, children),
+  Portal: ({ children, ...props }: any) => React.createElement('div', { ...props, 'data-testid': 'select-portal' }, children),
+  Content: ({ children, ...props }: any) => React.createElement('div', { ...props, 'data-testid': 'select-content' }, children),
+  Viewport: ({ children, ...props }: any) => React.createElement('div', { ...props, 'data-testid': 'select-viewport' }, children),
+  Item: ({ children, ...props }: any) => React.createElement('div', { ...props, 'data-testid': 'select-item', onClick: props.onSelect }, children),
+  ItemText: ({ children, ...props }: any) => React.createElement('span', { ...props, 'data-testid': 'select-item-text' }, children),
+  ItemIndicator: ({ children, ...props }: any) => React.createElement('span', { ...props, 'data-testid': 'select-item-indicator' }, children),
+  Label: ({ children, ...props }: any) => React.createElement('div', { ...props, 'data-testid': 'select-label' }, children),
+  Separator: ({ children, ...props }: any) => React.createElement('div', { ...props, 'data-testid': 'select-separator' }, children),
+  ScrollUpButton: ({ children, ...props }: any) => React.createElement('button', { ...props, 'data-testid': 'select-scroll-up' }, children),
+  ScrollDownButton: ({ children, ...props }: any) => React.createElement('button', { ...props, 'data-testid': 'select-scroll-down' }, children),
+  Icon: ({ children, ...props }: any) => React.createElement('span', { ...props, 'data-testid': 'select-icon' }, children),
+}))
+
 // Mock framer-motion - MUST be at the top for proper hoisting
 vi.mock('framer-motion', () => {
   const createMockMotionComponent = (element: string) => {
@@ -179,9 +198,18 @@ Object.defineProperty(window, 'PointerEvent', {
   value: class MockPointerEvent extends Event {
     pointerId = 1
     isPrimary = true
+    pointerType = 'mouse'
     constructor(type: string, init?: PointerEventInit) {
-      super(type, init)
-      Object.assign(this, init)
+      super(type, {
+        ...init,
+        // Remove properties that have read-only getters
+        bubbles: init?.bubbles,
+        cancelable: init?.cancelable
+      })
+      // Only set properties that don't conflict with read-only getters
+      if (init?.pointerId !== undefined) this.pointerId = init.pointerId
+      if (init?.isPrimary !== undefined) this.isPrimary = init.isPrimary
+      if (init?.pointerType !== undefined) this.pointerType = init.pointerType
     }
   }
 })
