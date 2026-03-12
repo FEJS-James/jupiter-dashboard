@@ -34,6 +34,17 @@ const createMockRequest = (url: string = mockUrl, method: string = 'GET', body?:
   return request
 }
 
+// Global mock query that can be reused
+const createMockQuery = () => ({
+  leftJoin: vi.fn().mockReturnThis(),
+  orderBy: vi.fn().mockReturnThis(),
+  where: vi.fn().mockReturnThis(),
+  limit: vi.fn().mockReturnThis(),
+  offset: vi.fn().mockReturnThis(),
+})
+
+let mockQuery = createMockQuery()
+
 const mockTasks = [
   {
     id: 1,
@@ -57,6 +68,8 @@ const mockTasks = [
 describe('/api/tasks API Routes', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockQuery = createMockQuery()
+    vi.mocked(db.select).mockReturnValue(mockQuery as any)
   })
 
   afterEach(() => {
@@ -98,15 +111,6 @@ describe('/api/tasks API Routes', () => {
     })
 
     it('applies priority filter when provided', async () => {
-      const mockQuery = {
-        leftJoin: vi.fn().mockReturnThis(),
-        orderBy: vi.fn().mockReturnThis(),
-        where: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockReturnThis(),
-        offset: vi.fn().mockReturnThis(),
-      }
-      
-      vi.mocked(db.select).mockReturnValue(mockQuery as any)
       vi.mocked(mockQuery.leftJoin).mockResolvedValue(mockTasks.filter(t => t.priority === 'high'))
 
       const request = createMockRequest('https://localhost:3000/api/tasks?priority=high')
@@ -127,15 +131,6 @@ describe('/api/tasks API Routes', () => {
     })
 
     it('handles project filter by ID', async () => {
-      const mockQuery = {
-        leftJoin: vi.fn().mockReturnThis(),
-        orderBy: vi.fn().mockReturnThis(),
-        where: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockReturnThis(),
-        offset: vi.fn().mockReturnThis(),
-      }
-      
-      vi.mocked(db.select).mockReturnValue(mockQuery as any)
       vi.mocked(mockQuery.leftJoin).mockResolvedValue(mockTasks.filter(t => t.projectId === 1))
 
       const request = createMockRequest('https://localhost:3000/api/tasks?project=1')
@@ -234,7 +229,7 @@ describe('/api/tasks API Routes', () => {
     it('returns error when assigned agent not found', async () => {
       // Mock: first call for project (found), second call for agent (not found)
       let callCount = 0
-      mockDb.select.mockImplementation(() => {
+      vi.mocked(db.select).mockImplementation(() => {
         const query = createMockQuery()
         callCount++
         if (callCount === 1) {

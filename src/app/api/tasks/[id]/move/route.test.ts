@@ -15,13 +15,19 @@ const mockUpdate = {
   returning: vi.fn().mockResolvedValue([]),
 }
 
-const mockDb = {
-  select: vi.fn(() => createMockQuery()),
-  update: vi.fn(() => mockUpdate),
-}
-
 vi.mock('@/lib/db', () => ({
-  db: mockDb
+  db: {
+    select: vi.fn(() => ({
+      from: vi.fn().mockReturnThis(),
+      where: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockReturnThis(),
+    })),
+    update: vi.fn(() => ({
+      set: vi.fn().mockReturnThis(),
+      where: vi.fn().mockReturnThis(),
+      returning: vi.fn().mockResolvedValue([]),
+    })),
+  }
 }))
 
 // Mock drizzle ORM functions
