@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { notifications, agents, tasks, projects, comments } from '@/lib/schema'
-import { eq, desc, and, isNull, or, sql, count } from 'drizzle-orm'
+import { eq, desc, and, isNull, or, sql, count, type SQL } from 'drizzle-orm'
 import { NotificationType, NotificationPriority } from '@/types'
 import { requireAuth, validateUserAccess, forbiddenResponse } from '@/lib/auth'
 import { z } from 'zod'
@@ -17,7 +17,7 @@ const CreateNotificationSchema = z.object({
   relatedEntityType: z.string().optional(),
   relatedEntityId: z.number().positive().optional(),
   actionUrl: z.string().url().optional().or(z.literal('')),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
   priority: z.enum(['low', 'normal', 'high', 'urgent']).default('normal'),
   expiresAt: z.string().datetime().optional(),
 })
@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit
 
     // Build where conditions
-    let whereConditions = [eq(notifications.recipientId, requestedUserId)]
+    const whereConditions: SQL<unknown>[] = [eq(notifications.recipientId, requestedUserId)]
     
     if (unreadOnly) {
       whereConditions.push(eq(notifications.isRead, false))
@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
       or(
         isNull(notifications.expiresAt),
         sql`${notifications.expiresAt} > unixepoch()`
-      )
+      )!
     )
 
     // Get notifications with relations

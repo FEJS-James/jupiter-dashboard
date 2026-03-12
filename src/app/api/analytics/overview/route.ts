@@ -2,65 +2,91 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { tasks, agents, projects, activity } from '@/lib/schema'
 import { count, sql, eq, gte, and } from 'drizzle-orm'
+import { requireAuth } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
   try {
+    // Authentication check
+    const { session, error } = requireAuth(request)
+    if (error) {
+      return error
+    }
+
     const { searchParams } = new URL(request.url)
     const startDate = searchParams.get('startDate')
     const endDate = searchParams.get('endDate')
     
-    // Build date filter
-    let dateFilter = undefined
-    if (startDate && endDate) {
-      const start = new Date(startDate)
-      const end = new Date(endDate)
-      dateFilter = and(
-        sql`${tasks.createdAt} >= ${start.toISOString()}`,
-        sql`${tasks.updatedAt} <= ${end.toISOString()}`
-      )
+    // Input validation
+    if (startDate && isNaN(Date.parse(startDate))) {
+      return NextResponse.json({ error: 'Invalid startDate' }, { status: 400 })
+    }
+    if (endDate && isNaN(Date.parse(endDate))) {
+      return NextResponse.json({ error: 'Invalid endDate' }, { status: 400 })
+    }
+    
+    // Build separate date filters for creation and completion metrics
+    let creationFilter = undefined
+    let completionFilter = undefined
+    
+    if (startDate || endDate) {
+      if (startDate) {
+        creationFilter = sql`${tasks.createdAt} >= ${new Date(startDate).toISOString()}`
+        completionFilter = sql`${tasks.updatedAt} >= ${new Date(startDate).toISOString()}`
+      }
+      if (endDate) {
+        const endCreationFilter = sql`${tasks.createdAt} <= ${new Date(endDate).toISOString()}`
+        const endCompletionFilter = sql`${tasks.updatedAt} <= ${new Date(endDate).toISOString()}`
+        
+        creationFilter = creationFilter 
+          ? and(creationFilter, endCreationFilter) 
+          : endCreationFilter
+        completionFilter = completionFilter 
+          ? and(completionFilter, endCompletionFilter) 
+          : endCompletionFilter
+      }
     }
 
-    // Total tasks
+    // Total tasks (based on creation date)
     const totalTasksResult = await db
       .select({ count: count() })
       .from(tasks)
-      .where(dateFilter)
+      .where(creationFilter)
     
     const totalTasks = totalTasksResult[0]?.count || 0
 
-    // Completed tasks
+    // Completed tasks (based on completion date)
     const completedTasksResult = await db
       .select({ count: count() })
       .from(tasks)
       .where(
-        dateFilter 
-          ? and(eq(tasks.status, 'done'), dateFilter)
+        completionFilter 
+          ? and(eq(tasks.status, 'done'), completionFilter)
           : eq(tasks.status, 'done')
       )
     
     const completedTasks = completedTasksResult[0]?.count || 0
 
-    // In-progress tasks
+    // In-progress tasks (based on creation date)
     const inProgressResult = await db
       .select({ count: count() })
       .from(tasks)
       .where(
-        dateFilter 
-          ? and(eq(tasks.status, 'in-progress'), dateFilter)
+        creationFilter 
+          ? and(eq(tasks.status, 'in-progress'), creationFilter)
           : eq(tasks.status, 'in-progress')
       )
     
     const inProgressTasks = inProgressResult[0]?.count || 0
 
-    // Average completion time (for completed tasks)
+    // Average completion time (for completed tasks, based on completion date)
     const avgCompletionResult = await db
       .select({
         avgDays: sql<number>`AVG((julianday(${tasks.updatedAt}) - julianday(${tasks.createdAt})))`
       })
       .from(tasks)
       .where(
-        dateFilter 
-          ? and(eq(tasks.status, 'done'), dateFilter)
+        completionFilter 
+          ? and(eq(tasks.status, 'done'), completionFilter)
           : eq(tasks.status, 'done')
       )
     

@@ -3,39 +3,64 @@ import { db } from '@/lib/db'
 import { tasks, comments, activity, agents } from '@/lib/schema'
 import { count, sql, eq, gte, and, desc } from 'drizzle-orm'
 import { format, subDays, startOfWeek, startOfDay } from 'date-fns'
+import { requireAuth } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
   try {
+    // Authentication check
+    const { session, error } = requireAuth(request)
+    if (error) {
+      return error
+    }
+
     const { searchParams } = new URL(request.url)
     const startDate = searchParams.get('startDate')
     const endDate = searchParams.get('endDate')
     
-    // Build date filter
-    let dateFilter = undefined
+    // Input validation
+    if (startDate && isNaN(Date.parse(startDate))) {
+      return NextResponse.json({ error: 'Invalid startDate' }, { status: 400 })
+    }
+    if (endDate && isNaN(Date.parse(endDate))) {
+      return NextResponse.json({ error: 'Invalid endDate' }, { status: 400 })
+    }
+    
+    // Build separate date filters for different data sources
+    let taskCreationFilter = undefined
     let commentDateFilter = undefined
     let activityDateFilter = undefined
     
-    if (startDate && endDate) {
-      const start = new Date(startDate)
-      const end = new Date(endDate)
-      commentDateFilter = and(
-        sql`${comments.timestamp} >= ${start.toISOString()}`,
-        sql`${comments.timestamp} <= ${end.toISOString()}`
-      )
-      activityDateFilter = and(
-        sql`${activity.timestamp} >= ${start.toISOString()}`,
-        sql`${activity.timestamp} <= ${end.toISOString()}`
-      )
+    if (startDate || endDate) {
+      if (startDate) {
+        taskCreationFilter = sql`${tasks.createdAt} >= ${new Date(startDate).toISOString()}`
+        commentDateFilter = sql`${comments.timestamp} >= ${new Date(startDate).toISOString()}`
+        activityDateFilter = sql`${activity.timestamp} >= ${new Date(startDate).toISOString()}`
+      }
+      if (endDate) {
+        const endTaskFilter = sql`${tasks.createdAt} <= ${new Date(endDate).toISOString()}`
+        const endCommentFilter = sql`${comments.timestamp} <= ${new Date(endDate).toISOString()}`
+        const endActivityFilter = sql`${activity.timestamp} <= ${new Date(endDate).toISOString()}`
+        
+        taskCreationFilter = taskCreationFilter 
+          ? and(taskCreationFilter, endTaskFilter) 
+          : endTaskFilter
+        commentDateFilter = commentDateFilter 
+          ? and(commentDateFilter, endCommentFilter) 
+          : endCommentFilter
+        activityDateFilter = activityDateFilter 
+          ? and(activityDateFilter, endActivityFilter) 
+          : endActivityFilter
+      }
     }
 
-    // Task priority distribution
+    // Task priority distribution (use task creation filter)
     const priorityDistribution = await db
       .select({
         priority: tasks.priority,
         count: count(tasks.id)
       })
       .from(tasks)
-      .where(startDate ? sql`${tasks.createdAt} >= ${new Date(startDate).toISOString()}` : undefined)
+      .where(taskCreationFilter)
       .groupBy(tasks.priority)
       .orderBy(tasks.priority)
 

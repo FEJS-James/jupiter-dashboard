@@ -71,7 +71,7 @@ export class NotificationService {
           .where(
             and(
               eq(notificationPreferences.agentId, data.recipientId),
-              eq(notificationPreferences.notificationType, data.type)
+              eq(notificationPreferences.notificationType, data.type as typeof notificationPreferences.notificationType.enumValues[number])
             )
           )
           .limit(1)
@@ -126,7 +126,7 @@ export class NotificationService {
           .where(
             and(
               inArray(notificationPreferences.agentId, recipientIds),
-              eq(notificationPreferences.notificationType, baseData.type)
+              eq(notificationPreferences.notificationType, baseData.type as typeof notificationPreferences.notificationType.enumValues[number])
             )
           )
 

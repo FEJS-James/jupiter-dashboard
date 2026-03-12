@@ -3,12 +3,28 @@ import { db } from '@/lib/db'
 import { tasks, activity } from '@/lib/schema'
 import { count, sql, eq, gte, and, desc } from 'drizzle-orm'
 import { format, subDays, startOfDay } from 'date-fns'
+import { requireAuth } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
   try {
+    // Authentication check
+    const { session, error } = requireAuth(request)
+    if (error) {
+      return error
+    }
+
     const { searchParams } = new URL(request.url)
-    const days = parseInt(searchParams.get('days') || '30')
+    const daysParam = searchParams.get('days') || '30'
     const period = searchParams.get('period') || 'day' // day, week, month
+    
+    // Input validation
+    const days = parseInt(daysParam)
+    if (isNaN(days) || days <= 0 || days > 365) {
+      return NextResponse.json({ error: 'Invalid days parameter (must be 1-365)' }, { status: 400 })
+    }
+    if (!['day', 'week', 'month'].includes(period)) {
+      return NextResponse.json({ error: 'Invalid period parameter (must be day, week, or month)' }, { status: 400 })
+    }
     
     const endDate = startOfDay(new Date())
     const startDate = startOfDay(subDays(endDate, days))

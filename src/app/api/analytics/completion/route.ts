@@ -2,26 +2,52 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { tasks, projects } from '@/lib/schema'
 import { count, sql, eq, gte, and } from 'drizzle-orm'
+import { requireAuth } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
   try {
+    // Authentication check
+    const { session, error } = requireAuth(request)
+    if (error) {
+      return error
+    }
+
     const { searchParams } = new URL(request.url)
     const startDate = searchParams.get('startDate')
     const endDate = searchParams.get('endDate')
     
-    // Build date filter
-    let dateFilter = undefined
-    if (startDate && endDate) {
-      const start = new Date(startDate)
-      const end = new Date(endDate)
-      dateFilter = and(
-        sql`${tasks.createdAt} >= ${start.toISOString()}`,
-        sql`${tasks.updatedAt} <= ${end.toISOString()}`
-      )
+    // Input validation
+    if (startDate && isNaN(Date.parse(startDate))) {
+      return NextResponse.json({ error: 'Invalid startDate' }, { status: 400 })
+    }
+    if (endDate && isNaN(Date.parse(endDate))) {
+      return NextResponse.json({ error: 'Invalid endDate' }, { status: 400 })
+    }
+    
+    // Build separate date filters for creation and completion metrics
+    let creationFilter = undefined
+    let completionFilter = undefined
+    
+    if (startDate || endDate) {
+      if (startDate) {
+        creationFilter = sql`${tasks.createdAt} >= ${new Date(startDate).toISOString()}`
+        completionFilter = sql`${tasks.updatedAt} >= ${new Date(startDate).toISOString()}`
+      }
+      if (endDate) {
+        const endCreationFilter = sql`${tasks.createdAt} <= ${new Date(endDate).toISOString()}`
+        const endCompletionFilter = sql`${tasks.updatedAt} <= ${new Date(endDate).toISOString()}`
+        
+        creationFilter = creationFilter 
+          ? and(creationFilter, endCreationFilter) 
+          : endCreationFilter
+        completionFilter = completionFilter 
+          ? and(completionFilter, endCompletionFilter) 
+          : endCompletionFilter
+      }
     }
 
     // Completion rate by priority
-    const priorities = ['low', 'medium', 'high', 'urgent']
+    const priorities: Array<'low' | 'medium' | 'high' | 'urgent'> = ['low', 'medium', 'high', 'urgent']
     const completionByPriority = []
 
     for (const priority of priorities) {
@@ -29,18 +55,18 @@ export async function GET(request: NextRequest) {
         .select({ count: count() })
         .from(tasks)
         .where(
-          dateFilter 
-            ? and(eq(tasks.priority, priority as any), dateFilter)
-            : eq(tasks.priority, priority as any)
+          creationFilter 
+            ? and(eq(tasks.priority, priority), creationFilter)
+            : eq(tasks.priority, priority)
         )
 
       const completedResult = await db
         .select({ count: count() })
         .from(tasks)
         .where(
-          dateFilter 
-            ? and(eq(tasks.priority, priority as any), eq(tasks.status, 'done'), dateFilter)
-            : and(eq(tasks.priority, priority as any), eq(tasks.status, 'done'))
+          completionFilter 
+            ? and(eq(tasks.priority, priority), eq(tasks.status, 'done'), completionFilter)
+            : and(eq(tasks.priority, priority), eq(tasks.status, 'done'))
         )
 
       const total = totalResult[0]?.count || 0
@@ -55,35 +81,50 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Completion rate by project  
-    const completionByProject = await db
+    // Completion rate by project (use creation filter for total, completion filter for completed)
+    const projectTotals = await db
       .select({
         projectId: tasks.projectId,
         projectName: projects.name,
-        total: count(),
-        completed: sql<number>`SUM(CASE WHEN ${tasks.status} = 'done' THEN 1 ELSE 0 END)`
+        total: count()
       })
       .from(tasks)
       .leftJoin(projects, eq(tasks.projectId, projects.id))
-      .where(dateFilter)
+      .where(creationFilter)
       .groupBy(tasks.projectId, projects.name)
-      .orderBy(projects.name)
 
-    const projectCompletionData = completionByProject.map(project => ({
-      projectName: project.projectName || 'Unknown Project',
-      total: project.total,
-      completed: Number(project.completed),
-      rate: project.total > 0 ? Math.round((Number(project.completed) / project.total) * 10000) / 100 : 0
-    }))
+    const projectCompleted = await db
+      .select({
+        projectId: tasks.projectId,
+        completed: count()
+      })
+      .from(tasks)
+      .where(
+        completionFilter 
+          ? and(eq(tasks.status, 'done'), completionFilter)
+          : eq(tasks.status, 'done')
+      )
+      .groupBy(tasks.projectId)
 
-    // Status distribution (funnel)
+    const projectCompletionData = projectTotals.map(project => {
+      const completedData = projectCompleted.find(c => c.projectId === project.projectId)
+      const completed = completedData?.completed || 0
+      return {
+        projectName: project.projectName || 'Unknown Project',
+        total: project.total,
+        completed,
+        rate: project.total > 0 ? Math.round((completed / project.total) * 10000) / 100 : 0
+      }
+    })
+
+    // Status distribution (funnel) - use creation filter
     const statusDistribution = await db
       .select({
         status: tasks.status,
         count: count()
       })
       .from(tasks)
-      .where(dateFilter)
+      .where(creationFilter)
       .groupBy(tasks.status)
       .orderBy(tasks.status)
 
@@ -98,7 +139,7 @@ export async function GET(request: NextRequest) {
       item.percentage = totalStatusTasks > 0 ? Math.round((item.count / totalStatusTasks) * 10000) / 100 : 0
     })
 
-    // Time to completion distribution
+    // Time to completion distribution - use completion filter for completed tasks
     const completionTimeData = await db
       .select({
         taskId: tasks.id,
@@ -110,8 +151,8 @@ export async function GET(request: NextRequest) {
       })
       .from(tasks)
       .where(
-        dateFilter 
-          ? and(eq(tasks.status, 'done'), dateFilter)
+        completionFilter 
+          ? and(eq(tasks.status, 'done'), completionFilter)
           : eq(tasks.status, 'done')
       )
       .orderBy(sql`julianday(${tasks.updatedAt}) - julianday(${tasks.createdAt})`)
@@ -136,7 +177,7 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    // Tasks stuck in each status (aging analysis)
+    // Tasks stuck in each status (aging analysis) - use creation filter for in-progress tasks
     const now = new Date()
     const agingTasks = await db
       .select({
@@ -147,8 +188,8 @@ export async function GET(request: NextRequest) {
       })
       .from(tasks)
       .where(
-        dateFilter 
-          ? and(sql`${tasks.status} != 'done'`, dateFilter)
+        creationFilter 
+          ? and(sql`${tasks.status} != 'done'`, creationFilter)
           : sql`${tasks.status} != 'done'`
       )
       .having(sql`julianday('now') - julianday(${tasks.updatedAt}) > 7`) // Tasks stuck for more than 7 days

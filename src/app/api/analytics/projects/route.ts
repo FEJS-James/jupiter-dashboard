@@ -3,25 +3,51 @@ import { db } from '@/lib/db'
 import { tasks, projects, activity } from '@/lib/schema'
 import { count, sql, eq, gte, and, desc } from 'drizzle-orm'
 import { format, subDays } from 'date-fns'
+import { requireAuth } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
   try {
+    // Authentication check
+    const { session, error } = requireAuth(request)
+    if (error) {
+      return error
+    }
+
     const { searchParams } = new URL(request.url)
     const startDate = searchParams.get('startDate')
     const endDate = searchParams.get('endDate')
     
-    // Build date filter
-    let dateFilter = undefined
-    if (startDate && endDate) {
-      const start = new Date(startDate)
-      const end = new Date(endDate)
-      dateFilter = and(
-        sql`${tasks.createdAt} >= ${start.toISOString()}`,
-        sql`${tasks.updatedAt} <= ${end.toISOString()}`
-      )
+    // Input validation
+    if (startDate && isNaN(Date.parse(startDate))) {
+      return NextResponse.json({ error: 'Invalid startDate' }, { status: 400 })
+    }
+    if (endDate && isNaN(Date.parse(endDate))) {
+      return NextResponse.json({ error: 'Invalid endDate' }, { status: 400 })
+    }
+    
+    // Build separate date filters for creation and completion/activity metrics
+    let creationFilter = undefined
+    let activityFilter = undefined
+    
+    if (startDate || endDate) {
+      if (startDate) {
+        creationFilter = sql`${tasks.createdAt} >= ${new Date(startDate).toISOString()}`
+        activityFilter = sql`${activity.timestamp} >= ${new Date(startDate).toISOString()}`
+      }
+      if (endDate) {
+        const endCreationFilter = sql`${tasks.createdAt} <= ${new Date(endDate).toISOString()}`
+        const endActivityFilter = sql`${activity.timestamp} <= ${new Date(endDate).toISOString()}`
+        
+        creationFilter = creationFilter 
+          ? and(creationFilter, endCreationFilter) 
+          : endCreationFilter
+        activityFilter = activityFilter 
+          ? and(activityFilter, endActivityFilter) 
+          : endActivityFilter
+      }
     }
 
-    // Project progress tracking
+    // Project progress tracking (use creation filter for task counts)
     const projectProgress = await db
       .select({
         projectId: projects.id,
@@ -37,7 +63,7 @@ export async function GET(request: NextRequest) {
       })
       .from(projects)
       .leftJoin(tasks, eq(projects.id, tasks.projectId))
-      .where(dateFilter ? sql`(${tasks.id} IS NULL OR (${dateFilter}))` : undefined)
+      .where(creationFilter ? sql`(${tasks.id} IS NULL OR (${creationFilter}))` : undefined)
       .groupBy(projects.id, projects.name, projects.status, projects.createdAt, projects.updatedAt)
       .orderBy(projects.name)
 
@@ -55,8 +81,8 @@ export async function GET(request: NextRequest) {
       updatedAt: project.updatedAt
     }))
 
-    // Project velocity comparison (tasks completed over time)
-    const last30Days = subDays(new Date(), 30)
+    // Project velocity comparison (tasks completed over time - use activity filter or default to last 30 days)
+    const velocityStartDate = activityFilter ? new Date(startDate!) : subDays(new Date(), 30)
     const projectVelocity = await db
       .select({
         projectId: projects.id,
@@ -70,7 +96,7 @@ export async function GET(request: NextRequest) {
         eq(activity.taskId, tasks.id),
         eq(activity.action, 'status_changed'),
         sql`JSON_EXTRACT(${activity.details}, '$.to') = 'done'`,
-        sql`${activity.timestamp} >= ${last30Days.toISOString()}`
+        activityFilter || sql`${activity.timestamp} >= ${velocityStartDate.toISOString()}`
       ))
       .groupBy(projects.id, projects.name)
       .orderBy(desc(count(activity.id)))
@@ -83,7 +109,7 @@ export async function GET(request: NextRequest) {
       velocity: project.completedInPeriod > 0 ? 'High' : 'Low'
     }))
 
-    // Tasks per project breakdown with priorities
+    // Tasks per project breakdown with priorities (use creation filter)
     const taskBreakdown = await db
       .select({
         projectId: projects.id,
@@ -94,7 +120,7 @@ export async function GET(request: NextRequest) {
       })
       .from(projects)
       .leftJoin(tasks, eq(projects.id, tasks.projectId))
-      .where(dateFilter)
+      .where(creationFilter)
       .groupBy(projects.id, projects.name, tasks.priority, tasks.status)
       .orderBy(projects.name, tasks.priority)
 
@@ -121,7 +147,7 @@ export async function GET(request: NextRequest) {
 
     const taskBreakdownData = Array.from(projectTaskBreakdown.values())
 
-    // Project timeline and milestones (based on task due dates)
+    // Project timeline and milestones (based on task due dates - use creation filter)
     const projectTimelines = await db
       .select({
         projectId: projects.id,
@@ -135,7 +161,7 @@ export async function GET(request: NextRequest) {
       })
       .from(projects)
       .leftJoin(tasks, eq(projects.id, tasks.projectId))
-      .where(dateFilter)
+      .where(creationFilter)
       .groupBy(projects.id, projects.name, projects.status)
       .orderBy(projects.name)
 
@@ -158,7 +184,7 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    // Cross-project resource allocation (agents working on multiple projects)
+    // Cross-project resource allocation (agents working on multiple projects - use creation filter)
     const resourceAllocation = await db
       .select({
         projectId: projects.id,
@@ -170,7 +196,7 @@ export async function GET(request: NextRequest) {
       .leftJoin(tasks, eq(projects.id, tasks.projectId))
       .where(and(
         sql`${tasks.assignedAgent} IS NOT NULL`,
-        dateFilter || sql`${tasks.status} != 'done'`
+        creationFilter || sql`${tasks.status} != 'done'`
       ))
       .groupBy(projects.id, projects.name, tasks.assignedAgent)
       .orderBy(projects.name, desc(count(tasks.id)))

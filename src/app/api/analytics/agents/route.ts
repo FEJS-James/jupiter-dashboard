@@ -2,25 +2,51 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { tasks, agents, activity } from '@/lib/schema'
 import { count, sql, eq, gte, and, desc } from 'drizzle-orm'
+import { requireAuth } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
   try {
+    // Authentication check
+    const { session, error } = requireAuth(request)
+    if (error) {
+      return error
+    }
+
     const { searchParams } = new URL(request.url)
     const startDate = searchParams.get('startDate')
     const endDate = searchParams.get('endDate')
     
-    // Build date filter
-    let dateFilter = undefined
-    if (startDate && endDate) {
-      const start = new Date(startDate)
-      const end = new Date(endDate)
-      dateFilter = and(
-        sql`${tasks.createdAt} >= ${start.toISOString()}`,
-        sql`${tasks.updatedAt} <= ${end.toISOString()}`
-      )
+    // Input validation
+    if (startDate && isNaN(Date.parse(startDate))) {
+      return NextResponse.json({ error: 'Invalid startDate' }, { status: 400 })
+    }
+    if (endDate && isNaN(Date.parse(endDate))) {
+      return NextResponse.json({ error: 'Invalid endDate' }, { status: 400 })
+    }
+    
+    // Build separate date filters for creation and completion/activity metrics
+    let creationFilter = undefined
+    let activityFilter = undefined
+    
+    if (startDate || endDate) {
+      if (startDate) {
+        creationFilter = sql`${tasks.createdAt} >= ${new Date(startDate).toISOString()}`
+        activityFilter = sql`${activity.timestamp} >= ${new Date(startDate).toISOString()}`
+      }
+      if (endDate) {
+        const endCreationFilter = sql`${tasks.createdAt} <= ${new Date(endDate).toISOString()}`
+        const endActivityFilter = sql`${activity.timestamp} <= ${new Date(endDate).toISOString()}`
+        
+        creationFilter = creationFilter 
+          ? and(creationFilter, endCreationFilter) 
+          : endCreationFilter
+        activityFilter = activityFilter 
+          ? and(activityFilter, endActivityFilter) 
+          : endActivityFilter
+      }
     }
 
-    // Tasks assigned per agent (current assignment)
+    // Tasks assigned per agent (use creation filter for task assignment)
     const tasksPerAgent = await db
       .select({
         agentName: agents.name,
@@ -33,7 +59,7 @@ export async function GET(request: NextRequest) {
       })
       .from(agents)
       .leftJoin(tasks, eq(agents.name, tasks.assignedAgent))
-      .where(dateFilter ? sql`(${tasks.id} IS NULL OR (${dateFilter}))` : undefined)
+      .where(creationFilter ? sql`(${tasks.id} IS NULL OR (${creationFilter}))` : undefined)
       .groupBy(agents.id, agents.name, agents.role, agents.color, agents.status)
       .orderBy(desc(count(tasks.id)))
 
@@ -48,7 +74,7 @@ export async function GET(request: NextRequest) {
       completionRate: agent.activeTasks > 0 ? Math.round((Number(agent.completed) / agent.activeTasks) * 10000) / 100 : 0
     }))
 
-    // Agent productivity metrics (tasks completed in time period)
+    // Agent productivity metrics (tasks completed in time period - use activity filter)
     const productivityData = await db
       .select({
         agentName: agents.name,
@@ -62,7 +88,7 @@ export async function GET(request: NextRequest) {
       .where(and(
         eq(activity.action, 'status_changed'),
         sql`JSON_EXTRACT(${activity.details}, '$.to') = 'done'`,
-        dateFilter ? sql`${activity.timestamp} >= ${new Date(startDate!).toISOString()}` : sql`1=1`
+        activityFilter || sql`1=1`
       ))
       .groupBy(agents.id, agents.name, agents.role)
       .orderBy(desc(count(activity.id)))
@@ -102,7 +128,7 @@ export async function GET(request: NextRequest) {
       capacity: agent.status === 'busy' ? 'Full' : agent.status === 'available' ? 'Available' : 'Offline'
     }))
 
-    // Peak activity analysis (when agents are most active)
+    // Peak activity analysis (when agents are most active - use activity filter)
     const activityByHour = await db
       .select({
         hour: sql<number>`CAST(strftime('%H', ${activity.timestamp}) AS INTEGER)`,
@@ -110,7 +136,7 @@ export async function GET(request: NextRequest) {
         agentCount: sql<number>`COUNT(DISTINCT ${activity.agentId})`
       })
       .from(activity)
-      .where(dateFilter ? gte(activity.timestamp, new Date(startDate!)) : sql`1=1`)
+      .where(activityFilter || sql`1=1`)
       .groupBy(sql`strftime('%H', ${activity.timestamp})`)
       .orderBy(sql`CAST(strftime('%H', ${activity.timestamp}) AS INTEGER)`)
 
@@ -123,7 +149,7 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    // Agent collaboration metrics (shared tasks/projects)
+    // Agent collaboration metrics (shared tasks/projects - use creation filter)
     const collaborationData = await db
       .select({
         projectId: tasks.projectId,
@@ -132,11 +158,11 @@ export async function GET(request: NextRequest) {
       })
       .from(tasks)
       .leftJoin(agents, eq(tasks.assignedAgent, agents.name))
-      .where(dateFilter)
+      .where(creationFilter)
       .groupBy(tasks.projectId, agents.name)
       .having(sql`COUNT(${tasks.id}) > 0`)
 
-    // Calculate task switching frequency (how often agents change tasks)
+    // Calculate task switching frequency (how often agents change tasks - use activity filter)
     const taskSwitches = await db
       .select({
         agentId: activity.agentId,
@@ -147,7 +173,7 @@ export async function GET(request: NextRequest) {
       .leftJoin(agents, eq(activity.agentId, agents.id))
       .where(and(
         eq(activity.action, 'assigned'),
-        dateFilter ? sql`${activity.timestamp} >= ${new Date(startDate!).toISOString()}` : sql`1=1`
+        activityFilter || sql`1=1`
       ))
       .groupBy(activity.agentId, agents.name)
       .orderBy(desc(count(activity.id)))

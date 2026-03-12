@@ -10,7 +10,7 @@ import { z } from 'zod'
 const PreferenceUpdateSchema = z.object({
   agentId: z.number().positive(),
   preferences: z.array(z.object({
-    notificationType: z.string(),
+    notificationType: z.enum(['task_assigned', 'task_reassigned', 'task_status_changed', 'task_priority_changed', 'comment_added', 'comment_mention', 'comment_reply', 'project_task_added', 'project_updated', 'system_announcement']),
     enabled: z.boolean().optional(),
     emailEnabled: z.boolean().optional(),
     pushEnabled: z.boolean().optional(),
@@ -186,7 +186,7 @@ export async function PUT(request: NextRequest) {
         .where(
           and(
             eq(notificationPreferences.agentId, agentId),
-            eq(notificationPreferences.notificationType, notificationType)
+            eq(notificationPreferences.notificationType, notificationType as NotificationType)
           )
         )
         .limit(1)
