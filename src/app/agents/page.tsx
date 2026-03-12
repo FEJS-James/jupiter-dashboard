@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Plus, Search, Filter, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,7 +32,7 @@ export default function AgentsPage() {
   const [statusFilter, setStatusFilter] = useState<AgentStatus | 'all'>('all');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
 
-  const fetchAgents = async () => {
+  const fetchAgents = useCallback(async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
@@ -55,11 +55,11 @@ export default function AgentsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchQuery, roleFilter, statusFilter]);
 
   useEffect(() => {
     fetchAgents();
-  }, [searchQuery, roleFilter, statusFilter]);
+  }, [fetchAgents]);
 
   const handleAgentCreated = (newAgent: Agent) => {
     setAgents(prev => [...prev, { ...newAgent, taskCounts: { total: 0, active: 0 } }]);
@@ -80,16 +80,8 @@ export default function AgentsPage() {
     toast.success('Agent updated successfully');
   };
 
-  const filteredAgents = agents.filter(agent => {
-    const matchesSearch = searchQuery === '' || 
-      agent.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      agent.role.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesRole = roleFilter === 'all' || agent.role === roleFilter;
-    const matchesStatus = statusFilter === 'all' || agent.status === statusFilter;
-    
-    return matchesSearch && matchesRole && matchesStatus;
-  });
+  // No client-side filtering needed since server-side filtering is already applied
+  const filteredAgents = agents;
 
   const getStatusColor = (status: AgentStatus) => {
     switch (status) {

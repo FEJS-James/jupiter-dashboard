@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
       throw error;
     }
     
-    // Build query - simpler approach
+    // Build query with conditional filtering
     const baseSelect = {
       id: agents.id,
       name: agents.name,
@@ -46,108 +46,24 @@ export async function GET(request: NextRequest) {
       updatedAt: agents.updatedAt,
     };
     
-    let allAgents;
+    // Build where conditions dynamically
+    let conditions = [];
+    if (filters.role) conditions.push(eq(agents.role, filters.role));
+    if (filters.status) conditions.push(eq(agents.status, filters.status));
+    if (filters.search) conditions.push(or(
+      like(agents.name, `%${filters.search}%`),
+      like(agents.role, `%${filters.search}%`)
+    ));
     
-    // Apply filters conditionally
-    if (filters.role && filters.status && filters.search) {
-      allAgents = await db
-        .select(baseSelect)
-        .from(agents)
-        .where(
-          and(
-            eq(agents.role, filters.role),
-            eq(agents.status, filters.status),
-            or(
-              like(agents.name, `%${filters.search}%`),
-              like(agents.role, `%${filters.search}%`)
-            )
-          )
-        )
-        .orderBy(agents.name)
-        .limit(filters.limit || 100)
-        .offset(filters.offset || 0);
-    } else if (filters.role && filters.status) {
-      allAgents = await db
-        .select(baseSelect)
-        .from(agents)
-        .where(
-          and(
-            eq(agents.role, filters.role),
-            eq(agents.status, filters.status)
-          )
-        )
-        .orderBy(agents.name)
-        .limit(filters.limit || 100)
-        .offset(filters.offset || 0);
-    } else if (filters.role && filters.search) {
-      allAgents = await db
-        .select(baseSelect)
-        .from(agents)
-        .where(
-          and(
-            eq(agents.role, filters.role),
-            or(
-              like(agents.name, `%${filters.search}%`),
-              like(agents.role, `%${filters.search}%`)
-            )
-          )
-        )
-        .orderBy(agents.name)
-        .limit(filters.limit || 100)
-        .offset(filters.offset || 0);
-    } else if (filters.status && filters.search) {
-      allAgents = await db
-        .select(baseSelect)
-        .from(agents)
-        .where(
-          and(
-            eq(agents.status, filters.status),
-            or(
-              like(agents.name, `%${filters.search}%`),
-              like(agents.role, `%${filters.search}%`)
-            )
-          )
-        )
-        .orderBy(agents.name)
-        .limit(filters.limit || 100)
-        .offset(filters.offset || 0);
-    } else if (filters.role) {
-      allAgents = await db
-        .select(baseSelect)
-        .from(agents)
-        .where(eq(agents.role, filters.role))
-        .orderBy(agents.name)
-        .limit(filters.limit || 100)
-        .offset(filters.offset || 0);
-    } else if (filters.status) {
-      allAgents = await db
-        .select(baseSelect)
-        .from(agents)
-        .where(eq(agents.status, filters.status))
-        .orderBy(agents.name)
-        .limit(filters.limit || 100)
-        .offset(filters.offset || 0);
-    } else if (filters.search) {
-      allAgents = await db
-        .select(baseSelect)
-        .from(agents)
-        .where(
-          or(
-            like(agents.name, `%${filters.search}%`),
-            like(agents.role, `%${filters.search}%`)
-          )
-        )
-        .orderBy(agents.name)
-        .limit(filters.limit || 100)
-        .offset(filters.offset || 0);
-    } else {
-      allAgents = await db
-        .select(baseSelect)
-        .from(agents)
-        .orderBy(agents.name)
-        .limit(filters.limit || 100)
-        .offset(filters.offset || 0);
-    }
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+    
+    const allAgents = await db
+      .select(baseSelect)
+      .from(agents)
+      .where(whereClause)
+      .orderBy(agents.name)
+      .limit(filters.limit || 100)
+      .offset(filters.offset || 0);
     
     // Get task counts for each agent
     const agentsWithCounts = await Promise.all(

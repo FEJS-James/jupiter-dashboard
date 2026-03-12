@@ -8,9 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
 import { EditAgentDialog } from '@/components/agents/edit-agent-dialog';
-import { Agent, AgentRole, AgentStatus, Task } from '@/types';
+import { Agent, AgentRole, AgentStatus } from '@/types';
 import { toast } from 'sonner';
 
 interface AgentWithStats extends Agent {
