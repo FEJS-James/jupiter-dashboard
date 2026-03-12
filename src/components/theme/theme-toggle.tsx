@@ -103,9 +103,13 @@ export function ThemeToggle({
         {dropdownOpen && (
           <>
             {/* Backdrop */}
-            <div
+            <motion.div
               className="fixed inset-0 z-10"
               onClick={() => setDropdownOpen(false)}
+              data-testid="dropdown-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
             />
             
             {/* Dropdown */}

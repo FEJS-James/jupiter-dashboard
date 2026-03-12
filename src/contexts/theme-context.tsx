@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useEffect, useState } from 'react'
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react'
 
 type Theme = 'light' | 'dark' | 'system'
 
@@ -27,7 +27,7 @@ interface ThemeProviderProps {
 
 export function ThemeProvider({ children }: ThemeProviderProps) {
   const [theme, setThemeState] = useState<Theme>('system')
-  const [actualTheme, setActualTheme] = useState<'light' | 'dark'>('dark')
+  const [actualTheme, setActualTheme] = useState<'light' | 'dark'>('light')
 
   // Get system theme preference
   const getSystemTheme = (): 'light' | 'dark' => {
@@ -36,7 +36,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   }
 
   // Update actual theme based on theme setting and system preference
-  const updateActualTheme = (themeValue: Theme) => {
+  const updateActualTheme = useCallback((themeValue: Theme) => {
     const newActualTheme = themeValue === 'system' ? getSystemTheme() : themeValue
     setActualTheme(newActualTheme)
     
@@ -50,24 +50,26 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
       html.classList.add('light')
       html.classList.remove('dark')
     }
-  }
+  }, [])
 
   // Set theme with localStorage persistence
-  const setTheme = (newTheme: Theme) => {
+  const setTheme = useCallback((newTheme: Theme) => {
     setThemeState(newTheme)
     localStorage.setItem('theme', newTheme)
     updateActualTheme(newTheme)
-  }
+  }, [updateActualTheme])
 
   // Toggle between light and dark (skips system)
-  const toggleTheme = () => {
+  const toggleTheme = useCallback(() => {
     if (theme === 'system') {
+      // When toggling from system, go to the opposite of what system currently shows
       const systemTheme = getSystemTheme()
       setTheme(systemTheme === 'dark' ? 'light' : 'dark')
     } else {
-      setTheme(theme === 'dark' ? 'light' : 'dark')
+      // Toggle between explicit light and dark using actualTheme for consistency
+      setTheme(actualTheme === 'dark' ? 'light' : 'dark')
     }
-  }
+  }, [theme, actualTheme, setTheme])
 
   // Initialize theme on mount
   useEffect(() => {
@@ -81,9 +83,13 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     // Listen for system theme changes
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
     const handleSystemThemeChange = () => {
-      if (theme === 'system') {
-        updateActualTheme('system')
-      }
+      // Use the current theme state by checking it directly
+      setThemeState(currentTheme => {
+        if (currentTheme === 'system') {
+          updateActualTheme('system')
+        }
+        return currentTheme
+      })
     }
 
     mediaQuery.addEventListener('change', handleSystemThemeChange)
@@ -91,12 +97,12 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     return () => {
       mediaQuery.removeEventListener('change', handleSystemThemeChange)
     }
-  }, [])
+  }, [updateActualTheme])
 
   // Update actual theme when theme state changes
   useEffect(() => {
     updateActualTheme(theme)
-  }, [theme])
+  }, [theme, updateActualTheme])
 
   return (
     <ThemeContext.Provider value={{

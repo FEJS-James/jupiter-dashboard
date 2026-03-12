@@ -56,19 +56,19 @@ describe('ThemeToggle Component', () => {
       
       const button = screen.getByRole('button')
       
-      // Initially should be dark theme (default)
+      // Initially should be light theme (default)
       fireEvent.click(button)
       
       // Should have called localStorage.setItem
       await waitFor(() => {
-        expect(localStorageMock.setItem).toHaveBeenCalledWith('theme', 'light')
+        expect(localStorageMock.setItem).toHaveBeenCalledWith('theme', 'dark')
       })
       
       // Click again to toggle back
       fireEvent.click(button)
       
       await waitFor(() => {
-        expect(localStorageMock.setItem).toHaveBeenCalledWith('theme', 'dark')
+        expect(localStorageMock.setItem).toHaveBeenCalledWith('theme', 'light')
       })
     })
 
@@ -107,9 +107,9 @@ describe('ThemeToggle Component', () => {
       fireEvent.click(button)
       
       await waitFor(() => {
-        expect(screen.getByText('Light')).toBeInTheDocument()
-        expect(screen.getByText('Dark')).toBeInTheDocument()
-        expect(screen.getByText('System')).toBeInTheDocument()
+        expect(screen.getAllByText('Light')).toHaveLength(1)
+        expect(screen.getAllByText('Dark')).toHaveLength(1)
+        expect(screen.getAllByText('System')).toHaveLength(2) // One in button, one in dropdown
       })
     })
 
@@ -141,8 +141,9 @@ describe('ThemeToggle Component', () => {
         expect(screen.getByText('Light')).toBeInTheDocument()
       })
       
-      // Click backdrop (this might need adjustment based on implementation)
-      fireEvent.click(document.body)
+      // Click backdrop
+      const backdrop = screen.getByTestId('dropdown-backdrop')
+      fireEvent.click(backdrop)
       
       await waitFor(() => {
         expect(screen.queryByText('Light')).not.toBeInTheDocument()
