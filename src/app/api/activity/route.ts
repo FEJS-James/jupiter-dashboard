@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { activity, agents, projects, tasks } from '@/lib/schema'
-import { desc, eq, and, like, gte, lte, or, isNotNull } from 'drizzle-orm'
-import { z } from 'zod'
+import { desc, eq, and, like, gte, lte, or, isNotNull, sql } from 'drizzle-orm'
+import { z, ZodError } from 'zod'
+import { handleZodError, handleDatabaseError, createSuccessResponse } from '@/lib/api-utils'
 
 const querySchema = z.object({
   page: z.coerce.number().min(1).default(1),
@@ -83,7 +84,7 @@ export async function GET(request: NextRequest) {
       conditions.push(
         or(
           like(activity.action, searchPattern),
-          like(activity.details, searchPattern)
+          like(sql`CAST(${activity.details} AS TEXT)`, searchPattern)
         )
       )
     }
@@ -154,8 +155,7 @@ export async function GET(request: NextRequest) {
       } : undefined,
     }))
 
-    return NextResponse.json({
-      success: true,
+    return createSuccessResponse({
       data: transformedActivities,
       pagination: {
         page,
@@ -166,13 +166,12 @@ export async function GET(request: NextRequest) {
       hasMore, // Keep for backward compatibility
     })
 
-  } catch (error) {
-    console.error('Activity fetch error:', error)
-    return NextResponse.json({
-      success: false,
-      error: 'Internal server error',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 })
+  } catch (error: unknown) {
+    if (error instanceof ZodError) {
+      return handleZodError(error)
+    }
+    
+    return handleDatabaseError(error)
   }
 }
 
@@ -275,13 +274,12 @@ export async function POST(request: NextRequest) {
       data: transformedActivity,
     }, { status: 201 })
 
-  } catch (error) {
-    console.error('Activity creation error:', error)
-    return NextResponse.json({
-      success: false,
-      error: 'Internal server error',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 })
+  } catch (error: unknown) {
+    if (error instanceof ZodError) {
+      return handleZodError(error)
+    }
+    
+    return handleDatabaseError(error)
   }
 }
 

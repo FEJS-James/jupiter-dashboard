@@ -11,14 +11,12 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { useWebSocket } from '@/contexts/websocket-context'
 import {
   Activity,
-  Filter,
   Search,
   RefreshCw,
   Calendar,
   User,
   FolderOpen,
   ChevronDown,
-  GitCommit,
   MessageSquare,
   Move,
   Plus,
@@ -27,9 +25,7 @@ import {
   Clock,
   AlertCircle,
   Users,
-  Settings,
-  Eye,
-  EyeOff
+  Settings
 } from 'lucide-react'
 import { formatDistanceToNow, format } from 'date-fns'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -227,9 +223,24 @@ export function ActivityFeed({
     socket.on('activity', handleNewActivity)
 
     return () => {
-      socket.off('activity', handleNewActivity)
+      // Proper cleanup to handle socket reconnection scenarios
+      try {
+        socket.off('activity', handleNewActivity)
+      } catch (error) {
+        // Socket might be in an invalid state during reconnection
+        console.warn('Failed to remove activity listener:', error)
+      }
     }
   }, [socket, realTime, maxItems])
+
+  // Additional cleanup on component unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (socket) {
+        socket.off('activity')
+      }
+    }
+  }, [])
 
   // Infinite scroll intersection observer
   useEffect(() => {
@@ -477,6 +488,15 @@ export function ActivityFeed({
       gray: 'text-gray-400 bg-gray-400/20'
     }
 
+    const borderColorMap = {
+      green: 'border-green-400/50',
+      blue: 'border-blue-400/50',
+      red: 'border-red-400/50',
+      yellow: 'border-yellow-400/50',
+      purple: 'border-purple-400/50',
+      gray: 'border-gray-400/50'
+    }
+
     return (
       <motion.div
         key={activity.id}
@@ -485,12 +505,7 @@ export function ActivityFeed({
         exit={{ opacity: 0, y: -20 }}
         className={cn(
           'border-l-2 pl-4 pb-4 last:pb-0',
-          colorClasses[color as keyof typeof colorClasses]?.includes('green') ? 'border-green-400/50' :
-          colorClasses[color as keyof typeof colorClasses]?.includes('blue') ? 'border-blue-400/50' :
-          colorClasses[color as keyof typeof colorClasses]?.includes('red') ? 'border-red-400/50' :
-          colorClasses[color as keyof typeof colorClasses]?.includes('yellow') ? 'border-yellow-400/50' :
-          colorClasses[color as keyof typeof colorClasses]?.includes('purple') ? 'border-purple-400/50' :
-          'border-gray-400/50'
+          borderColorMap[color as keyof typeof borderColorMap] || borderColorMap.gray
         )}
       >
         <div className="flex items-start gap-3">

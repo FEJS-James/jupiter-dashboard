@@ -1,6 +1,7 @@
 import { db } from './db'
-import { activity } from './schema'
+import { activity, projects, tasks, agents } from './schema'
 import { websocketManager } from './websocket-manager'
+import { eq } from 'drizzle-orm'
 
 export interface ActivityLogData {
   projectId?: number
@@ -12,10 +13,60 @@ export interface ActivityLogData {
 
 export class ActivityLogger {
   /**
+   * Validate relationship IDs exist in database
+   */
+  private static async validateRelationships(data: ActivityLogData): Promise<void> {
+    const errors: string[] = []
+
+    // Validate project exists
+    if (data.projectId) {
+      const project = await db.select({ id: projects.id })
+        .from(projects)
+        .where(eq(projects.id, data.projectId))
+        .limit(1)
+      
+      if (project.length === 0) {
+        errors.push(`Project with ID ${data.projectId} does not exist`)
+      }
+    }
+
+    // Validate task exists
+    if (data.taskId) {
+      const task = await db.select({ id: tasks.id })
+        .from(tasks)
+        .where(eq(tasks.id, data.taskId))
+        .limit(1)
+      
+      if (task.length === 0) {
+        errors.push(`Task with ID ${data.taskId} does not exist`)
+      }
+    }
+
+    // Validate agent exists
+    if (data.agentId) {
+      const agent = await db.select({ id: agents.id })
+        .from(agents)
+        .where(eq(agents.id, data.agentId))
+        .limit(1)
+      
+      if (agent.length === 0) {
+        errors.push(`Agent with ID ${data.agentId} does not exist`)
+      }
+    }
+
+    if (errors.length > 0) {
+      throw new Error(`Activity validation failed: ${errors.join(', ')}`)
+    }
+  }
+
+  /**
    * Log a single activity entry
    */
   static async log(data: ActivityLogData, broadcast: boolean = true): Promise<void> {
     try {
+      // Validate relationships exist
+      await this.validateRelationships(data)
+
       const [newActivity] = await db.insert(activity).values({
         projectId: data.projectId,
         taskId: data.taskId,
@@ -72,6 +123,11 @@ export class ActivityLogger {
     if (entries.length === 0) return
 
     try {
+      // Validate all relationships exist
+      for (const entry of entries) {
+        await this.validateRelationships(entry)
+      }
+
       const newActivities = await db.insert(activity).values(
         entries.map(entry => ({
           projectId: entry.projectId,

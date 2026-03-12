@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { integer, sqliteTable, text, real } from 'drizzle-orm/sqlite-core';
+import { integer, sqliteTable, text, real, index } from 'drizzle-orm/sqlite-core';
 import { relations } from 'drizzle-orm';
 
 /**
@@ -94,7 +94,15 @@ export const activity = sqliteTable('activity', {
   timestamp: integer('timestamp', { mode: 'timestamp' })
     .notNull()
     .default(sql`(unixepoch())`),
-});
+}, (table) => ({
+  // Indexes for query performance
+  timestampIdx: index('activity_timestamp_idx').on(table.timestamp),
+  projectIdIdx: index('activity_project_id_idx').on(table.projectId),
+  agentIdIdx: index('activity_agent_id_idx').on(table.agentId),
+  actionIdx: index('activity_action_idx').on(table.action),
+  // Composite index for common query patterns
+  timestampProjectIdx: index('activity_timestamp_project_idx').on(table.timestamp, table.projectId),
+}));
 
 /**
  * Comments table - stores task comments with enhanced features
