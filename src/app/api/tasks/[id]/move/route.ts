@@ -54,7 +54,7 @@ export async function POST(
     }
     
     // Update task status and optionally assigned agent
-    const updateData: any = {
+    const updateData: { status: string; assignedAgent?: string | null } = {
       status: validatedData.status,
     };
     
@@ -72,7 +72,7 @@ export async function POST(
       updatedTask, 
       `Task moved to ${validatedData.status}`
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error?.message === 'Invalid ID parameter') {
       return createErrorResponse('Invalid task ID', 400);
     }

@@ -68,7 +68,7 @@ export async function GET(
     };
     
     return createSuccessResponse(projectWithStats);
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error?.message === 'Invalid ID parameter') {
       return createErrorResponse('Invalid project ID', 400);
     }
@@ -118,7 +118,7 @@ export async function PATCH(
       .returning();
     
     return createSuccessResponse(updatedProject, 'Project updated successfully');
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error?.message === 'Invalid ID parameter') {
       return createErrorResponse('Invalid project ID', 400);
     }
@@ -173,7 +173,7 @@ export async function DELETE(
       archivedProject, 
       'Project archived successfully'
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error?.message === 'Invalid ID parameter') {
       return createErrorResponse('Invalid project ID', 400);
     }

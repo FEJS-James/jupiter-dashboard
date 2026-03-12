@@ -77,7 +77,7 @@ export async function POST(
       'Comment added successfully', 
       201
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error?.message === 'Invalid ID parameter') {
       return createErrorResponse('Invalid task ID', 400);
     }
@@ -140,7 +140,7 @@ export async function GET(
       .orderBy(comments.timestamp);
     
     return createSuccessResponse(taskComments);
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error?.message === 'Invalid ID parameter') {
       return createErrorResponse('Invalid task ID', 400);
     }

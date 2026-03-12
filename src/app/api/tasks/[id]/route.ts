@@ -66,7 +66,7 @@ export async function GET(
     }
     
     return createSuccessResponse(taskDetails[0]);
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error?.message === 'Invalid ID parameter') {
       return createErrorResponse('Invalid task ID', 400);
     }

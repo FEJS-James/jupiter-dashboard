@@ -1,8 +1,6 @@
-import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { agents } from '@/lib/schema';
 import { 
-  createErrorResponse, 
   createSuccessResponse, 
   handleDatabaseError
 } from '@/lib/api-utils';

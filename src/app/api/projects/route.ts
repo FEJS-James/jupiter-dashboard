@@ -1,5 +1,4 @@
 import { NextRequest } from 'next/server';
-import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { projects } from '@/lib/schema';
 import { createProjectSchema } from '@/lib/validation';
@@ -50,7 +49,7 @@ export async function POST(request: NextRequest) {
       .returning();
     
     return createSuccessResponse(newProject, 'Project created successfully', 201);
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error?.name === 'ZodError') {
       return handleZodError(error);
     }

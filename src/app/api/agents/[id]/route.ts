@@ -61,7 +61,7 @@ export async function PATCH(
       .returning();
     
     return createSuccessResponse(updatedAgent, 'Agent updated successfully');
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error?.message === 'Invalid ID parameter') {
       return createErrorResponse('Invalid agent ID', 400);
     }

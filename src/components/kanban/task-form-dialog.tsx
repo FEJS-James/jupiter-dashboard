@@ -376,6 +376,7 @@ export function TaskFormDialog({
                 onClick={addTag}
                 size="sm"
                 className="bg-slate-700 hover:bg-slate-600"
+                aria-label="Add tag"
               >
                 <Plus className="w-4 h-4" />
               </Button>

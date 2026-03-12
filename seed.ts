@@ -1,6 +1,6 @@
 import { db, runMigrations } from './src/lib/db';
 import { agents, projects, tasks, activity } from './src/lib/schema';
-import { eq } from 'drizzle-orm';
+// Removed unused import: eq
 
 /**
  * Seed the database with initial data

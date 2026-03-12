@@ -232,7 +232,7 @@ describe('DeleteTaskDialog Component', () => {
       })
       
       // Should show normal state again after error
-      expect(screen.getByText('Delete Task')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Delete Task' })).toBeInTheDocument()
     })
   })
 

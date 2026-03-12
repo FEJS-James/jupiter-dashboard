@@ -226,7 +226,7 @@ describe('TaskFormDialog Component', () => {
       render(<TaskFormDialog {...defaultProps} open={true} />)
       
       const tagInput = screen.getByPlaceholderText(/add a tag/i)
-      const addTagButton = document.querySelector('button[type="button"]') // Plus icon button
+      const addTagButton = screen.getByRole('button', { name: 'Add tag' })
       
       // Add a tag
       fireEvent.change(tagInput, { target: { value: 'frontend' } })
@@ -235,9 +235,10 @@ describe('TaskFormDialog Component', () => {
       expect(screen.getByText('frontend')).toBeInTheDocument()
       expect(tagInput).toHaveValue('')
       
-      // Remove the tag
-      const removeButton = screen.getByRole('button', { name: /Cancel|×/i })
-      fireEvent.click(removeButton)
+      // Remove the tag - find the X button within the tag
+      const removeButton = screen.getByText('frontend').parentElement?.querySelector('button')
+      expect(removeButton).toBeTruthy()
+      fireEvent.click(removeButton!)
       
       expect(screen.queryByText('frontend')).not.toBeInTheDocument()
     })
@@ -258,7 +259,7 @@ describe('TaskFormDialog Component', () => {
       render(<TaskFormDialog {...defaultProps} open={true} />)
       
       const tagInput = screen.getByPlaceholderText(/add a tag/i)
-      const addTagButton = document.querySelector('button[type="button"]') // Plus icon button
+      const addTagButton = screen.getByRole('button', { name: 'Add tag' })
       
       // Add first tag
       fireEvent.change(tagInput, { target: { value: 'duplicate' } })
