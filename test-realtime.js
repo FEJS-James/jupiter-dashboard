@@ -7,8 +7,8 @@
 
 const io = require('socket.io-client');
 
-const BASE_URL = 'http://localhost:6000';
-const WEBSOCKET_URL = 'http://localhost:6000';
+const BASE_URL = 'http://localhost:7000';
+const WEBSOCKET_URL = 'http://localhost:7000';
 
 // Test configuration
 const TEST_CONFIG = {
@@ -26,6 +26,7 @@ const MOCK_USERS = [
     name: 'Alice Test',
     email: 'alice@test.com',
     color: '#FF6B6B',
+    lastSeen: new Date(),
     boardId: 'board-1'
   },
   {
@@ -33,6 +34,7 @@ const MOCK_USERS = [
     name: 'Bob Test',
     email: 'bob@test.com',
     color: '#4ECDC4',
+    lastSeen: new Date(),
     boardId: 'board-1'
   }
 ];
