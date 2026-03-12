@@ -18,6 +18,8 @@ vi.mock('drizzle-orm', () => ({
   eq: vi.fn((field, value) => ({ field, value, type: 'eq' })),
   and: vi.fn((...conditions) => ({ conditions, type: 'and' })),
   desc: vi.fn((field) => ({ field, type: 'desc' })),
+  sql: vi.fn((strings, ...values) => ({ strings, values, type: 'sql' })),
+  relations: vi.fn((table, callback) => ({ table, callback, type: 'relations' })),
 }))
 
 // Mock Request and NextRequest
@@ -63,16 +65,7 @@ describe('/api/tasks API Routes', () => {
 
   describe('GET /api/tasks', () => {
     it('returns all tasks when no filters applied', async () => {
-      // Mock database query chain
-      const mockQuery = {
-        leftJoin: vi.fn().mockReturnThis(),
-        orderBy: vi.fn().mockReturnThis(),
-        where: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockReturnThis(),
-        offset: vi.fn().mockReturnThis(),
-      }
-      
-      vi.mocked(db.select).mockReturnValue(mockQuery as any)
+      // Use the global mockQuery
       vi.mocked(mockQuery.leftJoin).mockResolvedValue(mockTasks)
 
       const request = createMockRequest()
@@ -83,15 +76,7 @@ describe('/api/tasks API Routes', () => {
     })
 
     it('applies status filter when provided', async () => {
-      const mockQuery = {
-        leftJoin: vi.fn().mockReturnThis(),
-        orderBy: vi.fn().mockReturnThis(),
-        where: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockReturnThis(),
-        offset: vi.fn().mockReturnThis(),
-      }
-      
-      vi.mocked(db.select).mockReturnValue(mockQuery as any)
+      // Use the global mockQuery
       vi.mocked(mockQuery.leftJoin).mockResolvedValue(mockTasks.filter(t => t.status === 'backlog'))
 
       const request = createMockRequest('https://localhost:3000/api/tasks?status=backlog')
@@ -102,15 +87,7 @@ describe('/api/tasks API Routes', () => {
     })
 
     it('applies agent filter when provided', async () => {
-      const mockQuery = {
-        leftJoin: vi.fn().mockReturnThis(),
-        orderBy: vi.fn().mockReturnThis(),
-        where: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockReturnThis(),
-        offset: vi.fn().mockReturnThis(),
-      }
-      
-      vi.mocked(db.select).mockReturnValue(mockQuery as any)
+      // Use the global mockQuery
       vi.mocked(mockQuery.leftJoin).mockResolvedValue(mockTasks.filter(t => t.assignedAgent === 'coder'))
 
       const request = createMockRequest('https://localhost:3000/api/tasks?agent=coder')
@@ -139,15 +116,7 @@ describe('/api/tasks API Routes', () => {
     })
 
     it('applies pagination when limit and offset provided', async () => {
-      const mockQuery = {
-        leftJoin: vi.fn().mockReturnThis(),
-        orderBy: vi.fn().mockReturnThis(),
-        where: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockReturnThis(),
-        offset: vi.fn().mockReturnThis(),
-      }
-      
-      vi.mocked(db.select).mockReturnValue(mockQuery as any)
+      // Use the global mockQuery
       vi.mocked(mockQuery.leftJoin).mockResolvedValue(mockTasks)
 
       const request = createMockRequest('https://localhost:3000/api/tasks?limit=10&offset=5')
@@ -263,26 +232,19 @@ describe('/api/tasks API Routes', () => {
     })
 
     it('returns error when assigned agent not found', async () => {
-      // Mock agent not found
-      const emptyAgentQuery = {
-        where: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockResolvedValue([]) // Empty array = not found
-      }
-
-      vi.mocked(db.select).mockImplementation(() => {
-        let callCount = 0
-        return {
-          from: vi.fn(() => {
-            callCount++
-            if (callCount === 1) {
-              return {
-                where: vi.fn().mockReturnThis(),
-                limit: vi.fn().mockResolvedValue(mockProject)
-              }
-            }
-            return emptyAgentQuery
-          })
-        } as any
+      // Mock: first call for project (found), second call for agent (not found)
+      let callCount = 0
+      mockDb.select.mockImplementation(() => {
+        const query = createMockQuery()
+        callCount++
+        if (callCount === 1) {
+          // Project exists
+          query.limit.mockResolvedValue([mockProject[0]])
+        } else {
+          // Agent doesn't exist
+          query.limit.mockResolvedValue([])
+        }
+        return query
       })
 
       const taskData = {

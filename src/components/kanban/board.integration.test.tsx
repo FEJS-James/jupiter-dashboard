@@ -190,15 +190,15 @@ describe('Board Integration Tests', () => {
     const urgentTaskCard = authTask.closest('[class*="border-l-red-500"]')
     expect(urgentTaskCard).toBeInTheDocument()
     
-    // Check tags are displayed
-    expect(screen.getByText('auth')).toBeInTheDocument()
+    // Check tags are displayed using getAllByText for multiple instances
+    expect(screen.getAllByText('auth')).toHaveLength(2) // auth tag appears in 2 cards
     expect(screen.getByText('security')).toBeInTheDocument()
     expect(screen.getByText('jwt')).toBeInTheDocument()
     
-    // Check effort points
+    // Check effort points - use getAllByText for duplicates
     expect(screen.getByText('8pt')).toBeInTheDocument()
-    expect(screen.getByText('3pt')).toBeInTheDocument()
-    expect(screen.getByText('2pt')).toBeInTheDocument()
+    expect(screen.getAllByText('3pt')).toHaveLength(2) // Appears in 2 different tasks
+    expect(screen.getAllByText('2pt')).toHaveLength(2) // Appears in 2 different tasks
     expect(screen.getByText('1pt')).toBeInTheDocument()
   })
 
@@ -222,9 +222,9 @@ describe('Board Integration Tests', () => {
   it('displays agent assignments correctly', () => {
     render(<Board tasks={mockTasksWithVariousStatuses} />)
     
-    // Check for agent initials in avatars
-    expect(screen.getByText('C')).toBeInTheDocument() // CodeAgent
-    expect(screen.getByText('R')).toBeInTheDocument() // ReviewAgent
+    // Check for agent initials in avatars - use getAllByText since there can be multiple
+    expect(screen.getAllByText('C')).toHaveLength(3) // CodeAgent appears 3 times
+    expect(screen.getAllByText('R')).toHaveLength(2) // ReviewAgent appears 2 times
     expect(screen.getByText('D')).toBeInTheDocument() // DeployAgent
   })
 
@@ -232,7 +232,8 @@ describe('Board Integration Tests', () => {
     render(<Board tasks={mockTasksWithVariousStatuses} />)
     
     // Task with due date 2024-03-20 should be overdue (current test time is 2024-03-21)
-    expect(screen.getByText('Overdue')).toBeInTheDocument()
+    // Use getAllByText since there might be multiple overdue tasks
+    expect(screen.getAllByText('Overdue')).toHaveLength(2) // 2 tasks are overdue
   })
 
   it('handles board with no tasks', () => {

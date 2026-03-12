@@ -2,17 +2,33 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import { POST } from './route'
 import { db } from '@/lib/db'
 
-// Mock the database
+// Mock the database with proper chaining
+const createMockQuery = () => ({
+  from: vi.fn().mockReturnThis(),
+  where: vi.fn().mockReturnThis(),
+  limit: vi.fn().mockReturnThis(),
+})
+
+const mockUpdate = {
+  set: vi.fn().mockReturnThis(),
+  where: vi.fn().mockReturnThis(),
+  returning: vi.fn().mockResolvedValue([]),
+}
+
+const mockDb = {
+  select: vi.fn(() => createMockQuery()),
+  update: vi.fn(() => mockUpdate),
+}
+
 vi.mock('@/lib/db', () => ({
-  db: {
-    select: vi.fn(),
-    update: vi.fn(),
-  }
+  db: mockDb
 }))
 
 // Mock drizzle ORM functions
 vi.mock('drizzle-orm', () => ({
   eq: vi.fn((field, value) => ({ field, value, type: 'eq' })),
+  sql: vi.fn((strings, ...values) => ({ strings, values, type: 'sql' })),
+  relations: vi.fn((table, callback) => ({ table, callback, type: 'relations' })),
 }))
 
 const createMockRequest = (body: any) => {
@@ -167,26 +183,19 @@ describe('/api/tasks/[id]/move API Route', () => {
     })
 
     it('returns error when assigned agent not found', async () => {
-      // Mock task exists but agent doesn't
-      const mockTaskQuery = {
-        where: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockResolvedValue([mockExistingTask])
-      }
-      
-      const mockAgentQuery = {
-        where: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockResolvedValue([]) // Empty array = agent not found
-      }
-
-      vi.mocked(db.select).mockImplementation(() => {
-        let callCount = 0
-        return {
-          from: vi.fn(() => {
-            callCount++
-            if (callCount === 1) return mockTaskQuery
-            return mockAgentQuery
-          })
-        } as any
+      // Mock: first call for task (found), second call for agent (not found)
+      let callCount = 0
+      mockDb.select.mockImplementation(() => {
+        const query = createMockQuery()
+        callCount++
+        if (callCount === 1) {
+          // Task exists
+          query.limit.mockResolvedValue([mockExistingTask])
+        } else {
+          // Agent doesn't exist
+          query.limit.mockResolvedValue([])
+        }
+        return query
       })
 
       const moveData = {
@@ -284,27 +293,16 @@ describe('/api/tasks/[id]/move API Route', () => {
 
     it('allows unsetting assigned agent with null', async () => {
       // Mock task existence
-      const mockTaskQuery = {
-        where: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockResolvedValue([mockExistingTask])
-      }
+      const query = createMockQuery()
+      query.limit.mockResolvedValue([mockExistingTask])
+      mockDb.select.mockReturnValue(query)
 
-      vi.mocked(db.select).mockReturnValue({
-        from: vi.fn().mockReturnValue(mockTaskQuery)
-      } as any)
-
-      // Mock update operation
-      const mockUpdate = {
-        set: vi.fn().mockReturnThis(),
-        where: vi.fn().mockReturnThis(),
-        returning: vi.fn().mockResolvedValue([{
-          ...mockExistingTask,
-          status: 'backlog',
-          assignedAgent: null
-        }])
-      }
-
-      vi.mocked(db.update).mockReturnValue(mockUpdate as any)
+      // Mock update operation - use the global mockUpdate
+      mockUpdate.returning.mockResolvedValue([{
+        ...mockExistingTask,
+        status: 'backlog',
+        assignedAgent: null
+      }])
 
       const moveData = {
         status: 'backlog',
