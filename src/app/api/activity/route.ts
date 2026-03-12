@@ -20,12 +20,34 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     
-    // Parse and validate query parameters
-    const queryParams = Object.fromEntries(
-      ['page', 'limit', 'project', 'agent', 'activityType', 'search', 'startDate', 'endDate']
-        .map(key => [key, searchParams.get(key)])
-        .filter(([_, value]) => value !== null)
-    )
+    // Parse and validate query parameters - only include non-null values
+    const queryParams: Record<string, string | number> = {}
+    
+    // Build query params object with only non-null values
+    if (searchParams.get('page') !== null) {
+      queryParams.page = searchParams.get('page')!
+    }
+    if (searchParams.get('limit') !== null) {
+      queryParams.limit = searchParams.get('limit')!
+    }
+    if (searchParams.get('project') !== null) {
+      queryParams.project = searchParams.get('project')!
+    }
+    if (searchParams.get('agent') !== null) {
+      queryParams.agent = searchParams.get('agent')!
+    }
+    if (searchParams.get('activityType') !== null) {
+      queryParams.activityType = searchParams.get('activityType')!
+    }
+    if (searchParams.get('search') !== null) {
+      queryParams.search = searchParams.get('search')!
+    }
+    if (searchParams.get('startDate') !== null) {
+      queryParams.startDate = searchParams.get('startDate')!
+    }
+    if (searchParams.get('endDate') !== null) {
+      queryParams.endDate = searchParams.get('endDate')!
+    }
 
     const parsed = querySchema.safeParse(queryParams)
 
@@ -41,8 +63,8 @@ export async function GET(request: NextRequest) {
       page, 
       limit, 
       project: projectId, 
-      agent: agentId, 
-      activityType, 
+      agent: agentId,
+      activityType,
       search, 
       startDate, 
       endDate 

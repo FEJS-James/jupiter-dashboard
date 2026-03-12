@@ -1,32 +1,33 @@
 /**
- * @jest-environment node
+ * @vitest-environment node
  */
 
 import { ActivityLogger } from './activity-logger'
 import { db } from './db'
 import { websocketManager } from './websocket-manager'
 import { projects, tasks, agents, activity } from './schema'
+import { vi } from 'vitest'
 
 // Mock database
-jest.mock('./db', () => ({
+vi.mock('./db', () => ({
   db: {
-    select: jest.fn(),
-    insert: jest.fn(),
+    select: vi.fn(),
+    insert: vi.fn(),
   },
 }))
 
 // Mock websocket manager
-jest.mock('./websocket-manager', () => ({
+vi.mock('./websocket-manager', () => ({
   websocketManager: {
-    isReady: jest.fn(() => true),
-    getIO: jest.fn(() => ({
-      emit: jest.fn(),
+    isReady: vi.fn(() => true),
+    getIO: vi.fn(() => ({
+      emit: vi.fn(),
     })),
   },
 }))
 
-const mockDb = db as jest.Mocked<typeof db>
-const mockWebsocketManager = websocketManager as jest.Mocked<typeof websocketManager>
+const mockDb = db as any
+const mockWebsocketManager = websocketManager as any
 
 describe('ActivityLogger', () => {
   const mockInsertResult = {
@@ -40,19 +41,19 @@ describe('ActivityLogger', () => {
   }
 
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
 
     // Mock successful relationship validation
     const mockValidationQueryBuilder = {
-      from: jest.fn().mockReturnThis(),
-      where: jest.fn().mockReturnThis(),
-      limit: jest.fn().mockReturnValue([{ id: 1 }]), // Entity exists
+      from: vi.fn().mockReturnThis(),
+      where: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockReturnValue([{ id: 1 }]), // Entity exists
     }
 
     // Mock successful insert
     const mockInsertBuilder = {
-      values: jest.fn().mockReturnThis(),
-      returning: jest.fn().mockReturnValue([mockInsertResult]),
+      values: vi.fn().mockReturnThis(),
+      returning: vi.fn().mockReturnValue([mockInsertResult]),
     }
 
     mockDb.select.mockReturnValue(mockValidationQueryBuilder as any)
@@ -61,7 +62,7 @@ describe('ActivityLogger', () => {
     // Mock websocket
     mockWebsocketManager.isReady.mockReturnValue(true)
     mockWebsocketManager.getIO.mockReturnValue({
-      emit: jest.fn(),
+      emit: vi.fn(),
     } as any)
   })
 
@@ -110,7 +111,7 @@ describe('ActivityLogger', () => {
     })
 
     it('should broadcast activity when websocket is ready', async () => {
-      const mockIO = { emit: jest.fn() }
+      const mockIO = { emit: vi.fn() }
       mockWebsocketManager.getIO.mockReturnValue(mockIO as any)
 
       const activityData = {
@@ -158,14 +159,14 @@ describe('ActivityLogger', () => {
     it('should handle validation errors gracefully', async () => {
       // Mock validation failure
       const mockFailedValidationBuilder = {
-        from: jest.fn().mockReturnThis(),
-        where: jest.fn().mockReturnThis(),
-        limit: jest.fn().mockReturnValue([]), // Entity doesn't exist
+        from: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockReturnValue([]), // Entity doesn't exist
       }
       
       mockDb.select.mockReturnValue(mockFailedValidationBuilder as any)
 
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation()
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
       const activityData = {
         projectId: 999, // Non-existent project
@@ -186,14 +187,14 @@ describe('ActivityLogger', () => {
     it('should handle database errors gracefully', async () => {
       // Mock database error
       const mockErrorBuilder = {
-        values: jest.fn().mockImplementation(() => {
+        values: vi.fn().mockImplementation(() => {
           throw new Error('Database connection failed')
         }),
       }
       
       mockDb.insert.mockReturnValue(mockErrorBuilder as any)
 
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation()
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
       const activityData = {
         action: 'task_created',
@@ -227,8 +228,8 @@ describe('ActivityLogger', () => {
       }))
 
       const mockBatchInsertBuilder = {
-        values: jest.fn().mockReturnThis(),
-        returning: jest.fn().mockReturnValue(mockBatchResult),
+        values: vi.fn().mockReturnThis(),
+        returning: vi.fn().mockReturnValue(mockBatchResult),
       }
 
       mockDb.insert.mockReturnValue(mockBatchInsertBuilder as any)
@@ -249,7 +250,7 @@ describe('ActivityLogger', () => {
     })
 
     it('should broadcast all batch activities', async () => {
-      const mockIO = { emit: jest.fn() }
+      const mockIO = { emit: vi.fn() }
       mockWebsocketManager.getIO.mockReturnValue(mockIO as any)
 
       const activities = [
@@ -263,8 +264,8 @@ describe('ActivityLogger', () => {
       ]
 
       const mockBatchInsertBuilder = {
-        values: jest.fn().mockReturnThis(),
-        returning: jest.fn().mockReturnValue(mockBatchResult),
+        values: vi.fn().mockReturnThis(),
+        returning: vi.fn().mockReturnValue(mockBatchResult),
       }
 
       mockDb.insert.mockReturnValue(mockBatchInsertBuilder as any)

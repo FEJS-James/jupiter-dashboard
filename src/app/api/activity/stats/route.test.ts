@@ -160,13 +160,13 @@ describe('/api/activity/stats API Route', () => {
     // Mock results without names
     let callCount = 0
     const mockQueryBuilder = {
-      select: jest.fn().mockReturnThis(),
-      from: jest.fn().mockReturnThis(),
-      leftJoin: jest.fn().mockReturnThis(),
-      where: jest.fn().mockReturnThis(),
-      groupBy: jest.fn().mockReturnThis(),
-      orderBy: jest.fn().mockReturnThis(),
-      limit: jest.fn().mockImplementation(() => {
+      select: vi.fn().mockReturnThis(),
+      from: vi.fn().mockReturnThis(),
+      leftJoin: vi.fn().mockReturnThis(),
+      where: vi.fn().mockReturnThis(),
+      groupBy: vi.fn().mockReturnThis(),
+      orderBy: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockImplementation(() => {
         callCount++
         switch (callCount) {
           case 1: // Total activities count
@@ -204,7 +204,7 @@ describe('/api/activity/stats API Route', () => {
   it('should handle database errors gracefully', async () => {
     // Mock database error
     const mockErrorQueryBuilder = {
-      select: jest.fn().mockImplementation(() => {
+      select: vi.fn().mockImplementation(() => {
         throw new Error('Database connection failed')
       }),
     }
@@ -225,13 +225,13 @@ describe('/api/activity/stats API Route', () => {
     // Mock more than 5 activity types
     let callCount = 0
     const mockQueryBuilder = {
-      select: jest.fn().mockReturnThis(),
-      from: jest.fn().mockReturnThis(),
-      leftJoin: jest.fn().mockReturnThis(),
-      where: jest.fn().mockReturnThis(),
-      groupBy: jest.fn().mockReturnThis(),
-      orderBy: jest.fn().mockReturnThis(),
-      limit: jest.fn().mockImplementation(() => {
+      select: vi.fn().mockReturnThis(),
+      from: vi.fn().mockReturnThis(),
+      leftJoin: vi.fn().mockReturnThis(),
+      where: vi.fn().mockReturnThis(),
+      groupBy: vi.fn().mockReturnThis(),
+      orderBy: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockImplementation(() => {
         callCount++
         switch (callCount) {
           case 1: return [{ count: 200 }]

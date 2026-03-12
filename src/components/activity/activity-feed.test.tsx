@@ -3,18 +3,19 @@ import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ActivityFeed } from './activity-feed'
 import { useWebSocket } from '@/contexts/websocket-context'
+import { vi } from 'vitest'
 
 // Mock WebSocket context
-jest.mock('@/contexts/websocket-context', () => ({
-  useWebSocket: jest.fn(),
+vi.mock('@/contexts/websocket-context', () => ({
+  useWebSocket: vi.fn(),
 }))
 
 // Mock fetch API
-global.fetch = jest.fn()
-const mockFetch = global.fetch as jest.MockedFunction<typeof fetch>
+global.fetch = vi.fn()
+const mockFetch = global.fetch as any
 
 // Mock framer-motion to avoid animation issues in tests
-jest.mock('framer-motion', () => ({
+vi.mock('framer-motion', () => ({
   motion: {
     div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
   },
@@ -22,12 +23,12 @@ jest.mock('framer-motion', () => ({
 }))
 
 // Mock date-fns
-jest.mock('date-fns', () => ({
-  formatDistanceToNow: jest.fn(() => '2 hours ago'),
-  format: jest.fn(() => 'Mar 12, 10:30'),
+vi.mock('date-fns', () => ({
+  formatDistanceToNow: vi.fn(() => '2 hours ago'),
+  format: vi.fn(() => 'Mar 12, 10:30'),
 }))
 
-const mockUseWebSocket = useWebSocket as jest.MockedFunction<typeof useWebSocket>
+const mockUseWebSocket = useWebSocket as any
 
 const mockActivityData = [
   {
@@ -116,13 +117,13 @@ const mockAgentsData = [
 
 describe('ActivityFeed Component', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
 
     // Mock successful WebSocket connection
     mockUseWebSocket.mockReturnValue({
       socket: {
-        on: jest.fn(),
-        off: jest.fn(),
+        on: vi.fn(),
+        off: vi.fn(),
       },
       connectionStatus: 'connected',
     } as any)
@@ -397,8 +398,8 @@ describe('ActivityFeed Component', () => {
 
   it('should handle real-time activity updates', async () => {
     const mockSocket = {
-      on: jest.fn(),
-      off: jest.fn(),
+      on: vi.fn(),
+      off: vi.fn(),
     }
 
     mockUseWebSocket.mockReturnValue({
@@ -511,11 +512,11 @@ describe('ActivityFeed Component', () => {
   it('should handle infinite scroll', async () => {
     // Mock IntersectionObserver
     const mockObserver = {
-      observe: jest.fn(),
-      disconnect: jest.fn(),
+      observe: vi.fn(),
+      disconnect: vi.fn(),
     }
 
-    global.IntersectionObserver = jest.fn().mockImplementation((callback) => {
+    global.IntersectionObserver = vi.fn().mockImplementation((callback) => {
       // Simulate intersection after setup
       setTimeout(() => {
         callback([{ isIntersecting: true }])
