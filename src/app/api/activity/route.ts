@@ -21,16 +21,13 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     
     // Parse and validate query parameters
-    const parsed = querySchema.safeParse({
-      page: searchParams.get('page') || undefined,
-      limit: searchParams.get('limit') || undefined,
-      project: searchParams.get('project') || undefined,
-      agent: searchParams.get('agent') || undefined,
-      activityType: searchParams.get('activityType') || undefined,
-      search: searchParams.get('search') || undefined,
-      startDate: searchParams.get('startDate') || undefined,
-      endDate: searchParams.get('endDate') || undefined,
-    })
+    const queryParams = Object.fromEntries(
+      ['page', 'limit', 'project', 'agent', 'activityType', 'search', 'startDate', 'endDate']
+        .map(key => [key, searchParams.get(key)])
+        .filter(([_, value]) => value !== null)
+    )
+
+    const parsed = querySchema.safeParse(queryParams)
 
     if (!parsed.success) {
       return NextResponse.json({
