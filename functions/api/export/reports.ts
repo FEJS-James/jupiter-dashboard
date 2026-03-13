@@ -1,0 +1,2 @@
+import { success } from '../_data';
+export const onRequestPost: PagesFunction = async () => success({ report: 'Demo report' });
