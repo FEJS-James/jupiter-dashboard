@@ -4,6 +4,7 @@ import "./globals.css"
 import { LayoutWrapper } from "@/components/layout/layout-wrapper"
 import { ThemeProvider } from "@/contexts/theme-context"
 import { UserPreferencesProvider } from "@/contexts/user-preferences-context"
+import { StaticDataProvider } from "@/providers/static-data-provider"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -26,13 +27,15 @@ export default function RootLayout({
         className={`${inter.variable} font-sans antialiased min-h-screen`}
         suppressHydrationWarning
       >
-        <ThemeProvider>
-          <UserPreferencesProvider agentId={1}>
-            <LayoutWrapper>
-              {children}
-            </LayoutWrapper>
-          </UserPreferencesProvider>
-        </ThemeProvider>
+        <StaticDataProvider>
+          <ThemeProvider>
+            <UserPreferencesProvider agentId={1}>
+              <LayoutWrapper>
+                {children}
+              </LayoutWrapper>
+            </UserPreferencesProvider>
+          </ThemeProvider>
+        </StaticDataProvider>
       </body>
     </html>
   )
