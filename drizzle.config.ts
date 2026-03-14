@@ -5,7 +5,7 @@ export default {
   out: './drizzle',
   dialect: 'sqlite',
   dbCredentials: {
-    url: process.env.DATABASE_URL || './data/agentflow.db',
+    url: process.env.TURSO_DATABASE_URL || 'file:./data/agentflow.db',
   },
   verbose: true,
   strict: true,

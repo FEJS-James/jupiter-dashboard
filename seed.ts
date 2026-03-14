@@ -1,18 +1,17 @@
-import { db, runMigrations } from './src/lib/db';
+import { db } from './src/lib/db';
 import { agents, projects, tasks, activity } from './src/lib/schema';
-// Removed unused import: eq
 
 /**
  * Seed the database with initial data
+ * 
+ * Works with both local SQLite file and remote Turso database.
+ * Set TURSO_DATABASE_URL and TURSO_AUTH_TOKEN for Turso cloud.
  */
 async function seed() {
   console.log('🌱 Starting database seed...');
+  console.log(`📡 Database URL: ${process.env.TURSO_DATABASE_URL || 'file:./data/agentflow.db'}`);
 
   try {
-    // Run migrations first
-    console.log('📦 Running migrations...');
-    runMigrations();
-
     // Check if agents already exist
     const existingAgents = await db.select().from(agents);
     if (existingAgents.length > 0) {
@@ -26,31 +25,31 @@ async function seed() {
       {
         name: 'coder',
         role: 'coder',
-        color: '#10b981', // emerald-500
+        color: '#10b981',
         status: 'available',
       },
       {
         name: 'reviewer',
         role: 'reviewer',
-        color: '#f59e0b', // amber-500
+        color: '#f59e0b',
         status: 'available',
       },
       {
         name: 'tester',
         role: 'tester',
-        color: '#f97316', // orange-500
+        color: '#f97316',
         status: 'available',
       },
       {
         name: 'devops',
         role: 'devops',
-        color: '#ef4444', // red-500
+        color: '#ef4444',
         status: 'available',
       },
       {
         name: 'manager',
         role: 'manager',
-        color: '#8b5cf6', // violet-500
+        color: '#8b5cf6',
         status: 'available',
       },
     ]).returning();
@@ -63,7 +62,7 @@ async function seed() {
       name: 'AgentFlow Demo',
       description: 'A demonstration project showing the AgentFlow system in action',
       status: 'active',
-      techStack: ['Next.js', 'TypeScript', 'Drizzle ORM', 'SQLite', 'Tailwind CSS'],
+      techStack: ['Next.js', 'TypeScript', 'Drizzle ORM', 'Turso', 'Tailwind CSS'],
     }).returning();
 
     console.log(`✅ Created demo project: ${demoProject.name}`);
