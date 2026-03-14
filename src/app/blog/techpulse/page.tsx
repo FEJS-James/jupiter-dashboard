@@ -5,6 +5,12 @@ import { TechPulseFooter } from './_components/footer'
 import { BreakingTicker } from './_components/breaking-ticker'
 import { ArticleCard } from './_components/article-card'
 import { CtaBanner } from './_components/cta-banner'
+import { JsonLd } from '@/components/json-ld'
+import {
+  generateWebSiteJsonLd,
+  generateBreadcrumbJsonLd,
+  homeBreadcrumbs,
+} from '@/lib/blog-seo'
 
 export const revalidate = 60
 
@@ -42,6 +48,8 @@ export default async function TechPulseHomePage() {
 
   return (
     <div className="tp-dot-bg min-h-screen">
+      <JsonLd data={generateWebSiteJsonLd('techpulse')} />
+      <JsonLd data={generateBreadcrumbJsonLd(homeBreadcrumbs('techpulse'))} />
       {/* Breaking News Ticker */}
       <BreakingTicker articles={tickerArticles} />
 

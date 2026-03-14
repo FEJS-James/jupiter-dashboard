@@ -4,6 +4,12 @@ import { getPublishedArticles } from '@/lib/smarthomemade-data'
 import { SmartHomeMadeNavbar } from './_components/navbar'
 import { SmartHomeMadeFooter } from './_components/footer'
 import { ArticleCard } from './_components/article-card'
+import { JsonLd } from '@/components/json-ld'
+import {
+  generateWebSiteJsonLd,
+  generateBreadcrumbJsonLd,
+  homeBreadcrumbs,
+} from '@/lib/blog-seo'
 
 export const revalidate = 60
 
@@ -61,6 +67,8 @@ export default async function SmartHomeMadeHomePage() {
 
   return (
     <div className="min-h-screen bg-white">
+      <JsonLd data={generateWebSiteJsonLd('smarthomemade')} />
+      <JsonLd data={generateBreadcrumbJsonLd(homeBreadcrumbs('smarthomemade'))} />
       <SmartHomeMadeNavbar />
 
       <main>

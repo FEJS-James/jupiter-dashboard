@@ -12,6 +12,13 @@ import { TechPulseNavbar } from '../_components/navbar'
 import { TechPulseFooter } from '../_components/footer'
 import { ArticleContent } from './_components/article-content'
 import { TableOfContents } from './_components/table-of-contents'
+import { JsonLd } from '@/components/json-ld'
+import {
+  generateArticleJsonLd,
+  generateBreadcrumbJsonLd,
+  articleBreadcrumbs,
+  articleUrl,
+} from '@/lib/blog-seo'
 
 export const revalidate = 60
 
@@ -24,9 +31,29 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const article = await getArticleBySlug(slug)
   if (!article) return { title: 'Article Not Found' }
 
+  const tags = Array.isArray(article.tags) ? article.tags : []
+  const imageUrl = article.heroImage || getHeroImage(tags)
+  const url = articleUrl('techpulse', slug)
+
   return {
     title: article.title,
     description: article.metaDescription || article.excerpt || undefined,
+    openGraph: {
+      type: 'article',
+      title: article.title,
+      description: article.metaDescription || article.excerpt || undefined,
+      url,
+      images: imageUrl ? [{ url: imageUrl }] : undefined,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: article.title,
+      description: article.metaDescription || article.excerpt || undefined,
+      images: imageUrl ? [imageUrl] : undefined,
+    },
+    alternates: {
+      canonical: url,
+    },
   }
 }
 
@@ -41,8 +68,24 @@ export default async function ArticlePage({ params }: PageProps) {
   const publishDate = safeDate(article.publishDate)
   const { prev, next } = await getAdjacentArticles(publishDate)
 
+  const articleSeoData = {
+    title: article.title,
+    slug: article.slug,
+    excerpt: article.excerpt,
+    metaDescription: article.metaDescription,
+    heroImage: imageUrl,
+    author: article.author,
+    publishDate: article.publishDate,
+    updatedAt: article.updatedAt,
+    tags,
+    readingTimeMinutes: article.readingTimeMinutes,
+    wordCount: article.wordCount,
+  }
+
   return (
     <div className="tp-dot-bg min-h-screen">
+      <JsonLd data={generateArticleJsonLd('techpulse', articleSeoData)} />
+      <JsonLd data={generateBreadcrumbJsonLd(articleBreadcrumbs('techpulse', article.title, slug))} />
       <TechPulseNavbar />
 
       <main className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-8">

@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import { SmartHomeMadeNavbar } from '../_components/navbar'
 import { SmartHomeMadeFooter } from '../_components/footer'
+import { JsonLd } from '@/components/json-ld'
+import { generateBreadcrumbJsonLd, aboutBreadcrumbs } from '@/lib/blog-seo'
 
 export const revalidate = 60
 
@@ -12,6 +14,7 @@ export const metadata: Metadata = {
 export default function AboutPage() {
   return (
     <div className="min-h-screen bg-white">
+      <JsonLd data={generateBreadcrumbJsonLd(aboutBreadcrumbs('smarthomemade'))} />
       <SmartHomeMadeNavbar />
 
       <main className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-12">

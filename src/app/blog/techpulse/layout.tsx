@@ -14,6 +14,24 @@ export const metadata: Metadata = {
   },
   description:
     'Your daily source for breaking tech news, in-depth analysis, and expert opinions on AI, gaming, hardware, and open source.',
+  openGraph: {
+    type: 'website',
+    siteName: 'TechPulse Daily',
+    title: 'TechPulse Daily — Breaking Tech News & Analysis',
+    description:
+      'Your daily source for breaking tech news, in-depth analysis, and expert opinions on AI, gaming, hardware, and open source.',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'TechPulse Daily — Breaking Tech News & Analysis',
+    description:
+      'Your daily source for breaking tech news, in-depth analysis, and expert opinions on AI, gaming, hardware, and open source.',
+  },
+  alternates: {
+    types: {
+      'application/rss+xml': '/blog/techpulse/feed.xml',
+    },
+  },
 }
 
 export default function TechPulseLayout({

@@ -4,6 +4,8 @@ import { getPublishedArticles, getArticlesCount } from '@/lib/techpulse-data'
 import { TechPulseNavbar } from '../_components/navbar'
 import { TechPulseFooter } from '../_components/footer'
 import { ArticleCard } from '../_components/article-card'
+import { JsonLd } from '@/components/json-ld'
+import { generateBreadcrumbJsonLd, blogListBreadcrumbs } from '@/lib/blog-seo'
 
 export const revalidate = 60
 
@@ -46,6 +48,7 @@ export default async function BlogListingPage({ searchParams }: PageProps) {
 
   return (
     <div className="tp-dot-bg min-h-screen">
+      <JsonLd data={generateBreadcrumbJsonLd(blogListBreadcrumbs('techpulse'))} />
       <TechPulseNavbar />
 
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">

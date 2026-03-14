@@ -4,6 +4,8 @@ import { getPublishedArticles, getArticlesCount } from '@/lib/smarthomemade-data
 import { SmartHomeMadeNavbar } from '../_components/navbar'
 import { SmartHomeMadeFooter } from '../_components/footer'
 import { ArticleCard } from '../_components/article-card'
+import { JsonLd } from '@/components/json-ld'
+import { generateBreadcrumbJsonLd, blogListBreadcrumbs } from '@/lib/blog-seo'
 
 export const revalidate = 60
 
@@ -47,6 +49,7 @@ export default async function BlogListingPage({ searchParams }: PageProps) {
 
   return (
     <div className="min-h-screen bg-white">
+      <JsonLd data={generateBreadcrumbJsonLd(blogListBreadcrumbs('smarthomemade'))} />
       <SmartHomeMadeNavbar />
 
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
