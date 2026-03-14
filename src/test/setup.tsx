@@ -5,21 +5,30 @@ import { server } from './mocks/server'
 import { mockWebsocketManager } from './mocks/websocket-manager'
 
 // Mock framer-motion to prevent animation issues in tests
-vi.mock('framer-motion', () => ({
+vi.mock('framer-motion', () => {
+  const React = require('react')
+  const invalidProps = new Set(['initial', 'animate', 'exit', 'transition', 'variants', 'whileHover', 'whileTap', 'whileFocus', 'whileDrag', 'whileInView', 'layout', 'layoutId', 'onAnimationStart', 'onAnimationComplete', 'drag', 'dragConstraints', 'dragElastic', 'dragMomentum', 'dragTransition', 'onDrag', 'onDragStart', 'onDragEnd'])
+  
+  // Cache component references so React doesn't remount on every render
+  const componentCache = new Map()
+  
+  return {
   motion: new Proxy({}, {
-    get: (_target, prop) => {
-      // Return a forwardRef component for any motion.xxx element
-      return React.forwardRef(({ children, ...props }: any, ref: any) => {
-        // Strip framer-motion specific props
-        const validProps: Record<string, any> = {}
-        const invalidProps = ['initial', 'animate', 'exit', 'transition', 'variants', 'whileHover', 'whileTap', 'whileFocus', 'whileDrag', 'whileInView', 'layout', 'layoutId', 'onAnimationStart', 'onAnimationComplete', 'drag', 'dragConstraints', 'dragElastic', 'dragMomentum', 'dragTransition', 'onDrag', 'onDragStart', 'onDragEnd']
-        for (const [key, val] of Object.entries(props)) {
-          if (!invalidProps.includes(key)) {
-            validProps[key] = val
+    get: (_target: any, prop: string) => {
+      if (!componentCache.has(prop)) {
+        const Component = React.forwardRef(({ children, ...props }: any, ref: any) => {
+          const validProps: Record<string, any> = {}
+          for (const [key, val] of Object.entries(props)) {
+            if (!invalidProps.has(key)) {
+              validProps[key] = val
+            }
           }
-        }
-        return React.createElement(prop as string, { ...validProps, ref }, children)
-      })
+          return React.createElement(prop, { ...validProps, ref }, children)
+        })
+        Component.displayName = `motion.${prop}`
+        componentCache.set(prop, Component)
+      }
+      return componentCache.get(prop)
     }
   }),
   AnimatePresence: ({ children }: { children: React.ReactNode }) => React.createElement(React.Fragment, null, children),
@@ -43,7 +52,8 @@ vi.mock('framer-motion', () => ({
   }),
   useInView: () => [null, true],
   useReducedMotion: () => false,
-}))
+  }
+})
 
 // Mock Radix UI Select — implements onValueChange so tests can interact with select dropdowns
 vi.mock('@radix-ui/react-select', async () => {

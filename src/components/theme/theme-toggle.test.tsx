@@ -1,5 +1,5 @@
 import React from 'react'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { vi, describe, it, expect, beforeEach } from 'vitest'
 import { ThemeProvider } from '@/contexts/theme-context'
 import { ThemeToggle } from './theme-toggle'
@@ -56,24 +56,19 @@ describe('ThemeToggle Component', () => {
       
       const button = screen.getByRole('button')
       
-      // Initially should be system theme (default)
       // First click: system → dark (since systemTheme is 'light' due to matchMedia mock)
-      fireEvent.click(button)
-      
-      await waitFor(() => {
-        expect(localStorageMock.setItem).toHaveBeenCalledWith('theme', 'dark')
+      await act(async () => {
+        fireEvent.click(button)
       })
       
-      // Need to wait for React to re-render with new `theme` state
-      // so that `toggleTheme`'s useCallback picks up `theme === 'dark'`
-      await new Promise(resolve => setTimeout(resolve, 50))
+      expect(localStorageMock.setItem).toHaveBeenCalledWith('theme', 'dark')
       
-      // Click again to toggle: dark → light
-      fireEvent.click(button)
-      
-      await waitFor(() => {
-        expect(localStorageMock.setItem).toHaveBeenCalledWith('theme', 'light')
+      // Second click: dark → light — act flushes all state updates and effects
+      await act(async () => {
+        fireEvent.click(button)
       })
+      
+      expect(localStorageMock.setItem).toHaveBeenCalledWith('theme', 'light')
     })
 
     it('displays correct icon for current theme', () => {

@@ -107,7 +107,13 @@ function setupFetchMocks() {
   // 1. Promise.all([task, projects, agents]) — 3 simultaneous fetches
   // 2. Activity (after agents load)
   mockFetch.mockImplementation((url: string) => {
-    if (url.includes('/api/tasks/1') && !url.includes('comments') && !url.includes('move')) {
+    if (url.includes('/api/tasks/1/activity')) {
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ success: true, data: mockActivity }),
+      })
+    }
+    if (url.includes('/api/tasks/1') && !url.includes('comments') && !url.includes('move') && !url.includes('activity')) {
       return Promise.resolve({
         ok: true,
         json: () => Promise.resolve({ success: true, data: mockTask }),
