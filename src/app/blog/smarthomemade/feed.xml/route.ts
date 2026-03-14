@@ -1,23 +1,9 @@
 import { getPublishedArticles } from '@/lib/smarthomemade-data'
-import { BLOG_CONFIGS, blogFullUrl, articleFullUrl } from '@/lib/blog-seo'
+import { BLOG_CONFIGS, blogFullUrl, articleFullUrl, escapeXml, toRfc822 } from '@/lib/blog-seo'
 
 export const revalidate = 3600
 
-function escapeXml(str: string): string {
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;')
-}
 
-function toRfc822(value: unknown): string {
-  if (!value) return new Date().toUTCString()
-  if (value instanceof Date) return value.toUTCString()
-  if (typeof value === 'number') return new Date(value * 1000).toUTCString()
-  return new Date(String(value)).toUTCString()
-}
 
 export async function GET() {
   const blogSlug = 'smarthomemade'

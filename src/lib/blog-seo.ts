@@ -302,3 +302,21 @@ export function articleBreadcrumbs(
     { name: articleTitle, url: articleFullUrl(blogSlug, articleSlug) },
   ]
 }
+
+// ─── XML / RSS Utilities ──────────────────────────────────────────────────────
+
+export function escapeXml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;')
+}
+
+export function toRfc822(value: unknown): string {
+  if (!value) return new Date().toUTCString()
+  if (value instanceof Date) return value.toUTCString()
+  if (typeof value === 'number') return new Date(value * 1000).toUTCString()
+  return new Date(String(value)).toUTCString()
+}
