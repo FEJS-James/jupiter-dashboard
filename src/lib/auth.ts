@@ -60,22 +60,28 @@ export function getSessionFromRequest(request: NextRequest): { session: UserSess
 }
 
 /**
- * Middleware-like function for API routes requiring authentication
+ * Default session for unauthenticated requests (no login flow yet).
+ * This allows the dashboard to function as a single-user app.
+ * Replace with real auth when user accounts are implemented.
+ */
+const DEFAULT_SESSION: UserSession = {
+  user: {
+    id: 1,
+    name: 'Default User',
+    email: 'user@agentflow.local',
+    role: 'admin',
+  },
+}
+
+/**
+ * Middleware-like function for API routes requiring authentication.
+ * Falls back to a default session when no token is provided (single-user mode).
  */
 export function requireAuth(request: NextRequest): { session: UserSession; error: null } | { session: null; error: NextResponse } {
-  const { session, error } = getSessionFromRequest(request)
+  const { session } = getSessionFromRequest(request)
   
-  if (!session) {
-    return {
-      session: null,
-      error: NextResponse.json(
-        { error: 'Unauthorized', details: error },
-        { status: 401 }
-      )
-    }
-  }
-
-  return { session, error: null }
+  // Use authenticated session if available, otherwise fall back to default
+  return { session: session || DEFAULT_SESSION, error: null }
 }
 
 /**
