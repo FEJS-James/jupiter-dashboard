@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect, useMemo, useCallback } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Task, TaskStatus, TaskPriority } from '@/types'
 
 export interface TaskFilters {
@@ -41,28 +41,67 @@ const defaultFilters: TaskFilters = {
   tags: []
 }
 
+/**
+ * Parse filter state from URLSearchParams (pure function, no side effects).
+ */
+function parseFiltersFromParams(params: URLSearchParams): TaskFilters {
+  return {
+    search: params.get('search') || '',
+    statuses: params.getAll('status') as TaskStatus[],
+    priorities: params.getAll('priority') as TaskPriority[],
+    assignees: params.getAll('assignee'),
+    projectIds: params.getAll('project').map(id => parseInt(id)).filter(id => !isNaN(id)),
+    tags: params.getAll('tag'),
+  }
+}
+
+/**
+ * Serialize filter state to a query-string (without leading '?').
+ */
+function serializeFilters(filters: TaskFilters): string {
+  const params = new URLSearchParams()
+  if (filters.search) params.set('search', filters.search)
+  filters.statuses.forEach(s => params.append('status', s))
+  filters.priorities.forEach(p => params.append('priority', p))
+  filters.assignees.forEach(a => params.append('assignee', a))
+  filters.projectIds.forEach(id => params.append('project', id.toString()))
+  filters.tags.forEach(t => params.append('tag', t))
+  return params.toString()
+}
+
 export function useTaskFilters(tasks: Task[]): UseTaskFiltersReturn {
-  const router = useRouter()
   const searchParams = useSearchParams()
-  const [filters, setFiltersState] = useState<TaskFilters>(defaultFilters)
-  const [debouncedSearch, setDebouncedSearch] = useState('')
+
+  // ── Source of truth: local React state ──
+  // URL is a *best-effort* mirror — we never let a failed URL update
+  // overwrite the user's filter selection.
+  const didInitFromURL = useRef(false)
+  const [filters, setFiltersState] = useState<TaskFilters>(() => {
+    // Eager initialiser: read URL params on first render so SSR/hydration
+    // picks up deep-linked filters.
+    if (searchParams) {
+      return parseFiltersFromParams(searchParams)
+    }
+    return defaultFilters
+  })
+
+  const [debouncedSearch, setDebouncedSearch] = useState(filters.search)
   const [isLoading, setIsLoading] = useState(false)
 
-  // Initialize filters from URL params on mount
+  // One-time sync from URL on mount (covers the case where the eager
+  // initialiser ran before searchParams was available, e.g. Suspense).
   useEffect(() => {
-    if (!searchParams) return
-    
-    const urlFilters: TaskFilters = {
-      search: searchParams.get('search') || '',
-      statuses: searchParams.getAll('status') as TaskStatus[],
-      priorities: searchParams.getAll('priority') as TaskPriority[],
-      assignees: searchParams.getAll('assignee'),
-      projectIds: searchParams.getAll('project').map(id => parseInt(id)).filter(id => !isNaN(id)),
-      tags: searchParams.getAll('tag')
+    if (didInitFromURL.current || !searchParams) return
+    didInitFromURL.current = true
+    const parsed = parseFiltersFromParams(searchParams)
+    // Only overwrite if URL actually carries filter params
+    const hasParams = parsed.search || parsed.statuses.length || parsed.priorities.length ||
+      parsed.assignees.length || parsed.projectIds.length || parsed.tags.length
+    if (hasParams) {
+      setFiltersState(parsed)
+      setDebouncedSearch(parsed.search)
     }
-
-    setFiltersState(urlFilters)
-    setDebouncedSearch(urlFilters.search)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional mount-only
   }, [searchParams])
 
   // Debounce search input
@@ -74,38 +113,38 @@ export function useTaskFilters(tasks: Task[]): UseTaskFiltersReturn {
     return () => clearTimeout(timer)
   }, [filters.search])
 
-  // Update URL when filters change
-  const updateURL = useCallback((newFilters: TaskFilters) => {
-    const params = new URLSearchParams()
-    
-    if (newFilters.search) params.set('search', newFilters.search)
-    newFilters.statuses.forEach(status => params.append('status', status))
-    newFilters.priorities.forEach(priority => params.append('priority', priority))
-    newFilters.assignees.forEach(assignee => params.append('assignee', assignee))
-    newFilters.projectIds.forEach(id => params.append('project', id.toString()))
-    newFilters.tags.forEach(tag => params.append('tag', tag))
-
-    const newUrl = params.toString() ? `?${params.toString()}` : ''
-    
-    // Use replace to avoid cluttering browser history
-    router.replace(newUrl, { scroll: false })
-  }, [router])
+  // Best-effort URL mirror — fires after state is already committed so a
+  // failed router.replace() can never revert the user's selection.
+  const syncURLBestEffort = useCallback((newFilters: TaskFilters) => {
+    try {
+      const qs = serializeFilters(newFilters)
+      const newUrl = qs ? `?${qs}` : window.location.pathname
+      // Use History API directly — avoids React startTransition which can be
+      // silently dropped on pages with heavy concurrent updates (DnD, WebSocket).
+      window.history.replaceState(window.history.state, '', newUrl)
+    } catch {
+      // URL update is non-critical; swallow errors.
+    }
+  }, [])
 
   const setFilters = useCallback((partialFilters: Partial<TaskFilters>) => {
     setIsLoading(true)
-    
-    const newFilters = { ...filters, ...partialFilters }
-    setFiltersState(newFilters)
-    updateURL(newFilters)
-    
+
+    setFiltersState(prev => {
+      const next = { ...prev, ...partialFilters }
+      // Schedule URL sync outside the render cycle
+      queueMicrotask(() => syncURLBestEffort(next))
+      return next
+    })
+
     // Brief loading state for better UX
     setTimeout(() => setIsLoading(false), 100)
-  }, [filters, updateURL])
+  }, [syncURLBestEffort])
 
   const clearFilters = useCallback(() => {
     setFiltersState(defaultFilters)
-    updateURL(defaultFilters)
-  }, [updateURL])
+    syncURLBestEffort(defaultFilters)
+  }, [syncURLBestEffort])
 
   // Optimized task filtering with memoization
   const filteredTasks = useMemo(() => {
