@@ -92,16 +92,13 @@ export const WebSocketErrorBoundary: React.FC<{ children: ReactNode }> = ({ chil
   }
 
   const fallback = (
-    <div className="flex flex-col items-center justify-center p-6 bg-yellow-50 border border-yellow-200 rounded-lg">
-      <h3 className="text-lg font-semibold text-yellow-800 mb-2">
-        Connection Issue
-      </h3>
-      <p className="text-yellow-700 mb-4 text-center">
-        There's a problem with the real-time connection. Some features may not work correctly.
+    <div className="flex flex-col items-center justify-center p-6">
+      <p className="text-muted-foreground mb-4 text-center">
+        Something went wrong loading this section.
       </p>
       <button
         onClick={() => window.location.reload()}
-        className="px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700 transition-colors"
+        className="px-4 py-2 bg-primary text-primary-foreground rounded hover:opacity-90 transition-colors"
       >
         Reload Page
       </button>
