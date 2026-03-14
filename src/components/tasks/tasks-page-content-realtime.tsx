@@ -13,9 +13,9 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Plus, RefreshCw, AlertCircle, Activity } from 'lucide-react'
+import { Plus, RefreshCw, AlertCircle, Activity, ChevronDown, ChevronUp, Users } from 'lucide-react'
 import { Task, TaskStatus, Project, Agent } from '@/types'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
 import { useRealtimeTasks } from '@/hooks/use-realtime-tasks'
 import { useTaskFilters } from '@/hooks/use-task-filters'
@@ -34,6 +34,8 @@ export default function TasksPageContentRealtime() {
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [deletingTask, setDeletingTask] = useState<Task | null>(null)
   const [defaultStatus, setDefaultStatus] = useState<TaskStatus>('backlog')
+  const [activityExpanded, setActivityExpanded] = useState(false)
+  const [activityTab, setActivityTab] = useState<string>('activity')
 
   // Selected project from sidebar dropdown
   const { selectedProjectId } = useProjectContext()
@@ -188,22 +190,16 @@ export default function TasksPageContentRealtime() {
 
   if (loading) {
     return (
-      <div className="p-6 space-y-6">
+      <div className="p-6 space-y-6 overflow-hidden">
         <div className="space-y-2">
           <Skeleton className="h-8 w-48" />
           <Skeleton className="h-4 w-96" />
         </div>
-        <div className="flex gap-4">
-          <div className="flex-1">
-            <div className="flex gap-4">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <Skeleton key={i} className="h-96 w-80" />
-              ))}
-            </div>
-          </div>
-          <div className="w-80">
-            <Skeleton className="h-96 w-full" />
-          </div>
+        <Skeleton className="h-10 w-full" />
+        <div className="flex gap-4 overflow-hidden">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-96 w-80 shrink-0" />
+          ))}
         </div>
       </div>
     )
@@ -232,7 +228,7 @@ export default function TasksPageContentRealtime() {
   }
 
   return (
-    <div className="p-6 space-y-6" role="main" aria-label="Task Management">
+    <div className="p-6 space-y-6 overflow-hidden" role="main" aria-label="Task Management">
       {/* Page Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -306,76 +302,120 @@ export default function TasksPageContentRealtime() {
         />
       </motion.div>
 
-      {/* Main Content with Sidebar */}
-      <div className="flex gap-6">
-        {/* Main Board Area */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="flex-1"
-        >
-          <Card className="bg-slate-800/30 border-slate-700">
-            <CardContent className="p-6">
-              <EnhancedBoard 
-                tasks={filteredTasks.map(task => ({
-                  ...task,
-                  isOptimistic: isOptimistic(task.id)
-                }))}
-                agents={agents}
-                onCreateTask={handleCreateTask}
-                onEditTask={handleEditTask}
-                onDeleteTask={handleDeleteTask}
-                onMoveTask={handleMoveTask}
-                onTasksUpdated={fetchData}
-              />
-            </CardContent>
-          </Card>
-        </motion.div>
+      {/* Collapsible Activity & Users Bar */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+      >
+        <Card className="bg-slate-800/50 border-slate-700">
+          {/* Collapsed header — always visible */}
+          <button
+            onClick={() => setActivityExpanded(!activityExpanded)}
+            className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-slate-700/30 transition-colors rounded-t-lg"
+            aria-expanded={activityExpanded}
+            aria-controls="activity-panel"
+          >
+            <div className="flex items-center gap-4">
+              <Tabs value={activityTab} onValueChange={setActivityTab}>
+                <TabsList className="bg-slate-800/80 h-8">
+                  <TabsTrigger value="activity" className="flex items-center gap-1.5 text-xs h-6 px-2.5"
+                    onClick={(e) => { e.stopPropagation(); setActivityExpanded(true); setActivityTab('activity') }}
+                  >
+                    <Activity className="w-3.5 h-3.5" />
+                    Activity
+                    {activities.length > 0 && (
+                      <span className="ml-1 bg-blue-500/20 text-blue-300 text-[10px] px-1.5 py-0.5 rounded-full">
+                        {activities.length}
+                      </span>
+                    )}
+                  </TabsTrigger>
+                  <TabsTrigger value="users" className="flex items-center gap-1.5 text-xs h-6 px-2.5"
+                    onClick={(e) => { e.stopPropagation(); setActivityExpanded(true); setActivityTab('users') }}
+                  >
+                    <Users className="w-3.5 h-3.5" />
+                    Users
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
 
-        {/* Sidebar with Activity Feed */}
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.2 }}
-          className="w-80"
-        >
-          <Tabs defaultValue="activity" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-2 bg-slate-800">
-              <TabsTrigger value="activity" className="flex items-center gap-2">
-                <Activity className="w-4 h-4" />
-                Activity
-              </TabsTrigger>
-              <TabsTrigger value="users" className="flex items-center gap-2">
-                <UserPresence showCount={false} maxUsers={1} />
-                Users
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="activity" className="space-y-4">
-              <ActivityFeed maxItems={15} />
-            </TabsContent>
-            
-            <TabsContent value="users" className="space-y-4">
-              <Card className="bg-slate-800/50 border-slate-700">
-                <CardContent className="p-6">
-                  <h3 className="font-semibold mb-4">Online Users</h3>
-                  <UserPresence showCount={true} maxUsers={10} />
-                  
-                  {pendingUpdates.length > 0 && (
-                    <div className="mt-6 p-4 bg-orange-500/10 border border-orange-500/20 rounded-lg">
-                      <h4 className="font-medium text-orange-200 mb-2">Pending Updates</h4>
-                      <p className="text-sm text-orange-300">
-                        {pendingUpdates.length} updates are being processed
-                      </p>
+              {/* Inline summary when collapsed */}
+              {!activityExpanded && (
+                <div className="flex items-center gap-3 text-xs text-slate-400">
+                  <UserPresence showCount={true} maxUsers={3} />
+                  {activities.length > 0 && <ActivityIndicator />}
+                </div>
+              )}
+            </div>
+
+            <div className="text-slate-400">
+              {activityExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </div>
+          </button>
+
+          {/* Expanded panel */}
+          <AnimatePresence>
+            {activityExpanded && (
+              <motion.div
+                id="activity-panel"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden border-t border-slate-700"
+              >
+                <CardContent className="p-4">
+                  {activityTab === 'activity' ? (
+                    <div className="max-h-48 overflow-y-auto">
+                      <ActivityFeed maxItems={4} />
+                    </div>
+                  ) : (
+                    <div className="flex items-start gap-6">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-sm mb-2">Online Users</h3>
+                        <UserPresence showCount={true} maxUsers={10} />
+                      </div>
+                      {pendingUpdates.length > 0 && (
+                        <div className="p-3 bg-orange-500/10 border border-orange-500/20 rounded-lg">
+                          <h4 className="font-medium text-orange-200 text-xs mb-1">Pending Updates</h4>
+                          <p className="text-xs text-orange-300">
+                            {pendingUpdates.length} updates being processed
+                          </p>
+                        </div>
+                      )}
                     </div>
                   )}
                 </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </motion.div>
-      </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </Card>
+      </motion.div>
+
+      {/* Full-Width Kanban Board */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15 }}
+        className="min-w-0 overflow-hidden"
+      >
+        <Card className="bg-slate-800/30 border-slate-700">
+          <CardContent className="p-6 overflow-x-auto">
+            <EnhancedBoard 
+              tasks={filteredTasks.map(task => ({
+                ...task,
+                isOptimistic: isOptimistic(task.id)
+              }))}
+              agents={agents}
+              onCreateTask={handleCreateTask}
+              onEditTask={handleEditTask}
+              onDeleteTask={handleDeleteTask}
+              onMoveTask={handleMoveTask}
+              onTasksUpdated={fetchData}
+            />
+          </CardContent>
+        </Card>
+      </motion.div>
 
       {/* Task Form Dialog */}
       <TaskFormDialog
