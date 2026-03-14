@@ -13,6 +13,29 @@ export function createSuccessResponse(data?: unknown, message?: string, status: 
   return NextResponse.json({ success: true, data, message }, { status });
 }
 
+/**
+ * Create a success response with Cache-Control / stale-while-revalidate headers.
+ *
+ * @param data        - Response payload
+ * @param maxAge      - Freshness window in seconds (default 10)
+ * @param swr         - stale-while-revalidate window in seconds (default 30)
+ */
+export function createCachedSuccessResponse(
+  data?: unknown,
+  message?: string,
+  { maxAge = 10, swr = 30, status = 200 }: { maxAge?: number; swr?: number; status?: number } = {},
+) {
+  return NextResponse.json(
+    { success: true, data, message },
+    {
+      status,
+      headers: {
+        'Cache-Control': `public, s-maxage=${maxAge}, stale-while-revalidate=${swr}`,
+      },
+    },
+  );
+}
+
 export function handleZodError(error: ZodError) {
   const issues = error.issues.map(issue => ({
     field: issue.path.join('.'),

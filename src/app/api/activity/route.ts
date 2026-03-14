@@ -3,7 +3,7 @@ import { db } from '@/lib/db'
 import { activity, agents, projects, tasks } from '@/lib/schema'
 import { desc, eq, and, like, gte, lte, or, isNotNull, sql } from 'drizzle-orm'
 import { z, ZodError } from 'zod'
-import { handleZodError, handleDatabaseError, createSuccessResponse } from '@/lib/api-utils'
+import { handleZodError, handleDatabaseError, createSuccessResponse, createCachedSuccessResponse } from '@/lib/api-utils'
 
 const querySchema = z.object({
   page: z.coerce.number().min(1).default(1),
@@ -174,7 +174,7 @@ export async function GET(request: NextRequest) {
       } : undefined,
     }))
 
-    return createSuccessResponse({
+    return createCachedSuccessResponse({
       data: transformedActivities,
       pagination: {
         page,
@@ -183,7 +183,7 @@ export async function GET(request: NextRequest) {
         total: null, // Don't calculate total for performance
       },
       hasMore, // Keep for backward compatibility
-    })
+    }, undefined, { maxAge: 5, swr: 30 })
 
   } catch (error: unknown) {
     if (error instanceof ZodError) {

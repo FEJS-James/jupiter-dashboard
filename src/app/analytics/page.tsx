@@ -13,13 +13,15 @@ import { cn } from '@/lib/utils'
 import { useMediaQuery } from '@/hooks/use-media-query'
 import { useMounted } from '@/hooks/use-mounted'
 
-// Chart components
+// Chart components — overview cards load eagerly (above-the-fold), rest are lazy
 import { OverviewCards } from '@/components/analytics/overview-cards'
-import { VelocityCharts } from '@/components/analytics/velocity-charts'
-import { CompletionAnalytics } from '@/components/analytics/completion-analytics'
-import { AgentWorkloadCharts } from '@/components/analytics/agent-workload-charts'
-import { ProjectPerformanceCharts } from '@/components/analytics/project-performance-charts'
-import { AdditionalAnalytics } from '@/components/analytics/additional-analytics'
+import {
+  LazyVelocityCharts as VelocityCharts,
+  LazyCompletionAnalytics as CompletionAnalytics,
+  LazyAgentWorkloadCharts as AgentWorkloadCharts,
+  LazyProjectPerformanceCharts as ProjectPerformanceCharts,
+  LazyAdditionalAnalytics as AdditionalAnalytics,
+} from '@/components/analytics/lazy-analytics'
 import { LoadingSpinner } from '@/components/ui/loading-spinner'
 import { Skeleton } from '@/components/ui/skeleton'
 import { toast } from 'sonner'

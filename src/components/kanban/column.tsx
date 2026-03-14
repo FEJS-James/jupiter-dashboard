@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import { Droppable } from '@hello-pangea/dnd'
 import { Task, TaskStatus } from '@/types'
 import { TaskCard } from './task-card'
@@ -27,7 +28,7 @@ const statusIcons: Record<TaskStatus, string> = {
   archived: '📦',
 }
 
-export function Column({ title, status, tasks, color, isDragging, onCreateTask, onEditTask, onDeleteTask }: ColumnProps) {
+export const Column = React.memo(function Column({ title, status, tasks, color, isDragging, onCreateTask, onEditTask, onDeleteTask }: ColumnProps) {
   const totalTasks = tasks.length
   const completionRatio = status === 'done' ? 1 : 
     status === 'blocked' ? 0 : 
@@ -109,4 +110,4 @@ export function Column({ title, status, tasks, color, isDragging, onCreateTask, 
       </Droppable>
     </div>
   )
-}
+})

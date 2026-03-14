@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Board } from '@/components/kanban/board'
-import { TaskFormDialog } from '@/components/kanban/task-form-dialog'
-import { DeleteTaskDialog } from '@/components/kanban/delete-task-dialog'
+import { LazyTaskFormDialog as TaskFormDialog } from '@/components/kanban/lazy-kanban'
+import { LazyDeleteTaskDialog as DeleteTaskDialog } from '@/components/kanban/lazy-kanban'
 import { TaskFiltersComponent } from '@/components/tasks/task-filters'
 import { MobileTaskFilters } from '@/components/tasks/mobile-task-filters'
 import { useMediaQuery } from '@/hooks/use-media-query'
@@ -97,25 +97,25 @@ export default function TasksPageContent() {
 
   // Filtered tasks are now handled by the useTaskFilters hook
 
-  const handleCreateTask = (status: TaskStatus = 'backlog') => {
+  const handleCreateTask = useCallback((status: TaskStatus = 'backlog') => {
     setEditingTask(null)
     setDefaultStatus(status)
     setShowTaskForm(true)
-  }
+  }, [])
 
-  const handleEditTask = (task: Task) => {
+  const handleEditTask = useCallback((task: Task) => {
     setEditingTask(task)
     setShowTaskForm(true)
-  }
+  }, [])
 
-  const handleDeleteTask = (task: Task) => {
+  const handleDeleteTask = useCallback((task: Task) => {
     setDeletingTask(task)
     setShowDeleteDialog(true)
-  }
+  }, [])
 
-  const handleMoveTask = async (taskId: number, newStatus: TaskStatus) => {
+  const handleMoveTask = useCallback(async (taskId: number, newStatus: TaskStatus) => {
     await moveTask(taskId, newStatus)
-  }
+  }, [moveTask])
 
   const submitTaskForm = async (taskData: Partial<Task>) => {
     try {

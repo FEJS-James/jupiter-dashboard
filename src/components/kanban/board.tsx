@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { DragDropContext, DropResult } from '@hello-pangea/dnd'
 import { Task, TaskStatus } from '@/types'
 import { Column } from './column'
@@ -48,22 +48,24 @@ export function Board({ tasks, onCreateTask, onEditTask, onDeleteTask, onMoveTas
     )
   }
 
-  // Group tasks by status
-  const tasksByStatus = tasks.reduce((acc, task) => {
-    if (!acc[task.status]) {
-      acc[task.status] = []
-    }
-    acc[task.status].push(task)
-    return acc
-  }, {} as Record<TaskStatus, Task[]>)
+  // Group tasks by status (memoized)
+  const tasksByStatus = useMemo(() => {
+    return tasks.reduce((acc, task) => {
+      if (!acc[task.status]) {
+        acc[task.status] = []
+      }
+      acc[task.status].push(task)
+      return acc
+    }, {} as Record<TaskStatus, Task[]>)
+  }, [tasks])
 
-  const handleDragStart = (start: any) => {
+  const handleDragStart = useCallback((start: any) => {
     setIsDragging(true)
     const task = tasks.find(t => t.id.toString() === start.draggableId)
     setDraggedTask(task || null)
-  }
+  }, [tasks])
 
-  const handleDragEnd = async (result: DropResult) => {
+  const handleDragEnd = useCallback(async (result: DropResult) => {
     setIsDragging(false)
     setDraggedTask(null)
 
@@ -91,7 +93,7 @@ export function Board({ tasks, onCreateTask, onEditTask, onDeleteTask, onMoveTas
       console.error('Failed to move task:', error)
       // Optionally show user-facing error notification here
     }
-  }
+  }, [onMoveTask])
 
   return (
     <DragDropContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>

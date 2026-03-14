@@ -76,7 +76,17 @@ export const tasks = sqliteTable('tasks', {
     .notNull()
     .default(sql`(unixepoch())`)
     .$onUpdate(() => sql`(unixepoch())`),
-});
+}, (table) => ({
+  // Indexes for query performance
+  statusIdx: index('tasks_status_idx').on(table.status),
+  priorityIdx: index('tasks_priority_idx').on(table.priority),
+  projectIdIdx: index('tasks_project_id_idx').on(table.projectId),
+  assignedAgentIdx: index('tasks_assigned_agent_idx').on(table.assignedAgent),
+  updatedAtIdx: index('tasks_updated_at_idx').on(table.updatedAt),
+  // Composite indexes for common query patterns
+  statusPriorityIdx: index('tasks_status_priority_idx').on(table.status, table.priority),
+  projectStatusIdx: index('tasks_project_status_idx').on(table.projectId, table.status),
+}));
 
 /**
  * Activity table - stores activity/audit log

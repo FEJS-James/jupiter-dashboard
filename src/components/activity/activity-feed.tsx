@@ -120,6 +120,7 @@ export function ActivityFeed({
   const [hasMore, setHasMore] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set())
+  const [searchInput, setSearchInput] = useState('')
   
   // Available filter options
   const [projects, setProjects] = useState<Array<{ id: number; name: string }>>([])
@@ -216,15 +217,25 @@ export function ActivityFeed({
     fetchActivities(1, false, filters)
   }, [filters, fetchActivities])
 
+  // Debounce search input (avoid re-fetching on every keystroke)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchInput !== (filters.search || '')) {
+        handleFilterChange('search', searchInput || undefined)
+      }
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [searchInput])
+
   // Real-time activity updates via polling
   // (Socket.io removed for Vercel serverless compatibility)
   useEffect(() => {
     if (!realTime) return
 
-    // Poll for new activities every 10 seconds
+    // Poll for new activities every 30 seconds (reduced from 10s to save bandwidth)
     const interval = setInterval(() => {
       fetchActivities(1, false, filters)
-    }, 10000)
+    }, 30000)
 
     return () => clearInterval(interval)
   }, [realTime, filters, fetchActivities])
@@ -263,6 +274,7 @@ export function ActivityFeed({
   }
 
   const clearFilters = () => {
+    setSearchInput('')
     setFilters({})
   }
 
@@ -328,14 +340,14 @@ export function ActivityFeed({
 
     return (
       <div className="flex flex-wrap gap-3 mb-6">
-        {/* Search */}
+        {/* Search (debounced — updates filters after 300ms idle) */}
         <div className="relative flex-1 min-w-64">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
           <Input
             placeholder="Search activities..."
             className="pl-10 bg-slate-800/50 border-slate-600"
-            value={filters.search || ''}
-            onChange={(e) => handleFilterChange('search', e.target.value)}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
           />
         </div>
 

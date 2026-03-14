@@ -1,11 +1,12 @@
 import { NextRequest } from 'next/server';
-import { eq, like, or, count, and } from 'drizzle-orm';
+import { eq, like, or, count, and, sql } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { agents, tasks } from '@/lib/schema';
 import { createAgentSchema, agentFiltersSchema } from '@/lib/validation';
 import { ZodError } from 'zod';
 import { 
-  createSuccessResponse, 
+  createSuccessResponse,
+  createCachedSuccessResponse,
   createErrorResponse,
   handleDatabaseError,
   handleZodError,
@@ -65,35 +66,28 @@ export async function GET(request: NextRequest) {
       .limit(filters.limit || 100)
       .offset(filters.offset || 0);
     
-    // Get task counts for each agent
-    const agentsWithCounts = await Promise.all(
-      allAgents.map(async (agent) => {
-        const [totalTasks] = await db
-          .select({ count: count() })
-          .from(tasks)
-          .where(eq(tasks.assignedAgent, agent.name));
-        
-        const [activeTasks] = await db
-          .select({ count: count() })
-          .from(tasks)
-          .where(
-            and(
-              eq(tasks.assignedAgent, agent.name),
-              eq(tasks.status, 'in-progress')
-            )
-          );
-        
-        return {
-          ...agent,
-          taskCounts: {
-            total: totalTasks.count,
-            active: activeTasks.count,
-          },
-        };
+    // Get task counts in a single query (fixes N+1)
+    const taskCounts = await db
+      .select({
+        assignedAgent: tasks.assignedAgent,
+        total: count(),
+        active: sql<number>`SUM(CASE WHEN ${tasks.status} = 'in-progress' THEN 1 ELSE 0 END)`,
       })
+      .from(tasks)
+      .where(sql`${tasks.assignedAgent} IS NOT NULL`)
+      .groupBy(tasks.assignedAgent);
+    
+    // Build lookup map
+    const countsMap = new Map(
+      taskCounts.map(tc => [tc.assignedAgent, { total: tc.total, active: tc.active }])
     );
     
-    return createSuccessResponse(agentsWithCounts);
+    const agentsWithCounts = allAgents.map(agent => ({
+      ...agent,
+      taskCounts: countsMap.get(agent.name) || { total: 0, active: 0 },
+    }));
+    
+    return createCachedSuccessResponse(agentsWithCounts, undefined, { maxAge: 15, swr: 60 });
   } catch (error) {
     return handleDatabaseError(error);
   }

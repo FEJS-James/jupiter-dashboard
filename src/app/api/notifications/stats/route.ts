@@ -109,6 +109,10 @@ export async function GET(request: NextRequest) {
       totalCount: totalCount[0]?.count || 0,
       byType,
       byPriority,
+    }, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=5, stale-while-revalidate=30',
+      },
     })
   } catch (error) {
     console.error('Error fetching notification stats:', error)

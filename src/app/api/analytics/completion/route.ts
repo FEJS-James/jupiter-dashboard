@@ -223,6 +223,8 @@ export async function GET(request: NextRequest) {
         })),
         stuckTasks: stuckTasks.slice(0, 10) // Top 10 most stuck tasks
       },
+    }, {
+      headers: { "Cache-Control": "public, s-maxage=30, stale-while-revalidate=120" },
     })
 
   } catch (error) {

@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import { Draggable } from '@hello-pangea/dnd'
 import { Task, TaskPriority } from '@/types'
 import { Card } from '@/components/ui/card'
@@ -41,7 +42,7 @@ const agentColors: Record<string, string> = {
   tester: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
 }
 
-export function EnhancedTaskCard({ task, index, onEdit, onDelete, onArchive }: EnhancedTaskCardProps) {
+export const EnhancedTaskCard = React.memo(function EnhancedTaskCard({ task, index, onEdit, onDelete, onArchive }: EnhancedTaskCardProps) {
   const {
     isSelected,
     toggleTaskSelection,
@@ -284,4 +285,4 @@ export function EnhancedTaskCard({ task, index, onEdit, onDelete, onArchive }: E
       )}
     </Draggable>
   )
-}
+})

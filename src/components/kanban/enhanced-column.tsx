@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import { Droppable } from '@hello-pangea/dnd'
 import { Task, TaskStatus } from '@/types'
 import { Card } from '@/components/ui/card'
@@ -31,7 +32,7 @@ interface EnhancedColumnProps {
   onArchiveAllDone?: () => void
 }
 
-export function EnhancedColumn({
+export const EnhancedColumn = React.memo(function EnhancedColumn({
   title,
   status,
   tasks,
@@ -262,4 +263,4 @@ export function EnhancedColumn({
       </Card>
     </div>
   )
-}
+})

@@ -34,13 +34,18 @@ vi.mock('@/lib/db', () => {
   }
 });
 
-vi.mock('drizzle-orm', () => ({
-  eq: vi.fn(),
-  like: vi.fn(),
-  or: vi.fn(),
-  and: vi.fn(),
-  count: vi.fn()
-}));
+vi.mock('drizzle-orm', () => {
+  const mockSql: any = (..._args: any[]) => 'mock-sql';
+  mockSql.raw = vi.fn();
+  return {
+    eq: vi.fn(),
+    like: vi.fn(),
+    or: vi.fn(),
+    and: vi.fn(),
+    count: vi.fn(),
+    sql: mockSql,
+  };
+});
 
 vi.mock('@/lib/schema', () => ({
   agents: {
@@ -71,6 +76,9 @@ vi.mock('@/lib/validation', () => ({
 
 vi.mock('@/lib/api-utils', () => ({
   createSuccessResponse: vi.fn((data) => 
+    new Response(JSON.stringify({ success: true, data }), { status: 200 })
+  ),
+  createCachedSuccessResponse: vi.fn((data) => 
     new Response(JSON.stringify({ success: true, data }), { status: 200 })
   ),
   createErrorResponse: vi.fn((message, status) => 

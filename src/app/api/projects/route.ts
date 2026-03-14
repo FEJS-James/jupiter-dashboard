@@ -5,7 +5,8 @@ import { createProjectSchema } from '@/lib/validation';
 import { ZodError } from 'zod';
 import { 
   createErrorResponse, 
-  createSuccessResponse, 
+  createSuccessResponse,
+  createCachedSuccessResponse,
   handleZodError, 
   handleDatabaseError,
   parseRequestBody
@@ -23,7 +24,7 @@ export async function GET() {
       .from(projects)
       .orderBy(projects.updatedAt);
     
-    return createSuccessResponse(allProjects);
+    return createCachedSuccessResponse(allProjects, undefined, { maxAge: 10, swr: 60 });
   } catch (error) {
     return handleDatabaseError(error);
   }
