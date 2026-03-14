@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import { Draggable } from '@hello-pangea/dnd'
 import { Task, TaskPriority } from '@/types'
 import { Card } from '@/components/ui/card'
@@ -36,7 +37,7 @@ const agentColors: Record<string, string> = {
   manager: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
 }
 
-export function TaskCard({ task, index, onEdit, onDelete }: TaskCardProps) {
+export const TaskCard = React.memo(function TaskCard({ task, index, onEdit, onDelete }: TaskCardProps) {
   const dueDate = task.dueDate ? new Date(task.dueDate) : null
   const isOverdue = dueDate && dueDate < new Date()
 
@@ -192,4 +193,4 @@ export function TaskCard({ task, index, onEdit, onDelete }: TaskCardProps) {
       )}
     </Draggable>
   )
-}
+})

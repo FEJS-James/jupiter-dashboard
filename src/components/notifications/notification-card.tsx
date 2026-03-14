@@ -23,7 +23,7 @@ interface NotificationCardProps {
   showActions?: boolean
 }
 
-export function NotificationCard({ 
+export const NotificationCard = React.memo(function NotificationCard({ 
   notification, 
   onClick, 
   showActions = false 
@@ -102,7 +102,7 @@ export function NotificationCard({
       </div>
     </div>
   )
-}
+})
 
 function getNotificationIcon(type: NotificationType) {
   const iconProps = { className: "h-4 w-4" }

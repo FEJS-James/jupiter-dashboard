@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -263,29 +263,35 @@ export function DashboardContent() {
     fetchDashboardData()
   }
 
-  // Prepare chart data with fallbacks
-  const taskStatusData = recentTasks.length > 0 ? recentTasks.reduce((acc, task) => {
-    const existing = acc.find(item => item.status === task.status)
-    if (existing) {
-      existing.count++
-    } else {
-      acc.push({ 
-        status: task.status, 
-        count: 1, 
-        color: statusColors[task.status as keyof typeof statusColors],
-        label: statusLabels[task.status as keyof typeof statusLabels] || task.status
-      })
-    }
-    return acc
-  }, [] as Array<{ status: string; count: number; color: string; label: string }>) : []
+  // Prepare chart data with fallbacks (memoized to avoid recomputation on unrelated re-renders)
+  const taskStatusData = useMemo(() => {
+    if (recentTasks.length === 0) return []
+    return recentTasks.reduce((acc, task) => {
+      const existing = acc.find(item => item.status === task.status)
+      if (existing) {
+        existing.count++
+      } else {
+        acc.push({ 
+          status: task.status, 
+          count: 1, 
+          color: statusColors[task.status as keyof typeof statusColors],
+          label: statusLabels[task.status as keyof typeof statusLabels] || task.status
+        })
+      }
+      return acc
+    }, [] as Array<{ status: string; count: number; color: string; label: string }>)
+  }, [recentTasks])
 
-  const agentWorkloadData = agents.length > 0 ? agents.map(agent => ({
-    name: agent.name,
-    role: agent.role,
-    tasks: recentTasks.filter(task => task.agent?.name === agent.name).length,
-    status: agent.status,
-    color: agent.color,
-  })) : []
+  const agentWorkloadData = useMemo(() => {
+    if (agents.length === 0) return []
+    return agents.map(agent => ({
+      name: agent.name,
+      role: agent.role,
+      tasks: recentTasks.filter(task => task.agent?.name === agent.name).length,
+      status: agent.status,
+      color: agent.color,
+    }))
+  }, [agents, recentTasks])
 
   // Error state UI
   if (error.hasError) {

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { DragDropContext, DropResult } from '@hello-pangea/dnd'
 import { Task, TaskStatus, TaskPriority } from '@/types'
 import { EnhancedColumn } from './enhanced-column'
@@ -87,14 +87,16 @@ function BoardContent({
     },
   })
 
-  // Group tasks by status
-  const tasksByStatus = tasks.reduce((acc, task) => {
-    if (!acc[task.status]) {
-      acc[task.status] = []
-    }
-    acc[task.status].push(task)
-    return acc
-  }, {} as Record<TaskStatus, Task[]>)
+  // Group tasks by status (memoized — only recomputes when tasks array changes)
+  const tasksByStatus = useMemo(() => {
+    return tasks.reduce((acc, task) => {
+      if (!acc[task.status]) {
+        acc[task.status] = []
+      }
+      acc[task.status].push(task)
+      return acc
+    }, {} as Record<TaskStatus, Task[]>)
+  }, [tasks])
 
   // Define bulk operation handlers first
   const handleBulkMove = async (taskIds: number[], newStatus: TaskStatus) => {
@@ -123,7 +125,7 @@ function BoardContent({
     enabled: true,
   })
 
-  const handleDragStart = (start: any) => {
+  const handleDragStart = useCallback((start: any) => {
     // Disable drag if in select mode
     if (isSelectMode) {
       return
@@ -132,9 +134,9 @@ function BoardContent({
     setIsDragging(true)
     const task = tasks.find(t => t.id.toString() === start.draggableId)
     setDraggedTask(task || null)
-  }
+  }, [isSelectMode, tasks])
 
-  const handleDragEnd = async (result: DropResult) => {
+  const handleDragEnd = useCallback(async (result: DropResult) => {
     setIsDragging(false)
     setDraggedTask(null)
 
@@ -163,7 +165,7 @@ function BoardContent({
       console.error('Failed to move task:', error)
       toast.error('Failed to move task')
     }
-  }
+  }, [onMoveTask, onTasksUpdated])
 
   const handleBulkAssign = async (taskIds: number[], agentName: string | null) => {
     await bulkAssign(taskIds, agentName)
