@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from "react"
+import { usePathname } from "next/navigation"
 import { useMounted } from "@/hooks/use-mounted"
 import { Sidebar } from "./sidebar"
 import { Header } from "./header"
@@ -21,8 +22,15 @@ interface LayoutWrapperProps {
 export function LayoutWrapper({ children }: LayoutWrapperProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const mounted = useMounted()
+  const pathname = usePathname()
   const { actualTheme } = useTheme()
   const isMobile = useMediaQuery('(max-width: 768px)')
+
+  // Blog pages have their own layout — skip dashboard chrome
+  const isBlogRoute = pathname.startsWith('/blog/')
+  if (isBlogRoute) {
+    return <>{children}</>
+  }
 
   // Listen for sidebar collapse changes
   useEffect(() => {
