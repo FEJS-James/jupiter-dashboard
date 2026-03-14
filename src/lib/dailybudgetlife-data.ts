@@ -147,6 +147,40 @@ export async function getPublishedArticles(options?: {
   }
 }
 
+export async function getArticlesCount(tag?: string): Promise<number> {
+  try {
+    const blogId = await getBlogId();
+    if (!blogId) return 0;
+
+    if (tag) {
+      // Tags are stored as JSON so we must count in-memory
+      const conditions = [
+        eq(articles.blogId, blogId),
+        eq(articles.status, 'published'),
+      ];
+      const results = await blogDb
+        .select({ tags: articles.tags })
+        .from(articles)
+        .where(and(...conditions));
+
+      if (!Array.isArray(results)) return 0;
+      return results.filter((a) => {
+        const parsed = parseJsonField<string[]>(a.tags);
+        return Array.isArray(parsed) && parsed.includes(tag);
+      }).length;
+    }
+
+    const [countResult] = await blogDb
+      .select({ total: sql<number>`count(*)` })
+      .from(articles)
+      .where(and(eq(articles.blogId, blogId), eq(articles.status, 'published')));
+
+    return Number(countResult?.total ?? 0);
+  } catch {
+    return 0;
+  }
+}
+
 export async function getArticleBySlug(slug: string): Promise<DBLArticle | null> {
   try {
     const blogId = await getBlogId();

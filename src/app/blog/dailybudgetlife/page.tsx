@@ -5,48 +5,10 @@ import {
   getHeroImageForTopic,
   type DBLArticle,
 } from '@/lib/dailybudgetlife-data';
+import { Navbar } from './_components/navbar';
+import { Footer } from './_components/footer';
 
 export const revalidate = 60;
-
-// ─── Subcomponents ──────────────────────────────────────────────────────────
-
-function Navbar() {
-  return (
-    <nav
-      className="sticky top-0 z-50 border-b border-stone-200"
-      style={{ backgroundColor: '#fafaf9' }}
-    >
-      <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-        <Link href="/blog/dailybudgetlife" className="flex items-center gap-2">
-          <span className="text-xl font-bold text-gray-900">
-            Daily<span style={{ color: '#059669' }}>Budget</span>Life
-          </span>
-        </Link>
-        <div className="hidden items-center gap-6 text-sm font-medium text-gray-600 md:flex">
-          <Link href="/blog/dailybudgetlife" className="transition hover:text-gray-900">
-            Home
-          </Link>
-          <Link href="/blog/dailybudgetlife/blog" className="transition hover:text-gray-900">
-            Articles
-          </Link>
-          <Link href="/blog/dailybudgetlife/about" className="transition hover:text-gray-900">
-            About
-          </Link>
-        </div>
-        {/* Mobile menu button */}
-        <div className="md:hidden">
-          <Link
-            href="/blog/dailybudgetlife/blog"
-            className="rounded-lg px-3 py-2 text-sm font-medium"
-            style={{ backgroundColor: '#059669', color: '#fff' }}
-          >
-            Articles
-          </Link>
-        </div>
-      </div>
-    </nav>
-  );
-}
 
 function HeroSection({ featured }: { featured: DBLArticle | null }) {
   return (
@@ -174,7 +136,7 @@ function ArticleFeed({ articleList }: { articleList: DBLArticle[] }) {
                   </div>
                 )}
               </div>
-              {(article.heroImage || article.tags.length > 0) && (
+              {(article.heroImage || (Array.isArray(article.tags) && article.tags.length > 0)) && (
                 <div className="hidden flex-shrink-0 sm:block">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
@@ -300,70 +262,6 @@ function CTASection() {
   );
 }
 
-function Footer() {
-  return (
-    <footer className="py-12" style={{ backgroundColor: '#1c1917', color: '#d6d3d1' }}>
-      <div className="mx-auto grid max-w-5xl gap-8 px-6 sm:grid-cols-3">
-        <div>
-          <h3 className="mb-3 text-sm font-bold text-white">
-            Daily<span style={{ color: '#059669' }}>Budget</span>Life
-          </h3>
-          <p className="text-sm text-stone-400">
-            Practical personal finance tips for everyday life.
-          </p>
-        </div>
-        <div>
-          <h4 className="mb-3 text-sm font-bold text-white">Quick Links</h4>
-          <ul className="space-y-2 text-sm">
-            <li>
-              <Link href="/blog/dailybudgetlife/blog" className="transition hover:text-white">
-                Articles
-              </Link>
-            </li>
-            <li>
-              <Link href="/blog/dailybudgetlife/about" className="transition hover:text-white">
-                About
-              </Link>
-            </li>
-          </ul>
-        </div>
-        <div>
-          <h4 className="mb-3 text-sm font-bold text-white">Topics</h4>
-          <ul className="space-y-2 text-sm">
-            <li>
-              <Link
-                href="/blog/dailybudgetlife/blog?tag=Budgeting"
-                className="transition hover:text-white"
-              >
-                💰 Budgeting
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/blog/dailybudgetlife/blog?tag=Housing"
-                className="transition hover:text-white"
-              >
-                🏠 Housing
-              </Link>
-            </li>
-            <li>
-              <Link
-                href="/blog/dailybudgetlife/blog?tag=Food"
-                className="transition hover:text-white"
-              >
-                🍽️ Food
-              </Link>
-            </li>
-          </ul>
-        </div>
-      </div>
-      <div className="mx-auto mt-8 max-w-5xl border-t border-stone-800 px-6 pt-6 text-center text-xs text-stone-500">
-        © {new Date().getFullYear()} DailyBudgetLife. All rights reserved.
-      </div>
-    </footer>
-  );
-}
-
 // ─── Page ───────────────────────────────────────────────────────────────────
 
 export default async function DailyBudgetLifeHome() {
@@ -372,7 +270,7 @@ export default async function DailyBudgetLifeHome() {
 
   return (
     <>
-      <Navbar />
+      <Navbar activePage="home" />
       <HeroSection featured={featured} />
       <ArticleFeed articleList={Array.isArray(recentArticles) ? recentArticles : []} />
       <StatsSection />

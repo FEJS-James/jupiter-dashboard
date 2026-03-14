@@ -1,10 +1,13 @@
 import Link from 'next/link';
 import {
   getPublishedArticles,
+  getArticlesCount,
   getAllTags,
   getHeroImageForTopic,
   type DBLArticle,
 } from '@/lib/dailybudgetlife-data';
+import { Navbar } from '../_components/navbar';
+import { FooterCompact } from '../_components/footer';
 
 export const revalidate = 60;
 
@@ -12,40 +15,6 @@ export const metadata = {
   title: 'All Articles',
   description: 'Browse all DailyBudgetLife articles — budgeting tips, saving guides, and more.',
 };
-
-// ─── Navbar ─────────────────────────────────────────────────────────────────
-
-function Navbar() {
-  return (
-    <nav
-      className="sticky top-0 z-50 border-b border-stone-200"
-      style={{ backgroundColor: '#fafaf9' }}
-    >
-      <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-        <Link href="/blog/dailybudgetlife" className="flex items-center gap-2">
-          <span className="text-xl font-bold text-gray-900">
-            Daily<span style={{ color: '#059669' }}>Budget</span>Life
-          </span>
-        </Link>
-        <div className="hidden items-center gap-6 text-sm font-medium text-gray-600 md:flex">
-          <Link href="/blog/dailybudgetlife" className="transition hover:text-gray-900">
-            Home
-          </Link>
-          <Link
-            href="/blog/dailybudgetlife/blog"
-            className="font-bold transition"
-            style={{ color: '#059669' }}
-          >
-            Articles
-          </Link>
-          <Link href="/blog/dailybudgetlife/about" className="transition hover:text-gray-900">
-            About
-          </Link>
-        </div>
-      </div>
-    </nav>
-  );
-}
 
 // ─── Components ─────────────────────────────────────────────────────────────
 
@@ -205,13 +174,14 @@ export default async function BlogListingPage({
   const activeTag = resolvedParams.tag ?? null;
   const page = Math.max(1, parseInt(resolvedParams.page ?? '1', 10) || 1);
 
-  const [tags, { articles: articleList, total }] = await Promise.all([
+  const [tags, { articles: articleList }, total] = await Promise.all([
     getAllTags(),
     getPublishedArticles({
       limit: ARTICLES_PER_PAGE,
       offset: (page - 1) * ARTICLES_PER_PAGE,
       tag: activeTag ?? undefined,
     }),
+    getArticlesCount(activeTag ?? undefined),
   ]);
 
   const totalPages = Math.max(1, Math.ceil(total / ARTICLES_PER_PAGE));
@@ -219,7 +189,7 @@ export default async function BlogListingPage({
 
   return (
     <>
-      <Navbar />
+      <Navbar activePage="articles" />
       <div className="mx-auto max-w-3xl px-6 py-12">
         <h1 className="mb-2 text-3xl font-bold text-gray-900">Articles</h1>
         <p className="mb-8 text-gray-600">
@@ -248,17 +218,7 @@ export default async function BlogListingPage({
         <Pagination page={page} totalPages={totalPages} activeTag={activeTag} />
       </div>
 
-      {/* Footer */}
-      <footer className="mt-8 py-8" style={{ backgroundColor: '#1c1917', color: '#d6d3d1' }}>
-        <div className="mx-auto max-w-5xl px-6 text-center text-sm">
-          <Link href="/blog/dailybudgetlife" className="transition hover:text-white">
-            Daily<span style={{ color: '#059669' }}>Budget</span>Life
-          </Link>
-          <p className="mt-2 text-xs text-stone-500">
-            © {new Date().getFullYear()} DailyBudgetLife. All rights reserved.
-          </p>
-        </div>
-      </footer>
+      <FooterCompact className="mt-8" />
     </>
   );
 }
