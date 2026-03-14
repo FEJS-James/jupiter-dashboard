@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { 
   ChevronLeft,
@@ -17,7 +17,7 @@ import {
 import { cn } from '@/lib/utils'
 import { useTheme } from '@/contexts/theme-context'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useSidebarData } from '@/hooks/use-sidebar-data'
 
 interface SidebarProps {
@@ -29,8 +29,20 @@ export function Sidebar({ className, onCollapseChange }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const { actualTheme } = useTheme()
   const pathname = usePathname()
+  const router = useRouter()
   const { projects, agents, loading } = useSidebarData()
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null)
+
+  // Explicit navigation handler — bypasses Next.js <Link> internal click handling
+  // to work around silent client-side navigation failures (React 19 startTransition
+  // can swallow errors, and Framer Motion wrappers can interfere with event delegation).
+  const handleNavClick = useCallback((e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    // Preserve modifier-key behaviour (open in new tab, etc.)
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return
+
+    e.preventDefault()
+    router.push(href)
+  }, [router])
 
   const toggleCollapse = () => {
     const newCollapsedState = !isCollapsed
@@ -147,6 +159,7 @@ export function Sidebar({ className, onCollapseChange }: SidebarProps) {
               ) : (
                 <Link
                   href={selectedProject ? `/projects/${selectedProject.id}` : '/projects'}
+                  onClick={(e) => handleNavClick(e, selectedProject ? `/projects/${selectedProject.id}` : '/projects')}
                   className={cn(
                     'w-full flex items-center justify-between p-3 rounded-lg transition-colors group',
                     actualTheme === 'dark'
@@ -177,20 +190,16 @@ export function Sidebar({ className, onCollapseChange }: SidebarProps) {
 
         {/* Navigation */}
         <nav className="flex-1 p-4 space-y-2">
-          {navigationItems.map((item, index) => {
+          {navigationItems.map((item) => {
             const isActive = item.href === '/' 
               ? pathname === '/' 
               : pathname.startsWith(item.href)
             
             return (
-              <motion.div
-                key={item.label}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.1 * (index + 2) }}
-              >
+              <div key={item.label}>
                 <Link
                   href={item.href}
+                  onClick={(e) => handleNavClick(e, item.href)}
                   className={cn(
                     'w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-all duration-200',
                     isActive
@@ -205,7 +214,7 @@ export function Sidebar({ className, onCollapseChange }: SidebarProps) {
                     <span className="text-sm font-medium">{item.label}</span>
                   )}
                 </Link>
-              </motion.div>
+              </div>
             )
           })}
         </nav>

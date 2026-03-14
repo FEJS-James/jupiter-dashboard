@@ -12,13 +12,21 @@ import {
 import { cn } from '@/lib/utils'
 import { useTheme } from '@/contexts/theme-context'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { useState } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
+import { useState, useCallback } from 'react'
 
 export function MobileBottomNav() {
   const { actualTheme } = useTheme()
   const pathname = usePathname()
+  const router = useRouter()
   const [showFAB, setShowFAB] = useState(false)
+
+  // Explicit navigation handler — bypasses <Link> internal click handling
+  const handleNavClick = useCallback((e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return
+    e.preventDefault()
+    router.push(href)
+  }, [router])
 
   const navigationItems = [
     { icon: Home, label: 'Home', href: '/', active: pathname === '/' },
@@ -89,6 +97,7 @@ export function MobileBottomNav() {
               <Link
                 key={item.label}
                 href={item.href}
+                onClick={(e) => handleNavClick(e, item.href)}
                 className={cn(
                   'flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-200 min-w-[60px]',
                   item.active

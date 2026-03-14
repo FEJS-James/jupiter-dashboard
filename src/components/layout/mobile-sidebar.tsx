@@ -1,7 +1,7 @@
 'use client'
 
 import { motion, AnimatePresence } from 'framer-motion'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { 
   Home,
   CheckSquare,
@@ -17,7 +17,7 @@ import {
 import { cn } from '@/lib/utils'
 import { useTheme } from '@/contexts/theme-context'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useSidebarData } from '@/hooks/use-sidebar-data'
 
 interface MobileSidebarProps {
@@ -28,9 +28,19 @@ interface MobileSidebarProps {
 export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
   const { actualTheme } = useTheme()
   const pathname = usePathname()
+  const router = useRouter()
   const { projects, agents, loading } = useSidebarData()
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null)
   const [showProjects, setShowProjects] = useState(false)
+
+  // Explicit navigation handler — bypasses <Link> internal click handling
+  // to work around silent client-side navigation failures.
+  const handleNavClick = useCallback((e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return
+    e.preventDefault()
+    onClose()
+    router.push(href)
+  }, [router, onClose])
 
   // Derive selected project — default to first project from API
   const selectedProject = projects.find(p => p.id === selectedProjectId) ?? projects[0] ?? null
@@ -219,7 +229,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                   <Link
                     key={item.label}
                     href={item.href}
-                    onClick={onClose}
+                    onClick={(e) => handleNavClick(e, item.href)}
                     className={cn(
                       'w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 text-base',
                       item.active
