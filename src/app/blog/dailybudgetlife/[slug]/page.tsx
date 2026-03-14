@@ -6,6 +6,8 @@ import {
   getAdjacentArticles,
   getHeroImageForTopic,
 } from '@/lib/dailybudgetlife-data';
+import { Navbar } from '../_components/navbar';
+import { FooterCompact } from '../_components/footer';
 
 export const revalidate = 60;
 
@@ -88,36 +90,6 @@ function markdownToHtml(md: string): string {
   });
 
   return `<p>${html}</p>`;
-}
-
-// ─── Navbar ─────────────────────────────────────────────────────────────────
-
-function Navbar() {
-  return (
-    <nav
-      className="sticky top-0 z-50 border-b border-stone-200"
-      style={{ backgroundColor: '#fafaf9' }}
-    >
-      <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-        <Link href="/blog/dailybudgetlife" className="flex items-center gap-2">
-          <span className="text-xl font-bold text-gray-900">
-            Daily<span style={{ color: '#059669' }}>Budget</span>Life
-          </span>
-        </Link>
-        <div className="hidden items-center gap-6 text-sm font-medium text-gray-600 md:flex">
-          <Link href="/blog/dailybudgetlife" className="transition hover:text-gray-900">
-            Home
-          </Link>
-          <Link href="/blog/dailybudgetlife/blog" className="transition hover:text-gray-900">
-            Articles
-          </Link>
-          <Link href="/blog/dailybudgetlife/about" className="transition hover:text-gray-900">
-            About
-          </Link>
-        </div>
-      </div>
-    </nav>
-  );
 }
 
 // ─── Page ───────────────────────────────────────────────────────────────────
@@ -250,17 +222,7 @@ export default async function ArticlePage({
         </div>
       </div>
 
-      {/* Footer */}
-      <footer className="py-8" style={{ backgroundColor: '#1c1917', color: '#d6d3d1' }}>
-        <div className="mx-auto max-w-5xl px-6 text-center text-sm">
-          <Link href="/blog/dailybudgetlife" className="transition hover:text-white">
-            Daily<span style={{ color: '#059669' }}>Budget</span>Life
-          </Link>
-          <p className="mt-2 text-xs text-stone-500">
-            © {new Date().getFullYear()} DailyBudgetLife. All rights reserved.
-          </p>
-        </div>
-      </footer>
+      <FooterCompact />
     </>
   );
 }
