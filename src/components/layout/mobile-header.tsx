@@ -17,6 +17,9 @@ import { useTheme } from '@/contexts/theme-context'
 import { ThemeToggle } from '@/components/theme/theme-toggle'
 import { NotificationBell } from '@/components/notifications/notification-bell'
 import { useMediaQuery } from '@/hooks/use-media-query'
+import { usePathname } from 'next/navigation'
+import Link from 'next/link'
+import { generateBreadcrumbs } from '@/lib/breadcrumbs'
 
 interface MobileHeaderProps {
   className?: string
@@ -37,12 +40,8 @@ export function MobileHeader({
   
   const isTablet = useMediaQuery('(min-width: 768px) and (max-width: 1024px)')
   const isDesktop = useMediaQuery('(min-width: 1024px)')
-  
-  const breadcrumbs = [
-    { label: 'Dashboard', href: '/' },
-    { label: 'Projects', href: '/projects' },
-    { label: 'AgentFlow Pipeline', href: '/projects/agentflow' }
-  ]
+  const pathname = usePathname()
+  const breadcrumbs = generateBreadcrumbs(pathname)
 
   const handleSearchToggle = () => {
     setSearchExpanded(!searchExpanded)
@@ -107,15 +106,16 @@ export function MobileHeader({
             {/* Desktop Breadcrumbs */}
             {!isMobile && (
               <div className="hidden md:flex items-center space-x-2 ml-4">
-                {breadcrumbs.slice(0, isTablet ? 2 : 3).map((crumb, index) => (
-                  <div key={crumb.label} className="flex items-center space-x-2">
+                {breadcrumbs.slice(0, isTablet ? 2 : breadcrumbs.length).map((crumb, index) => (
+                  <div key={crumb.href} className="flex items-center space-x-2">
                     {index > 0 && (
                       <ChevronRight className={cn(
                         'h-4 w-4',
                         actualTheme === 'dark' ? 'text-slate-500' : 'text-slate-400'
                       )} />
                     )}
-                    <button
+                    <Link
+                      href={crumb.href}
                       className={cn(
                         'text-sm transition-colors',
                         index === breadcrumbs.length - 1
@@ -128,7 +128,7 @@ export function MobileHeader({
                       )}
                     >
                       {crumb.label}
-                    </button>
+                    </Link>
                   </div>
                 ))}
               </div>

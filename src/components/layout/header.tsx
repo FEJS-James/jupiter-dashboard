@@ -15,6 +15,9 @@ import { useTheme } from '@/contexts/theme-context'
 import { ThemeToggle } from '@/components/theme/theme-toggle'
 import { NotificationBell } from '@/components/notifications/notification-bell'
 import { MobileHeader } from './mobile-header'
+import { usePathname } from 'next/navigation'
+import Link from 'next/link'
+import { generateBreadcrumbs } from '@/lib/breadcrumbs'
 
 interface HeaderProps {
   className?: string
@@ -43,12 +46,8 @@ export function Header({
 
   const [searchFocused, setSearchFocused] = useState(false)
   const { actualTheme } = useTheme()
-  
-  const breadcrumbs = [
-    { label: 'Dashboard', href: '/' },
-    { label: 'Projects', href: '/projects' },
-    { label: 'AgentFlow Pipeline', href: '/projects/agentflow' }
-  ]
+  const pathname = usePathname()
+  const breadcrumbs = generateBreadcrumbs(pathname)
 
   return (
     <motion.header
@@ -69,14 +68,15 @@ export function Header({
         {/* Breadcrumb Navigation */}
         <div className="flex items-center space-x-2">
           {breadcrumbs.map((crumb, index) => (
-            <div key={crumb.label} className="flex items-center space-x-2">
+            <div key={crumb.href} className="flex items-center space-x-2">
               {index > 0 && (
                 <ChevronRight className={cn(
                   'h-4 w-4',
                   actualTheme === 'dark' ? 'text-slate-500' : 'text-slate-400'
                 )} />
               )}
-              <button
+              <Link
+                href={crumb.href}
                 className={cn(
                   'text-sm transition-colors',
                   index === breadcrumbs.length - 1
@@ -89,7 +89,7 @@ export function Header({
                 )}
               >
                 {crumb.label}
-              </button>
+              </Link>
             </div>
           ))}
         </div>
