@@ -174,7 +174,7 @@ function ArticleFeed({ articleList }: { articleList: DBLArticle[] }) {
                   </div>
                 )}
               </div>
-              {(article.heroImage || article.tags.length > 0) && (
+              {(article.heroImage || (Array.isArray(article.tags) && article.tags.length > 0)) && (
                 <div className="hidden flex-shrink-0 sm:block">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
