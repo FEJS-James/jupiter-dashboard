@@ -365,7 +365,7 @@ export function MobileTaskFormDialog({
                 <div>
                   <Label className="text-base font-medium">Tags</Label>
                   <div className="flex flex-wrap gap-2 mt-2 mb-3">
-                    {formData.tags?.map((tag) => (
+                    {(Array.isArray(formData.tags) ? formData.tags : []).map((tag) => (
                       <Badge
                         key={tag}
                         variant="outline"
@@ -531,7 +531,7 @@ export function MobileTaskFormDialog({
                       </span>
                     </div>
                     
-                    {formData.tags && formData.tags.length > 0 && (
+                    {Array.isArray(formData.tags) && formData.tags.length > 0 && (
                       <div className="flex justify-between items-start">
                         <span className="text-slate-500">Tags:</span>
                         <div className="flex flex-wrap gap-1 ml-2">

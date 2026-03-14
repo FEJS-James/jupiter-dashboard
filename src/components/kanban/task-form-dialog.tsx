@@ -368,7 +368,7 @@ export function TaskFormDialog({
                 <Plus className="w-4 h-4" />
               </Button>
             </div>
-            {formData.tags.length > 0 && (
+            {Array.isArray(formData.tags) && formData.tags.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-2">
                 {formData.tags.map(tag => (
                   <Badge 

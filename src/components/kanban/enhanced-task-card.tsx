@@ -163,7 +163,7 @@ export function EnhancedTaskCard({ task, index, onEdit, onDelete }: EnhancedTask
           )}
 
           {/* Tags */}
-          {task.tags && task.tags.length > 0 && (
+          {Array.isArray(task.tags) && task.tags.length > 0 && (
             <div className="flex flex-wrap gap-1 mb-3">
               {task.tags.slice(0, 3).map((tag) => (
                 <Badge 

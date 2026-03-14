@@ -200,7 +200,7 @@ export function TaskFiltersComponent({
 
   // Get unique tags from all tasks
   const allTags = Array.from(new Set(
-    tasks.flatMap(task => task.tags || [])
+    tasks.flatMap(task => Array.isArray(task.tags) ? task.tags : [])
   )).sort()
 
   const statusOptions = statusConfig.map(status => ({
@@ -233,7 +233,7 @@ export function TaskFiltersComponent({
   const tagOptions = allTags.map(tag => ({
     value: tag,
     label: tag,
-    count: tasks.filter(task => task.tags?.includes(tag)).length
+    count: tasks.filter(task => Array.isArray(task.tags) && task.tags.includes(tag)).length
   }))
 
   return (
