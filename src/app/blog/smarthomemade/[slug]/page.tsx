@@ -15,9 +15,9 @@ import { TableOfContents } from './_components/table-of-contents'
 import { JsonLd } from '@/components/json-ld'
 import {
   generateArticleJsonLd,
+  generateArticleMetadata,
   generateBreadcrumbJsonLd,
   articleBreadcrumbs,
-  articleUrl,
 } from '@/lib/blog-seo'
 
 export const revalidate = 60
@@ -33,28 +33,17 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const tags = Array.isArray(article.tags) ? article.tags : []
   const imageUrl = article.heroImage || getHeroImage(tags)
-  const url = articleUrl('smarthomemade', slug)
 
-  return {
+  return generateArticleMetadata('smarthomemade', {
     title: article.title,
-    description: article.metaDescription || article.excerpt || undefined,
-    openGraph: {
-      type: 'article',
-      title: article.title,
-      description: article.metaDescription || article.excerpt || undefined,
-      url,
-      images: imageUrl ? [{ url: imageUrl }] : undefined,
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: article.title,
-      description: article.metaDescription || article.excerpt || undefined,
-      images: imageUrl ? [imageUrl] : undefined,
-    },
-    alternates: {
-      canonical: url,
-    },
-  }
+    metaDescription: article.metaDescription,
+    excerpt: article.excerpt,
+    slug,
+    heroImage: imageUrl,
+    author: article.author,
+    publishDate: article.publishDate,
+    tags,
+  })
 }
 
 export default async function ArticlePage({ params }: PageProps) {

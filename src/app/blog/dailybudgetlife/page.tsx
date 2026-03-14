@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import {
   getPublishedArticles,
@@ -7,8 +8,21 @@ import {
 } from '@/lib/dailybudgetlife-data';
 import { Navbar } from './_components/navbar';
 import { Footer } from './_components/footer';
+import { JsonLd } from '@/components/json-ld';
+import {
+  generateWebSiteJsonLd,
+  generateBreadcrumbJsonLd,
+  generateBlogPageMetadata,
+  homeBreadcrumbs,
+} from '@/lib/blog-seo';
 
 export const revalidate = 60;
+
+export const metadata: Metadata = generateBlogPageMetadata('dailybudgetlife', {
+  title: 'DailyBudgetLife — Smart Money, Simple Living',
+  description:
+    'Practical personal finance tips, budgeting strategies, and money-saving guides for everyday life.',
+});
 
 function HeroSection({ featured }: { featured: DBLArticle | null }) {
   return (
@@ -270,6 +284,8 @@ export default async function DailyBudgetLifeHome() {
 
   return (
     <>
+      <JsonLd data={generateWebSiteJsonLd('dailybudgetlife')} />
+      <JsonLd data={generateBreadcrumbJsonLd(homeBreadcrumbs('dailybudgetlife'))} />
       <Navbar activePage="home" />
       <HeroSection featured={featured} />
       <ArticleFeed articleList={Array.isArray(recentArticles) ? recentArticles : []} />

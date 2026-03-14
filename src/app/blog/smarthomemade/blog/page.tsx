@@ -5,7 +5,11 @@ import { SmartHomeMadeNavbar } from '../_components/navbar'
 import { SmartHomeMadeFooter } from '../_components/footer'
 import { ArticleCard } from '../_components/article-card'
 import { JsonLd } from '@/components/json-ld'
-import { generateBreadcrumbJsonLd, blogListBreadcrumbs } from '@/lib/blog-seo'
+import {
+  generateBreadcrumbJsonLd,
+  generateBlogPageMetadata,
+  blogListBreadcrumbs,
+} from '@/lib/blog-seo'
 
 export const revalidate = 60
 
@@ -21,10 +25,11 @@ const categories = [
   { label: 'Audio', tag: 'audio' },
 ]
 
-export const metadata: Metadata = {
+export const metadata: Metadata = generateBlogPageMetadata('smarthomemade', {
   title: 'All Reviews',
   description: 'Browse all SmartHomeMade reviews — smart plugs, lighting, security, cameras, climate, and audio.',
-}
+  path: '/blog',
+})
 
 interface PageProps {
   searchParams: Promise<{ page?: string; tag?: string }>

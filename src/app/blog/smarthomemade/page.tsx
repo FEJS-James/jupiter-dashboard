@@ -8,16 +8,17 @@ import { JsonLd } from '@/components/json-ld'
 import {
   generateWebSiteJsonLd,
   generateBreadcrumbJsonLd,
+  generateBlogPageMetadata,
   homeBreadcrumbs,
 } from '@/lib/blog-seo'
 
 export const revalidate = 60
 
-export const metadata: Metadata = {
+export const metadata: Metadata = generateBlogPageMetadata('smarthomemade', {
   title: 'SmartHomeMade — Smart Home Reviews & Guides',
   description:
     'Your trusted source for smart home device reviews, setup guides, and automation tips.',
-}
+})
 
 const stats = [
   { value: '50+', label: 'Device Reviews' },

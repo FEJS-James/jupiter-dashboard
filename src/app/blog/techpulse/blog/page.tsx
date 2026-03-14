@@ -5,7 +5,11 @@ import { TechPulseNavbar } from '../_components/navbar'
 import { TechPulseFooter } from '../_components/footer'
 import { ArticleCard } from '../_components/article-card'
 import { JsonLd } from '@/components/json-ld'
-import { generateBreadcrumbJsonLd, blogListBreadcrumbs } from '@/lib/blog-seo'
+import {
+  generateBreadcrumbJsonLd,
+  generateBlogPageMetadata,
+  blogListBreadcrumbs,
+} from '@/lib/blog-seo'
 
 export const revalidate = 60
 
@@ -20,10 +24,11 @@ const categories = [
   { label: 'Open Source', tag: 'open source' },
 ]
 
-export const metadata: Metadata = {
+export const metadata: Metadata = generateBlogPageMetadata('techpulse', {
   title: 'All Posts',
   description: 'Browse all TechPulse Daily articles on AI, gaming, hardware, and more.',
-}
+  path: '/blog',
+})
 
 interface PageProps {
   searchParams: Promise<{ page?: string; tag?: string }>

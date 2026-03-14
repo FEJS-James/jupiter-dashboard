@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import {
@@ -8,6 +9,13 @@ import {
 } from '@/lib/dailybudgetlife-data';
 import { Navbar } from '../_components/navbar';
 import { FooterCompact } from '../_components/footer';
+import { JsonLd } from '@/components/json-ld';
+import {
+  generateArticleJsonLd,
+  generateArticleMetadata,
+  generateBreadcrumbJsonLd,
+  articleBreadcrumbs,
+} from '@/lib/blog-seo';
 
 export const revalidate = 60;
 
@@ -21,14 +29,24 @@ export async function generateMetadata({
   params,
 }: {
   params: Promise<{ slug: string }>;
-}) {
+}): Promise<Metadata> {
   const { slug } = await params;
   const article = await getArticleBySlug(slug);
   if (!article) return { title: 'Article Not Found' };
-  return {
+
+  const tags = Array.isArray(article.tags) ? article.tags : [];
+  const imageUrl = article.heroImage || getHeroImageForTopic(tags);
+
+  return generateArticleMetadata('dailybudgetlife', {
     title: article.title,
-    description: article.metaDescription ?? article.excerpt ?? '',
-  };
+    metaDescription: article.metaDescription,
+    excerpt: article.excerpt,
+    slug,
+    heroImage: imageUrl,
+    author: article.author,
+    publishDate: article.publishDate,
+    tags,
+  });
 }
 
 // ─── TOC extraction ─────────────────────────────────────────────────────────
@@ -107,8 +125,24 @@ export default async function ArticlePage({
   const toc = article.content ? extractToc(article.content) : [];
   const htmlContent = article.content ? markdownToHtml(article.content) : '';
 
+  const articleSeoData = {
+    title: article.title,
+    slug: article.slug,
+    excerpt: article.excerpt,
+    metaDescription: article.metaDescription,
+    heroImage: article.heroImage || getHeroImageForTopic(article.tags),
+    author: article.author,
+    publishDate: article.publishDate,
+    updatedAt: article.updatedAt,
+    tags: Array.isArray(article.tags) ? article.tags : [],
+    readingTimeMinutes: article.readingTimeMinutes,
+    wordCount: article.wordCount,
+  };
+
   return (
     <>
+      <JsonLd data={generateArticleJsonLd('dailybudgetlife', articleSeoData)} />
+      <JsonLd data={generateBreadcrumbJsonLd(articleBreadcrumbs('dailybudgetlife', article.title, slug))} />
       <Navbar />
       {/* Hero */}
       <div className="relative h-64 overflow-hidden bg-stone-200 md:h-80">

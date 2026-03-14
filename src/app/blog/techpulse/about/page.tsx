@@ -3,14 +3,19 @@ import { TechPulseNavbar } from '../_components/navbar'
 import { TechPulseFooter } from '../_components/footer'
 import { CtaBanner } from '../_components/cta-banner'
 import { JsonLd } from '@/components/json-ld'
-import { generateBreadcrumbJsonLd, aboutBreadcrumbs } from '@/lib/blog-seo'
+import {
+  generateBreadcrumbJsonLd,
+  generateBlogPageMetadata,
+  aboutBreadcrumbs,
+} from '@/lib/blog-seo'
 
 export const revalidate = 60
 
-export const metadata: Metadata = {
+export const metadata: Metadata = generateBlogPageMetadata('techpulse', {
   title: 'About',
   description: 'Learn more about TechPulse Daily — your source for breaking tech news and analysis.',
-}
+  path: '/about',
+})
 
 export default function AboutPage() {
   return (

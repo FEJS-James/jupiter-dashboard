@@ -20,7 +20,6 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -415,7 +414,7 @@ export default function AgentDetailPage() {
     };
 
     fetchActivity();
-  }, [agent]);
+  }, [agent?.id]);
 
   // ─── Fetch Task History ──────────────────────────────────────────
 
@@ -505,7 +504,6 @@ export default function AgentDetailPage() {
       : 0;
   const inProgressCount =
     agent.statistics.activeTasks;
-  const pendingCount = agent.statistics.totalTasks - agent.statistics.completedTasks - inProgressCount;
 
   // ─── Render ──────────────────────────────────────────────────────
 
