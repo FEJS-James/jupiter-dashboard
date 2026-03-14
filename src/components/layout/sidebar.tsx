@@ -36,13 +36,39 @@ export function Sidebar({ className, onCollapseChange }: SidebarProps) {
   // Explicit navigation handler — bypasses Next.js <Link> internal click handling
   // to work around silent client-side navigation failures (React 19 startTransition
   // can swallow errors, and Framer Motion wrappers can interfere with event delegation).
+  //
+  // On pages with @hello-pangea/dnd (e.g. Tasks), the DnD library's global event
+  // listeners and Redux store (via useSyncExternalStore) can interfere with React's
+  // concurrent transitions, causing router.push() to silently fail.  We add a
+  // native-navigation fallback to guarantee sidebar links always work.
   const handleNavClick = useCallback((e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     // Preserve modifier-key behaviour (open in new tab, etc.)
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return
 
     e.preventDefault()
+
+    // Try client-side navigation first (fast, no full reload)
     router.push(href)
+
+    // Fallback: if the pathname hasn't changed after 150 ms, force a full
+    // navigation.  This catches cases where startTransition silently drops the
+    // navigation (e.g. DnD or WebSocket re-renders pre-empting the transition).
+    const before = window.location.pathname
+    setTimeout(() => {
+      if (window.location.pathname === before && before !== href) {
+        window.location.href = href
+      }
+    }, 150)
   }, [router])
+
+  // Prevent DnD library global event listeners (capture-phase on window) from
+  // seeing pointer / mouse events that originate inside the sidebar.  This is a
+  // defensive measure: even though the library *should* ignore events outside
+  // draggable elements, stopping propagation here ensures the sidebar is fully
+  // isolated from any drag-and-drop event processing.
+  const stopDndInterference = useCallback((e: React.SyntheticEvent) => {
+    e.stopPropagation()
+  }, [])
 
   const toggleCollapse = () => {
     const newCollapsedState = !isCollapsed
@@ -83,6 +109,8 @@ export function Sidebar({ className, onCollapseChange }: SidebarProps) {
       )}
       animate={{ width: isCollapsed ? 64 : 280 }}
       transition={{ duration: 0.3, ease: 'easeInOut' }}
+      onPointerDown={stopDndInterference}
+      onMouseDown={stopDndInterference}
     >
       <div className="flex h-full flex-col">
         {/* Header with collapse toggle */}
