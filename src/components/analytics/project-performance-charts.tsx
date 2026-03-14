@@ -250,7 +250,7 @@ export function ProjectPerformanceCharts({ data }: ProjectPerformanceChartsProps
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Project Velocity Comparison */}
         <Card className={cn(
           actualTheme === 'dark' 
@@ -353,7 +353,7 @@ export function ProjectPerformanceCharts({ data }: ProjectPerformanceChartsProps
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
               {taskBreakdown.slice(0, 4).map((project) => (
                 <div key={project.projectId} className="space-y-4">
                   <h4 className={cn(

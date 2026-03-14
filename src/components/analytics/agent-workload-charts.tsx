@@ -140,7 +140,7 @@ export function AgentWorkloadCharts({ data }: AgentWorkloadChartsProps) {
   return (
     <div className="space-y-6">
       {/* Agent Workload Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <Card className={cn(
           actualTheme === 'dark' 
             ? 'bg-slate-800/50 border-slate-700/50' 
@@ -282,7 +282,7 @@ export function AgentWorkloadCharts({ data }: AgentWorkloadChartsProps) {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Agent Productivity Metrics */}
         <Card className={cn(
           actualTheme === 'dark' 
