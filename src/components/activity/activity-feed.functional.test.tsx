@@ -40,8 +40,7 @@ describe('ActivityFeed Core Functionality', () => {
     expect(screen.getByText(/DeployAgent joined/)).toBeInTheDocument()
 
     // Should display project and task information in descriptions
-    expect(screen.getByText(/Test Project 1/)).toBeInTheDocument()
-    expect(screen.getByText(/Test Task/)).toBeInTheDocument()
+    expect(screen.getByText(/CodeAgent created task "Test Task" in Test Project 1/)).toBeInTheDocument()
   })
 
   it('should handle compact mode', async () => {
@@ -101,10 +100,10 @@ describe('ActivityFeed Core Functionality', () => {
     })
 
     // Agent roles are displayed in "AgentName • role" format within span elements
-    // Use regex to match text containing the role within the combined string
-    expect(screen.getByText(/CodeAgent • coder/)).toBeInTheDocument()
-    expect(screen.getByText(/ReviewAgent • reviewer/)).toBeInTheDocument()
-    expect(screen.getByText(/DeployAgent • deployer/)).toBeInTheDocument()
+    // Multiple activities may have the same agent, so use getAllByText
+    expect(screen.getAllByText(/CodeAgent • coder/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/ReviewAgent • reviewer/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/DeployAgent • deployer/).length).toBeGreaterThan(0)
   })
 
   it('should handle custom title and description', () => {

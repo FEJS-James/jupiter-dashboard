@@ -3,31 +3,36 @@ import { NextRequest } from 'next/server';
 import { GET, POST } from './route';
 
 // Mock the database and utilities
-vi.mock('@/lib/db', () => ({
-  db: {
-    select: vi.fn(() => ({
-      from: vi.fn(() => ({
-        where: vi.fn(() => ({
-          orderBy: vi.fn(() => ({
-            limit: vi.fn(() => ({
-              offset: vi.fn(() => Promise.resolve([]))
-            }))
-          }))
-        })),
-        orderBy: vi.fn(() => ({
-          limit: vi.fn(() => ({
-            offset: vi.fn(() => Promise.resolve([]))
-          }))
+vi.mock('@/lib/db', () => {
+  // Create a flexible chainable builder that returns empty results
+  const createBuilder = (result: any[] = []) => {
+    const builder: any = {}
+    const methods = ['select', 'from', 'where', 'orderBy', 'limit', 'offset', 'leftJoin', 'groupBy']
+    methods.forEach(method => {
+      builder[method] = vi.fn(() => builder)
+    })
+    // Terminal methods resolve with the result
+    builder.then = (resolve: any) => resolve(result)
+    builder.limit = vi.fn(() => {
+      const limited: any = { ...builder }
+      limited.offset = vi.fn(() => result)
+      limited.then = (resolve: any) => resolve(result)
+      return limited
+    })
+    return builder
+  }
+
+  return {
+    db: {
+      select: vi.fn(() => createBuilder([])),
+      insert: vi.fn(() => ({
+        values: vi.fn(() => ({
+          returning: vi.fn(() => Promise.resolve([{ id: 1, name: 'Test Agent', role: 'coder' }]))
         }))
       }))
-    })),
-    insert: vi.fn(() => ({
-      values: vi.fn(() => ({
-        returning: vi.fn(() => Promise.resolve([{ id: 1, name: 'Test Agent' }]))
-      }))
-    }))
+    }
   }
-}));
+});
 
 vi.mock('drizzle-orm', () => ({
   eq: vi.fn(),

@@ -302,18 +302,15 @@ describe('ActivityFeed Component', () => {
     const user = userEvent.setup()
     render(<ActivityFeed />)
 
+    // Wait for activities to load
     await waitFor(() => {
-      expect(screen.getByText('All Time')).toBeInTheDocument()
+      expect(screen.getByText(/Alice Developer created task/)).toBeInTheDocument()
     })
 
-    // Open date range filter
-    await user.click(screen.getByText('All Time'))
-    
-    await waitFor(() => {
-      expect(screen.getByText('Today')).toBeInTheDocument()
-    })
-
-    await user.click(screen.getByText('Today'))
+    // With Popover mock, content is rendered inline.
+    // "Today" button is always visible inside the popover content.
+    const todayButton = screen.getByRole('button', { name: /Today/ })
+    await user.click(todayButton)
 
     await waitFor(() => {
       expect(mockFetch).toHaveBeenCalledWith(
