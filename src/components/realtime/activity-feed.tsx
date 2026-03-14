@@ -94,23 +94,9 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
 
   if (displayedActivities.length === 0) {
     return (
-      <Card className={cn('bg-slate-800/50 border-slate-700', className)}>
-        {showHeader && (
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Clock className="w-5 h-5" />
-              Recent Activity
-            </CardTitle>
-          </CardHeader>
-        )}
-        <CardContent>
-          <div className="text-center text-muted-foreground py-8">
-            <Clock className="w-12 h-12 mx-auto mb-4 opacity-50" />
-            <p>No recent activity</p>
-            <p className="text-sm">Activity will appear here as users interact with the board</p>
-          </div>
-        </CardContent>
-      </Card>
+      <div className={cn('text-xs text-slate-500 py-2', className)}>
+        No recent activity
+      </div>
     )
   }
 

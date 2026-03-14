@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { EnhancedBoard } from '@/components/kanban/enhanced-board'
 import { TaskFormDialog } from '@/components/kanban/task-form-dialog'
 import { DeleteTaskDialog } from '@/components/kanban/delete-task-dialog'
@@ -74,6 +74,16 @@ export default function TasksPageContentRealtime() {
     filterStats,
     isLoading: filtersLoading
   } = useTaskFilters(tasks)
+
+  const activeFilterCount = useMemo(() =>
+    filters.statuses.length +
+    filters.priorities.length +
+    filters.assignees.length +
+    filters.projectIds.length +
+    filters.tags.length +
+    (filters.search ? 1 : 0),
+    [filters]
+  )
 
   const fetchData = useCallback(async () => {
     try {
@@ -247,9 +257,6 @@ export default function TasksPageContentRealtime() {
             {/* Connection status */}
             <ConnectionStatusIndicator />
             
-            {/* Activity indicator */}
-            {activities.length > 0 && <ActivityIndicator />}
-            
             {/* User presence */}
             <UserPresence maxUsers={4} />
             
@@ -291,69 +298,58 @@ export default function TasksPageContentRealtime() {
         )}
 
         {/* Collapsible Filters Section */}
-        {(() => {
-          const activeFilterCount =
-            filters.statuses.length +
-            filters.priorities.length +
-            filters.assignees.length +
-            filters.projectIds.length +
-            filters.tags.length +
-            (filters.search ? 1 : 0)
-          return (
-            <Card className="bg-slate-800/50 border-slate-700">
-              <button
-                onClick={() => setFiltersExpanded(!filtersExpanded)}
-                className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-slate-700/30 transition-colors rounded-t-lg"
-                aria-expanded={filtersExpanded}
-                aria-controls="filters-panel"
-              >
-                <div className="flex items-center gap-2">
-                  <SlidersHorizontal className="w-4 h-4 text-slate-400" />
-                  <span className="text-sm font-medium text-slate-200">Filters</span>
-                  {activeFilterCount > 0 && (
-                    <span className="bg-blue-500/20 text-blue-300 text-xs px-2 py-0.5 rounded-full font-medium">
-                      {activeFilterCount}
-                    </span>
-                  )}
-                  {!filtersExpanded && activeFilterCount > 0 && (
-                    <span className="text-xs text-slate-500 ml-1">
-                      {filterStats.filteredTasks} of {filterStats.totalTasks} tasks
-                    </span>
-                  )}
-                </div>
-                <div className="text-slate-400">
-                  {filtersExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                </div>
-              </button>
+        <Card className="bg-slate-800/50 border-slate-700">
+          <button
+            onClick={() => setFiltersExpanded(!filtersExpanded)}
+            className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-slate-700/30 transition-colors rounded-t-lg"
+            aria-expanded={filtersExpanded}
+            aria-controls="filters-panel"
+          >
+            <div className="flex items-center gap-2">
+              <SlidersHorizontal className="w-4 h-4 text-slate-400" />
+              <span className="text-sm font-medium text-slate-200">Filters</span>
+              {activeFilterCount > 0 && (
+                <span className="bg-blue-500/20 text-blue-300 text-xs px-2 py-0.5 rounded-full font-medium">
+                  {activeFilterCount}
+                </span>
+              )}
+              {!filtersExpanded && activeFilterCount > 0 && (
+                <span className="text-xs text-slate-500 ml-1">
+                  {filterStats.filteredTasks} of {filterStats.totalTasks} tasks
+                </span>
+              )}
+            </div>
+            <div className="text-slate-400">
+              {filtersExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </div>
+          </button>
 
-              <AnimatePresence>
-                {filtersExpanded && (
-                  <motion.div
-                    id="filters-panel"
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="overflow-hidden border-t border-slate-700"
-                  >
-                    <CardContent className="p-4">
-                      <TaskFiltersComponent
-                        filters={filters}
-                        onFiltersChange={setFilters}
-                        onClearFilters={clearFilters}
-                        filterStats={filterStats}
-                        tasks={tasks}
-                        projects={projects}
-                        agents={agents}
-                        isLoading={filtersLoading}
-                      />
-                    </CardContent>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </Card>
-          )
-        })()}
+          <AnimatePresence>
+            {filtersExpanded && (
+              <motion.div
+                id="filters-panel"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden border-t border-slate-700"
+              >
+                <CardContent className="p-4">
+                  <TaskFiltersComponent
+                    filters={filters}
+                    onFiltersChange={setFilters}
+                    onClearFilters={clearFilters}
+                    filterStats={filterStats}
+                    tasks={tasks}
+                    projects={projects}
+                    agents={agents}
+                    isLoading={filtersLoading}
+                  />
+                </CardContent>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </Card>
       </motion.div>
 
       {/* Collapsible Activity & Users Bar */}
@@ -364,18 +360,11 @@ export default function TasksPageContentRealtime() {
       >
         <Card className="bg-slate-800/50 border-slate-700">
           {/* Collapsed header — always visible */}
-          <button
-            onClick={() => setActivityExpanded(!activityExpanded)}
-            className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-slate-700/30 transition-colors rounded-t-lg"
-            aria-expanded={activityExpanded}
-            aria-controls="activity-panel"
-          >
+          <div className="flex items-center justify-between px-4 py-2.5">
             <div className="flex items-center gap-4">
-              <Tabs value={activityTab} onValueChange={setActivityTab}>
+              <Tabs value={activityTab} onValueChange={(val) => { setActivityTab(val); setActivityExpanded(true) }}>
                 <TabsList className="bg-slate-800/80 h-8">
-                  <TabsTrigger value="activity" className="flex items-center gap-1.5 text-xs h-6 px-2.5"
-                    onClick={(e) => { e.stopPropagation(); setActivityExpanded(true); setActivityTab('activity') }}
-                  >
+                  <TabsTrigger value="activity" className="flex items-center gap-1.5 text-xs h-6 px-2.5">
                     <Activity className="w-3.5 h-3.5" />
                     Activity
                     {activities.length > 0 && (
@@ -384,9 +373,7 @@ export default function TasksPageContentRealtime() {
                       </span>
                     )}
                   </TabsTrigger>
-                  <TabsTrigger value="users" className="flex items-center gap-1.5 text-xs h-6 px-2.5"
-                    onClick={(e) => { e.stopPropagation(); setActivityExpanded(true); setActivityTab('users') }}
-                  >
+                  <TabsTrigger value="users" className="flex items-center gap-1.5 text-xs h-6 px-2.5">
                     <Users className="w-3.5 h-3.5" />
                     Users
                   </TabsTrigger>
@@ -394,18 +381,23 @@ export default function TasksPageContentRealtime() {
               </Tabs>
 
               {/* Inline summary when collapsed */}
-              {!activityExpanded && (
+              {!activityExpanded && activities.length > 0 && (
                 <div className="flex items-center gap-3 text-xs text-slate-400">
-                  <UserPresence showCount={true} maxUsers={3} />
-                  {activities.length > 0 && <ActivityIndicator />}
+                  <ActivityIndicator />
                 </div>
               )}
             </div>
 
-            <div className="text-slate-400">
+            <button
+              onClick={() => setActivityExpanded(!activityExpanded)}
+              className="p-1.5 rounded-md text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 transition-colors"
+              aria-expanded={activityExpanded}
+              aria-controls="activity-panel"
+              aria-label={activityExpanded ? 'Collapse activity panel' : 'Expand activity panel'}
+            >
               {activityExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-            </div>
-          </button>
+            </button>
+          </div>
 
           {/* Expanded panel */}
           <AnimatePresence>
@@ -420,13 +412,16 @@ export default function TasksPageContentRealtime() {
               >
                 <CardContent className="p-4">
                   {activityTab === 'activity' ? (
-                    <div className="max-h-48 overflow-y-auto">
-                      <ActivityFeed maxItems={4} />
-                    </div>
+                    activities.length > 0 ? (
+                      <div className="max-h-48 overflow-y-auto">
+                        <ActivityFeed maxItems={4} showHeader={false} />
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-500 py-2">No recent activity</p>
+                    )
                   ) : (
                     <div className="flex items-start gap-6">
                       <div className="flex-1">
-                        <h3 className="font-semibold text-sm mb-2">Online Users</h3>
                         <UserPresence showCount={true} maxUsers={10} />
                       </div>
                       {pendingUpdates.length > 0 && (

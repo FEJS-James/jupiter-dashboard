@@ -41,12 +41,7 @@ export const UserPresence: React.FC<UserPresenceProps> = ({
   const remainingCount = Math.max(0, connectedUsers.length - maxUsers)
 
   if (connectedUsers.length === 0) {
-    return (
-      <div className={cn('flex items-center gap-2 text-sm text-muted-foreground', className)}>
-        <Users className="w-4 h-4" />
-        <span>No other users online</span>
-      </div>
-    )
+    return null
   }
 
   return (
