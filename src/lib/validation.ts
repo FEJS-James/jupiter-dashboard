@@ -52,6 +52,7 @@ export const taskFiltersSchema = z.object({
   status: z.enum(['backlog', 'in-progress', 'code-review', 'testing', 'deploying', 'done', 'blocked', 'archived']).optional(),
   agent: z.string().optional(),
   priority: z.enum(['low', 'medium', 'high', 'urgent']).optional(),
+  search: z.string().optional(),
   limit: z.string().transform(Number).optional(),
   offset: z.string().transform(Number).optional(),
 });

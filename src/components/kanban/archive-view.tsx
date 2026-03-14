@@ -56,7 +56,8 @@ export function ArchiveView({ onTasksChanged }: ArchiveViewProps) {
       if (searchQuery) params.set('search', searchQuery)
       params.set('limit', '50')
 
-      const res = await fetch(`/api/tasks/archived?${params.toString()}`)
+      params.set('status', 'archived')
+      const res = await fetch(`/api/tasks?${params.toString()}`)
       if (!res.ok) throw new Error('Failed to fetch archived tasks')
 
       const data = await res.json()

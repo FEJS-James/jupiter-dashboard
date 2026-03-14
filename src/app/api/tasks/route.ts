@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { eq, and, desc, ne } from 'drizzle-orm';
+import { eq, and, desc, ne, like, sql } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { tasks, projects, agents } from '@/lib/schema';
 import { createTaskSchema, taskFiltersSchema } from '@/lib/validation';
@@ -58,6 +58,7 @@ export async function GET(request: NextRequest) {
     
     // Check if archived tasks should be included
     const includeArchived = url.searchParams.get('includeArchived') === 'true';
+    const isArchivedQuery = filters.status === 'archived';
     
     // Build query conditions
     const conditions = [];
@@ -79,6 +80,10 @@ export async function GET(request: NextRequest) {
       conditions.push(eq(tasks.priority, filters.priority));
     }
     
+    if (filters.search) {
+      conditions.push(like(tasks.title, `%${filters.search}%`));
+    }
+    
     if (filters.project) {
       // Handle both project ID and project name
       const projectId = parseInt(filters.project, 10);
@@ -96,9 +101,22 @@ export async function GET(request: NextRequest) {
           conditions.push(eq(tasks.projectId, project[0].id));
         } else {
           // If project not found, return empty result
+          if (isArchivedQuery) {
+            return createSuccessResponse({ tasks: [], total: 0, limit: 50, offset: 0 });
+          }
           return createSuccessResponse([]);
         }
       }
+    }
+    
+    // For archived queries, get total count for the badge
+    let totalArchived: number | undefined;
+    if (isArchivedQuery) {
+      const countResult = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(tasks)
+        .where(eq(tasks.status, 'archived'));
+      totalArchived = countResult[0]?.count ?? 0;
     }
     
     // Execute query with joins
@@ -141,15 +159,28 @@ export async function GET(request: NextRequest) {
     }
     
     // Apply pagination
-    if (filters.limit) {
-      query.limit(filters.limit);
+    const limit = filters.limit || (isArchivedQuery ? 50 : undefined);
+    const offset = filters.offset || (isArchivedQuery ? 0 : undefined);
+    
+    if (limit) {
+      query.limit(limit);
     }
     
-    if (filters.offset) {
-      query.offset(filters.offset);
+    if (offset) {
+      query.offset(offset);
     }
     
     const tasksWithDetails = await query;
+    
+    // Return paginated format for archived queries (matches old /api/tasks/archived response shape)
+    if (isArchivedQuery) {
+      return createSuccessResponse({
+        tasks: tasksWithDetails,
+        total: totalArchived!,
+        limit: limit!,
+        offset: offset!,
+      });
+    }
     
     return createSuccessResponse(tasksWithDetails);
   } catch (error: unknown) {
