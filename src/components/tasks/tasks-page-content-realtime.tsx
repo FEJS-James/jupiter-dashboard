@@ -20,6 +20,7 @@ import { toast } from 'sonner'
 import { useRealtimeTasks } from '@/hooks/use-realtime-tasks'
 import { useTaskFilters } from '@/hooks/use-task-filters'
 import { useWebSocket, ConnectedUser } from '@/contexts/websocket-context'
+import { useProjectContext } from '@/contexts/project-context'
 
 export default function TasksPageContentRealtime() {
   const [projects, setProjects] = useState<Project[]>([])
@@ -33,6 +34,9 @@ export default function TasksPageContentRealtime() {
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [deletingTask, setDeletingTask] = useState<Task | null>(null)
   const [defaultStatus, setDefaultStatus] = useState<TaskStatus>('backlog')
+
+  // Selected project from sidebar dropdown
+  const { selectedProjectId } = useProjectContext()
 
   // WebSocket and real-time functionality
   const { 
@@ -71,8 +75,11 @@ export default function TasksPageContentRealtime() {
   const fetchData = useCallback(async () => {
     try {
       setError(null)
+      const tasksUrl = selectedProjectId
+        ? `/api/tasks?project=${selectedProjectId}`
+        : '/api/tasks'
       const [tasksRes, projectsRes, agentsRes] = await Promise.all([
-        fetch('/api/tasks'),
+        fetch(tasksUrl),
         fetch('/api/projects'),
         fetch('/api/agents')
       ])
@@ -100,7 +107,7 @@ export default function TasksPageContentRealtime() {
     } finally {
       setLoading(false)
     }
-  }, [setTasks])
+  }, [setTasks, selectedProjectId])
 
   useEffect(() => {
     fetchData()
