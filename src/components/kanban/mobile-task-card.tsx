@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Draggable } from '@hello-pangea/dnd'
-import { Task, TaskPriority } from '@/types'
+import { Task, TaskPriority, TaskStatus } from '@/types'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar } from '@/components/ui/avatar'
@@ -17,6 +17,7 @@ interface MobileTaskCardProps {
   index: number
   onEdit?: (task: Task) => void
   onDelete?: (task: Task) => void
+  onMoveTask?: (taskId: number, newStatus: TaskStatus) => Promise<void>
   isCompact?: boolean
 }
 
