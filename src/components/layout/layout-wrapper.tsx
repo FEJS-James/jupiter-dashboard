@@ -26,12 +26,6 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
   const { actualTheme } = useTheme()
   const isMobile = useMediaQuery('(max-width: 768px)')
 
-  // Blog pages have their own layout — skip dashboard chrome
-  const isBlogRoute = pathname.startsWith('/blog/')
-  if (isBlogRoute) {
-    return <>{children}</>
-  }
-
   // Listen for sidebar collapse changes
   useEffect(() => {
     const handleResize = () => {
@@ -45,6 +39,12 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
 
     return () => window.removeEventListener('resize', handleResize)
   }, [])
+
+  // Blog pages have their own layout — skip dashboard chrome
+  const isBlogRoute = pathname.startsWith('/blog/')
+  if (isBlogRoute) {
+    return <>{children}</>
+  }
 
   // Use mobile layout on mobile devices — only after mount to avoid hydration mismatch
   if (mounted && isMobile) {

@@ -17,7 +17,8 @@ export function BreakingTicker({ articles }: BreakingTickerProps) {
       style={{
         background: 'linear-gradient(90deg, #991b1b 0%, #ef4444 50%, #991b1b 100%)',
       }}
-      role="marquee"
+      role="region"
+      aria-live="polite"
       aria-label="Breaking news headlines"
     >
       <div className="tp-ticker">
