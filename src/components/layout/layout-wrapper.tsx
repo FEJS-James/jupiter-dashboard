@@ -40,12 +40,6 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
-  // Blog pages have their own layout — skip dashboard chrome
-  const isBlogRoute = pathname.startsWith('/blog/')
-  if (isBlogRoute) {
-    return <>{children}</>
-  }
-
   // Use mobile layout on mobile devices — only after mount to avoid hydration mismatch
   if (mounted && isMobile) {
     return <MobileLayoutWrapper>{children}</MobileLayoutWrapper>
