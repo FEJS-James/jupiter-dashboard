@@ -117,21 +117,21 @@ export default function ProjectsListPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 p-6">
+      <div className="min-h-screen bg-slate-950 p-3 sm:p-6">
         <div className="max-w-7xl mx-auto">
           {/* Header skeleton */}
-          <div className="mb-8">
+          <div className="mb-4 sm:mb-8">
             <Skeleton className="h-8 w-48 mb-2 bg-slate-800" />
-            <Skeleton className="h-4 w-96 bg-slate-800 mb-6" />
-            <div className="flex gap-4 mb-6">
-              <Skeleton className="h-10 w-32 bg-slate-800" />
-              <Skeleton className="h-10 flex-1 max-w-md bg-slate-800" />
-              <Skeleton className="h-10 w-40 bg-slate-800" />
+            <Skeleton className="h-4 w-full sm:w-96 bg-slate-800 mb-4 sm:mb-6" />
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 mb-4 sm:mb-6">
+              <Skeleton className="h-11 w-full sm:w-32 bg-slate-800" />
+              <Skeleton className="h-11 flex-1 sm:max-w-md bg-slate-800" />
+              <Skeleton className="h-11 w-full sm:w-40 bg-slate-800" />
             </div>
           </div>
 
           {/* Grid skeleton */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {Array.from({ length: 6 }).map((_, i) => (
               <Skeleton key={i} className="h-64 bg-slate-800" />
             ))}
@@ -143,7 +143,7 @@ export default function ProjectsListPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-slate-950 p-6">
+      <div className="min-h-screen bg-slate-950 p-3 sm:p-6">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-center min-h-[400px]">
             <div className="text-center">
@@ -170,26 +170,26 @@ export default function ProjectsListPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 p-6">
+    <div className="min-h-screen bg-slate-950 p-3 sm:p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <motion.div 
-          className="mb-8"
+          className="mb-4 sm:mb-8"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-6">
             <div>
-              <h1 className="text-3xl font-bold text-slate-100 mb-2">
+              <h1 className="text-2xl sm:text-3xl font-bold text-slate-100 mb-1 sm:mb-2">
                 Projects
               </h1>
-              <p className="text-slate-400">
+              <p className="text-sm sm:text-base text-slate-400">
                 Manage all your development projects in one place.
               </p>
             </div>
             <Link href="/projects/new">
-              <Button className="bg-blue-600 hover:bg-blue-700">
+              <Button className="bg-blue-600 hover:bg-blue-700 min-h-[44px] w-full sm:w-auto">
                 <Plus className="w-4 h-4 mr-2" />
                 New Project
               </Button>
@@ -197,37 +197,39 @@ export default function ProjectsListPage() {
           </div>
 
           {/* Filters */}
-          <div className="flex gap-4 items-center">
-            <div className="relative flex-1 max-w-md">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 items-stretch sm:items-center">
+            <div className="relative flex-1 sm:max-w-md">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
               <Input
                 placeholder="Search projects..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-slate-800/50 border-slate-700 text-slate-100 placeholder-slate-400"
+                className="pl-10 bg-slate-800/50 border-slate-700 text-slate-100 placeholder-slate-400 min-h-[44px]"
               />
             </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-40 bg-slate-800/50 border-slate-700">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="planning">Planning</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="on-hold">On Hold</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button 
-              onClick={fetchProjects}
-              variant="outline"
-              size="sm"
-              className="border-slate-700 hover:bg-slate-800"
-            >
-              <RefreshCw className="w-4 h-4" />
-            </Button>
+            <div className="flex gap-2">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="flex-1 sm:w-40 bg-slate-800/50 border-slate-700 min-h-[44px]">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="planning">Planning</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="on-hold">On Hold</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button 
+                onClick={fetchProjects}
+                variant="outline"
+                size="sm"
+                className="border-slate-700 hover:bg-slate-800 min-h-[44px] min-w-[44px]"
+              >
+                <RefreshCw className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
         </motion.div>
 
@@ -259,7 +261,7 @@ export default function ProjectsListPage() {
           </motion.div>
         ) : (
           <motion.div 
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
@@ -332,12 +334,12 @@ export default function ProjectsListPage() {
                     {/* Actions */}
                     <div className="flex gap-2 mt-auto pt-2 border-t border-slate-700/50">
                       <Link href={`/projects/${project.id}`} className="flex-1">
-                        <Button variant="outline" size="sm" className="w-full border-slate-700 hover:bg-slate-800">
+                        <Button variant="outline" size="sm" className="w-full border-slate-700 hover:bg-slate-800 min-h-[44px]">
                           View Board
                         </Button>
                       </Link>
                       <Link href={`/projects/${project.id}/edit`}>
-                        <Button variant="outline" size="sm" className="border-slate-700 hover:bg-slate-800">
+                        <Button variant="outline" size="sm" className="border-slate-700 hover:bg-slate-800 min-h-[44px]">
                           Edit
                         </Button>
                       </Link>
@@ -345,7 +347,7 @@ export default function ProjectsListPage() {
                         variant="outline" 
                         size="sm" 
                         onClick={() => handleDeleteProject(project.id, project.name)}
-                        className="border-red-800 hover:bg-red-900/20 hover:border-red-700 text-red-400"
+                        className="border-red-800 hover:bg-red-900/20 hover:border-red-700 text-red-400 min-h-[44px]"
                       >
                         Archive
                       </Button>

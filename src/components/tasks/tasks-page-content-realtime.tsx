@@ -2,9 +2,11 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { EnhancedBoard } from '@/components/kanban/enhanced-board'
+import { MobileBoard } from '@/components/kanban/mobile-board'
 import { TaskFormDialog } from '@/components/kanban/task-form-dialog'
 import { DeleteTaskDialog } from '@/components/kanban/delete-task-dialog'
 import { TaskFiltersComponent } from '@/components/tasks/task-filters'
+import { MobileTaskFilters } from '@/components/tasks/mobile-task-filters'
 import { ConnectionStatusIndicator } from '@/components/realtime/connection-status'
 import { UserPresence } from '@/components/realtime/user-presence'
 import { ActivityFeed, ActivityIndicator } from '@/components/realtime/activity-feed'
@@ -22,6 +24,8 @@ import { useRealtimeTasks } from '@/hooks/use-realtime-tasks'
 import { useTaskFilters } from '@/hooks/use-task-filters'
 import { useWebSocket, ConnectedUser } from '@/contexts/websocket-context'
 import { useProjectContext } from '@/contexts/project-context'
+import { useMediaQuery } from '@/hooks/use-media-query'
+import { useMounted } from '@/hooks/use-mounted'
 
 export default function TasksPageContentRealtime() {
   const [projects, setProjects] = useState<Project[]>([])
@@ -41,6 +45,11 @@ export default function TasksPageContentRealtime() {
 
   // Selected project from sidebar dropdown
   const { selectedProjectId } = useProjectContext()
+
+  // Mobile detection (guarded with useMounted to prevent hydration mismatch)
+  const mounted = useMounted()
+  const isMobileQuery = useMediaQuery('(max-width: 768px)')
+  const isMobile = mounted && isMobileQuery
 
   // WebSocket and real-time functionality
   const { 
@@ -236,15 +245,15 @@ export default function TasksPageContentRealtime() {
 
   if (loading) {
     return (
-      <div className="p-6 space-y-6 overflow-hidden">
+      <div className="p-3 sm:p-6 space-y-4 sm:space-y-6 overflow-hidden">
         <div className="space-y-2">
           <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-4 w-96" />
+          <Skeleton className="h-4 w-full sm:w-96" />
         </div>
         <Skeleton className="h-10 w-full" />
         <div className="flex gap-4 overflow-hidden">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} className="h-96 w-80 shrink-0" />
+          {Array.from({ length: isMobile ? 1 : 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-96 w-full sm:w-80 shrink-0" />
           ))}
         </div>
       </div>
@@ -253,10 +262,10 @@ export default function TasksPageContentRealtime() {
 
   if (error) {
     return (
-      <div className="p-6">
+      <div className="p-3 sm:p-6">
         <Alert className="bg-red-900/20 border-red-500/20">
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription className="text-red-200 flex items-center gap-4">
+          <AlertDescription className="text-red-200 flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
             <span>{error}</span>
             <Button 
               onClick={fetchData}
@@ -274,42 +283,46 @@ export default function TasksPageContentRealtime() {
   }
 
   return (
-    <div className="p-6 space-y-6 overflow-hidden" role="main" aria-label="Task Management">
+    <div className="p-3 sm:p-6 space-y-4 sm:space-y-6 overflow-hidden" role="main" aria-label="Task Management">
       {/* Page Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="space-y-4"
+        className="space-y-3 sm:space-y-4"
       >
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h1 className="text-3xl font-bold text-slate-100">Task Management</h1>
-            <p className="text-slate-400">
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-100">Task Management</h1>
+            <p className="text-sm sm:text-base text-slate-400">
               Real-time collaborative task management
             </p>
           </div>
-          <div className="flex gap-2 items-center">
-            {/* Connection status */}
-            <ConnectionStatusIndicator />
+          <div className="flex gap-2 items-center flex-wrap">
+            {/* Connection status - hide on very small screens */}
+            <div className="hidden sm:block">
+              <ConnectionStatusIndicator />
+            </div>
             
-            {/* User presence */}
-            <UserPresence maxUsers={4} />
+            {/* User presence - hide on mobile */}
+            <div className="hidden md:block">
+              <UserPresence maxUsers={4} />
+            </div>
             
-            <div className="h-6 w-px bg-slate-600 mx-2" />
+            <div className="hidden sm:block h-6 w-px bg-slate-600 mx-2" />
             
             {/* Action buttons */}
             <Button 
               onClick={() => handleCreateTask()}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-blue-600 hover:bg-blue-700 min-h-[44px]"
               aria-label="Create new task"
             >
-              <Plus className="w-4 h-4 mr-2" />
-              Create Task
+              <Plus className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Create Task</span>
             </Button>
             <Button 
               onClick={fetchData}
               variant="outline"
-              className="border-slate-600 text-slate-300 hover:bg-slate-800"
+              className="border-slate-600 text-slate-300 hover:bg-slate-800 min-h-[44px]"
               aria-label="Refresh tasks data"
             >
               <RefreshCw className="w-4 h-4" />
@@ -332,7 +345,19 @@ export default function TasksPageContentRealtime() {
           </Alert>
         )}
 
-        {/* Collapsible Filters Section */}
+        {/* Filters Section — mobile uses MobileTaskFilters, desktop uses collapsible panel */}
+        {isMobile ? (
+          <MobileTaskFilters
+            filters={filters}
+            onFiltersChange={setFilters}
+            onClearFilters={clearFilters}
+            filterStats={filterStats}
+            tasks={tasks}
+            projects={projects}
+            agents={agents}
+            isLoading={filtersLoading}
+          />
+        ) : (
         <Card className="bg-slate-800/50 border-slate-700">
           <button
             onClick={() => setFiltersExpanded(!filtersExpanded)}
@@ -385,13 +410,15 @@ export default function TasksPageContentRealtime() {
             )}
           </AnimatePresence>
         </Card>
+        )}
       </motion.div>
 
-      {/* Collapsible Activity & Users Bar */}
+      {/* Collapsible Activity & Users Bar — hidden on mobile */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
+        className={isMobile ? 'hidden' : ''}
       >
         <Card className="bg-slate-800/50 border-slate-700">
           {/* Collapsed header — always visible */}
@@ -483,24 +510,37 @@ export default function TasksPageContentRealtime() {
         transition={{ delay: 0.15 }}
         className="min-w-0 overflow-hidden"
       >
-        <Card className="bg-slate-800/30 border-slate-700">
-          <CardContent className="p-6 overflow-x-auto">
-            <EnhancedBoard 
-              tasks={filteredTasks.map(task => ({
-                ...task,
-                isOptimistic: isOptimistic(task.id)
-              }))}
-              agents={agents}
-              onCreateTask={handleCreateTask}
-              onEditTask={handleEditTask}
-              onDeleteTask={handleDeleteTask}
-              onMoveTask={handleMoveTask}
-              onTasksUpdated={fetchData}
-              onArchiveTask={handleArchiveTask}
-              onArchiveAllDone={handleArchiveAllDone}
-            />
-          </CardContent>
-        </Card>
+        {isMobile ? (
+          <MobileBoard
+            tasks={filteredTasks.map(task => ({
+              ...task,
+              isOptimistic: isOptimistic(task.id)
+            }))}
+            onCreateTask={handleCreateTask}
+            onEditTask={handleEditTask}
+            onDeleteTask={handleDeleteTask}
+            onMoveTask={handleMoveTask}
+          />
+        ) : (
+          <Card className="bg-slate-800/30 border-slate-700">
+            <CardContent className="p-6 overflow-x-auto">
+              <EnhancedBoard 
+                tasks={filteredTasks.map(task => ({
+                  ...task,
+                  isOptimistic: isOptimistic(task.id)
+                }))}
+                agents={agents}
+                onCreateTask={handleCreateTask}
+                onEditTask={handleEditTask}
+                onDeleteTask={handleDeleteTask}
+                onMoveTask={handleMoveTask}
+                onTasksUpdated={fetchData}
+                onArchiveTask={handleArchiveTask}
+                onArchiveAllDone={handleArchiveAllDone}
+              />
+            </CardContent>
+          </Card>
+        )}
       </motion.div>
 
       {/* Archive View */}

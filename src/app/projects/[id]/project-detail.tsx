@@ -94,7 +94,7 @@ export default function ProjectBoardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 p-6">
+      <div className="min-h-screen bg-slate-950 p-3 sm:p-6">
         <div className="max-w-7xl mx-auto">
           {/* Header skeleton */}
           <div className="mb-6">
@@ -122,7 +122,7 @@ export default function ProjectBoardPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-slate-950 p-6">
+      <div className="min-h-screen bg-slate-950 p-3 sm:p-6">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-center min-h-[400px]">
             <div className="text-center">
@@ -149,14 +149,14 @@ export default function ProjectBoardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 p-6">
+    <div className="min-h-screen bg-slate-950 p-3 sm:p-6">
       <div className="max-w-7xl mx-auto">
         {/* Project Header */}
         {project && (
           <div className="mb-6 p-6 bg-slate-900/50 rounded-lg border border-slate-800 backdrop-blur-sm">
             <div className="flex items-start justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-slate-100 mb-2">
+                <h1 className="text-2xl sm:text-3xl font-bold text-slate-100 mb-2">
                   {project.name}
                 </h1>
                 {project.description && (

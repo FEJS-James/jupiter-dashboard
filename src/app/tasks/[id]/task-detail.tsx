@@ -342,20 +342,20 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
 
   if (loading) {
     return (
-      <div className="p-6 space-y-6">
-        <div className="flex items-center gap-4 mb-6">
+      <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
+        <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
           <Skeleton className="h-10 w-10" />
-          <div className="space-y-2">
-            <Skeleton className="h-8 w-96" />
-            <Skeleton className="h-4 w-48" />
+          <div className="space-y-2 flex-1">
+            <Skeleton className="h-8 w-full sm:w-96" />
+            <Skeleton className="h-4 w-32 sm:w-48" />
           </div>
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
-            <Skeleton className="h-96" />
-            <Skeleton className="h-64" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+          <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+            <Skeleton className="h-64 sm:h-96" />
+            <Skeleton className="h-48 sm:h-64" />
           </div>
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             <Skeleton className="h-48" />
             <Skeleton className="h-32" />
           </div>
@@ -366,8 +366,8 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
 
   if (error || !task) {
     return (
-      <div className="p-6">
-        <div className="flex items-center gap-4 mb-6">
+      <div className="p-3 sm:p-6">
+        <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
           <Button 
             variant="outline" 
             onClick={() => router.back()}
@@ -388,33 +388,33 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
       {/* Header with breadcrumbs */}
-      <div className="flex items-center gap-4 mb-6">
+      <div className="flex items-center gap-2 sm:gap-4 mb-4 sm:mb-6">
         <Button 
           variant="outline" 
           onClick={() => router.back()}
-          className="border-slate-600 text-slate-300 hover:bg-slate-800"
+          className="border-slate-600 text-slate-300 hover:bg-slate-800 min-h-[44px]"
         >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back
+          <ArrowLeft className="w-4 h-4 sm:mr-2" />
+          <span className="hidden sm:inline">Back</span>
         </Button>
-        <div className="text-sm text-slate-400">
+        <div className="text-xs sm:text-sm text-slate-400 truncate">
           <Link href="/tasks" className="hover:text-slate-200">Tasks</Link>
-          <span className="mx-2">/</span>
-          <span className="text-slate-200">{task.title}</span>
+          <span className="mx-1 sm:mx-2">/</span>
+          <span className="text-slate-200 truncate">{task.title}</span>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
           {/* Task Details Card */}
           <Card className="bg-slate-800/50 border-slate-700">
-            <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-4">
-              <div className="space-y-3 flex-1">
-                <div className="flex items-start gap-3">
-                  <h1 className="text-2xl font-bold text-slate-100 flex-1">
+            <CardHeader className="flex flex-col sm:flex-row items-start justify-between space-y-2 sm:space-y-0 pb-4 px-3 sm:px-6">
+              <div className="space-y-3 flex-1 w-full">
+                <div className="flex items-start gap-2 sm:gap-3">
+                  <h1 className="text-xl sm:text-2xl font-bold text-slate-100 flex-1">
                     {task.title}
                   </h1>
                   <Button
@@ -452,7 +452,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
               </div>
             </CardHeader>
             
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-4 sm:space-y-6 px-3 sm:px-6">
               {task.description && (
                 <div>
                   <h3 className="text-sm font-medium text-slate-300 mb-2">Description</h3>
@@ -461,7 +461,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
               )}
 
               {/* Task Metadata */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div className="space-y-3">
                   {task.project && (
                     <div className="flex items-center gap-2 text-sm">
@@ -553,7 +553,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
         </div>
 
         {/* Sidebar */}
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Task History */}
           <Card className="bg-slate-800/50 border-slate-700">
             <CardHeader>

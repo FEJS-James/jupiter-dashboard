@@ -10,6 +10,8 @@ import { CalendarIcon, Download, RefreshCw, BarChart3, TrendingUp, Users, Zap } 
 import { format, subDays } from 'date-fns'
 import { useTheme } from '@/contexts/theme-context'
 import { cn } from '@/lib/utils'
+import { useMediaQuery } from '@/hooks/use-media-query'
+import { useMounted } from '@/hooks/use-mounted'
 
 // Chart components
 import { OverviewCards } from '@/components/analytics/overview-cards'
@@ -49,6 +51,9 @@ interface DateRange {
 
 export default function AnalyticsPage() {
   const { actualTheme } = useTheme()
+  const mounted = useMounted()
+  const isMobileQuery = useMediaQuery('(max-width: 768px)')
+  const isMobile = mounted && isMobileQuery
   const [dateRange, setDateRange] = useState<DateRange>({
     from: subDays(new Date(), 30),
     to: new Date()
@@ -154,13 +159,13 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div className="flex items-center space-x-2">
-          <BarChart3 className="h-6 w-6 text-blue-500" />
+          <BarChart3 className="h-5 w-5 sm:h-6 sm:w-6 text-blue-500" />
           <h1 className={cn(
-            'text-2xl font-bold',
+            'text-xl sm:text-2xl font-bold',
             actualTheme === 'dark' ? 'text-white' : 'text-slate-900'
           )}>
             Dashboard Analytics
@@ -174,12 +179,12 @@ export default function AnalyticsPage() {
               <Button
                 variant="outline"
                 className={cn(
-                  'justify-start text-left font-normal min-w-[240px]',
+                  'justify-start text-left font-normal min-w-0 sm:min-w-[240px] text-sm sm:text-base min-h-[44px]',
                   !dateRange.from && 'text-muted-foreground'
                 )}
               >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {formatDateRange()}
+                <CalendarIcon className="mr-1 sm:mr-2 h-4 w-4 shrink-0" />
+                <span className="truncate">{formatDateRange()}</span>
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="end">
@@ -196,7 +201,7 @@ export default function AnalyticsPage() {
                     to: range?.to
                   })
                 }}
-                numberOfMonths={2}
+                numberOfMonths={isMobile ? 1 : 2}
               />
             </PopoverContent>
           </Popover>
@@ -206,6 +211,7 @@ export default function AnalyticsPage() {
             size="sm"
             onClick={handleRefresh}
             disabled={loading}
+            className="min-h-[44px] min-w-[44px]"
           >
             <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />
           </Button>
@@ -214,9 +220,10 @@ export default function AnalyticsPage() {
             variant="outline"
             size="sm"
             onClick={handleExport}
+            className="min-h-[44px]"
           >
-            <Download className="h-4 w-4 mr-2" />
-            Export
+            <Download className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Export</span>
           </Button>
         </div>
       </div>
@@ -233,8 +240,8 @@ export default function AnalyticsPage() {
       ) : null}
 
       {/* Analytics Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-6">
+        <TabsList className="flex sm:grid w-full sm:grid-cols-5 overflow-x-auto">
           <TabsTrigger value="overview" className="flex items-center space-x-2">
             <TrendingUp className="h-4 w-4" />
             <span className="hidden sm:inline">Velocity</span>

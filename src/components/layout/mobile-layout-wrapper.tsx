@@ -82,7 +82,7 @@ export function MobileLayoutWrapper({ children }: MobileLayoutWrapperProps) {
               {/* Main Content */}
               <main className={`flex-1 transition-all duration-300 ${
                 (mounted && isMobile)
-                  ? 'pt-16 pb-20 px-4 overflow-auto' // Mobile: account for bottom nav
+                  ? 'pt-16 pb-20 px-2 sm:px-4 overflow-auto' // Mobile: account for bottom nav
                   : (mounted && isTablet)
                     ? 'pt-16 pb-12 px-6 overflow-auto' // Tablet
                     : 'pt-16 pb-12 px-6 overflow-auto' // Desktop (also SSR default)

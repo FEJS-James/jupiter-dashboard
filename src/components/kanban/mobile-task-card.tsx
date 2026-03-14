@@ -2,12 +2,12 @@
 
 import { useState } from 'react'
 import { Draggable } from '@hello-pangea/dnd'
-import { Task, TaskPriority } from '@/types'
+import { Task, TaskPriority, TaskStatus } from '@/types'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar } from '@/components/ui/avatar'
 import { formatDistanceToNow } from 'date-fns'
-import { Clock, AlertCircle, Edit, Trash2, GripVertical, MoreHorizontal, X } from 'lucide-react'
+import { Clock, AlertCircle, Edit, Trash2, GripVertical, MoreHorizontal, X, ArrowRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useTheme } from '@/contexts/theme-context'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -17,6 +17,7 @@ interface MobileTaskCardProps {
   index: number
   onEdit?: (task: Task) => void
   onDelete?: (task: Task) => void
+  onMoveTask?: (taskId: number, newStatus: TaskStatus) => Promise<void>
   isCompact?: boolean
 }
 
@@ -41,9 +42,19 @@ const agentColors: Record<string, string> = {
   manager: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
 }
 
-export function MobileTaskCard({ task, index, onEdit, onDelete, isCompact = false }: MobileTaskCardProps) {
+const ALL_STATUSES: { value: TaskStatus; label: string }[] = [
+  { value: 'backlog', label: 'Backlog' },
+  { value: 'in-progress', label: 'In Progress' },
+  { value: 'code-review', label: 'Code Review' },
+  { value: 'testing', label: 'Testing' },
+  { value: 'deploying', label: 'Deploying' },
+  { value: 'done', label: 'Done' },
+]
+
+export function MobileTaskCard({ task, index, onEdit, onDelete, onMoveTask, isCompact = false }: MobileTaskCardProps) {
   const { actualTheme } = useTheme()
   const [showActions, setShowActions] = useState(false)
+  const [showMoveMenu, setShowMoveMenu] = useState(false)
   const dueDate = task.dueDate ? new Date(task.dueDate) : null
   const isOverdue = dueDate && dueDate < new Date()
 
@@ -234,7 +245,7 @@ export function MobileTaskCard({ task, index, onEdit, onDelete, isCompact = fals
 
           {/* Quick Actions Overlay */}
           <AnimatePresence>
-            {showActions && (
+            {showActions && !showMoveMenu && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -264,6 +275,24 @@ export function MobileTaskCard({ task, index, onEdit, onDelete, isCompact = fals
                 >
                   <Edit className="w-4 h-4" />
                 </motion.button>
+                {onMoveTask && (
+                  <motion.button 
+                    className={cn(
+                      'p-3 rounded-full shadow-lg transition-colors',
+                      actualTheme === 'dark'
+                        ? 'bg-indigo-600 hover:bg-indigo-500 text-white'
+                        : 'bg-indigo-500 hover:bg-indigo-600 text-white'
+                    )}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setShowMoveMenu(true)
+                    }}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                  >
+                    <ArrowRight className="w-4 h-4" />
+                  </motion.button>
+                )}
                 <motion.button 
                   className="p-3 rounded-full bg-red-600 hover:bg-red-700 text-white shadow-lg transition-colors"
                   onClick={(e) => {
@@ -292,6 +321,66 @@ export function MobileTaskCard({ task, index, onEdit, onDelete, isCompact = fals
                 >
                   <X className="w-4 h-4" />
                 </motion.button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Move-to-Column Menu Overlay */}
+          <AnimatePresence>
+            {showMoveMenu && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                className={cn(
+                  'absolute inset-0 backdrop-blur-sm rounded-lg flex flex-col items-center justify-center gap-1.5 p-3 z-10',
+                  actualTheme === 'dark' 
+                    ? 'bg-slate-900/90' 
+                    : 'bg-white/90'
+                )}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <p className={cn(
+                  'text-xs font-medium mb-1',
+                  actualTheme === 'dark' ? 'text-slate-400' : 'text-slate-500'
+                )}>
+                  Move to&hellip;
+                </p>
+                {ALL_STATUSES
+                  .filter((s) => s.value !== task.status)
+                  .map((s) => (
+                    <button
+                      key={s.value}
+                      className={cn(
+                        'w-full text-sm px-3 py-1.5 rounded-md text-left transition-colors',
+                        actualTheme === 'dark'
+                          ? 'hover:bg-slate-700 text-slate-200'
+                          : 'hover:bg-slate-100 text-slate-700'
+                      )}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onMoveTask?.(task.id, s.value)
+                        setShowMoveMenu(false)
+                        setShowActions(false)
+                      }}
+                    >
+                      {s.label}
+                    </button>
+                  ))}
+                <button
+                  className={cn(
+                    'mt-1 text-xs px-3 py-1 rounded-md transition-colors',
+                    actualTheme === 'dark'
+                      ? 'text-slate-400 hover:text-slate-300 hover:bg-slate-800'
+                      : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'
+                  )}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setShowMoveMenu(false)
+                  }}
+                >
+                  Cancel
+                </button>
               </motion.div>
             )}
           </AnimatePresence>

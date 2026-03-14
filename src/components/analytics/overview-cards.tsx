@@ -89,7 +89,7 @@ export function OverviewCards({ data }: OverviewCardsProps) {
   ]
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
+    <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-3 sm:gap-4">
       {cards.map((card, index) => {
         const Icon = card.icon
         
@@ -103,23 +103,23 @@ export function OverviewCards({ data }: OverviewCardsProps) {
                 : 'bg-white border-slate-200 hover:bg-slate-50'
             )}
           >
-            <CardHeader className="pb-2">
+            <CardHeader className="pb-2 p-3 sm:p-6 sm:pb-2">
               <div className="flex items-center justify-between">
-                <div className={cn('p-2 rounded-lg', card.bgColor)}>
-                  <Icon className={cn('h-4 w-4', card.color)} />
+                <div className={cn('p-1.5 sm:p-2 rounded-lg', card.bgColor)}>
+                  <Icon className={cn('h-3.5 w-3.5 sm:h-4 sm:w-4', card.color)} />
                 </div>
               </div>
               <CardTitle className={cn(
-                'text-sm font-medium',
+                'text-xs sm:text-sm font-medium truncate',
                 actualTheme === 'dark' ? 'text-slate-300' : 'text-slate-600'
               )}>
                 {card.title}
               </CardTitle>
             </CardHeader>
-            <CardContent className="pt-0">
-              <div className="flex items-baseline space-x-2">
+            <CardContent className="pt-0 px-3 sm:px-6 pb-3 sm:pb-6">
+              <div className="flex items-baseline space-x-1 sm:space-x-2">
                 <div className={cn(
-                  'text-2xl font-bold',
+                  'text-lg sm:text-2xl font-bold',
                   actualTheme === 'dark' ? 'text-white' : 'text-slate-900'
                 )}>
                   {card.value}

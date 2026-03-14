@@ -118,7 +118,7 @@ export default function PreferencesPage() {
   
   if (loading) {
     return (
-      <div className="container mx-auto py-8">
+      <div className="container mx-auto px-3 sm:px-6 py-4 sm:py-8">
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
@@ -130,12 +130,12 @@ export default function PreferencesPage() {
   }
   
   return (
-    <div className="container mx-auto py-8 space-y-6" role="main" aria-label="User preferences">
+    <div className="container mx-auto px-3 sm:px-6 py-4 sm:py-8 space-y-4 sm:space-y-6" role="main" aria-label="User preferences">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold">Preferences</h1>
-          <p className="text-gray-600 mt-1">
+          <h1 className="text-2xl sm:text-3xl font-bold">Preferences</h1>
+          <p className="text-sm sm:text-base text-gray-600 mt-1">
             Customize your experience and personalize your workspace
           </p>
         </div>
@@ -220,18 +220,18 @@ export default function PreferencesPage() {
           <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as PreferenceCategoryName)} className="w-full" aria-label="Preference categories">
             {/* Tabs List */}
             <div className="border-b">
-              <TabsList className="grid w-full grid-cols-6 h-auto p-1 bg-transparent">
+              <TabsList className="flex sm:grid sm:w-full sm:grid-cols-6 h-auto p-1 bg-transparent overflow-x-auto">
                 {filteredCategories.map((category) => {
                   const Icon = CATEGORY_ICONS[category.name as PreferenceCategoryName]
                   return (
                     <TabsTrigger
                       key={category.name}
                       value={category.name}
-                      className="flex flex-col items-center gap-2 py-3 px-2 data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                      className="flex flex-col items-center gap-1 sm:gap-2 py-2 sm:py-3 px-3 sm:px-2 min-w-[80px] shrink-0 data-[state=active]:bg-background data-[state=active]:shadow-sm"
                     >
                       <Icon className="h-5 w-5" />
                       <div className="text-center">
-                        <div className="font-medium text-sm">{category.displayName}</div>
+                        <div className="font-medium text-xs sm:text-sm">{category.displayName}</div>
                         <div className="text-xs text-gray-500 hidden sm:block">
                           {category.description}
                         </div>
@@ -246,7 +246,7 @@ export default function PreferencesPage() {
             {filteredCategories.map((category) => {
               const Component = CATEGORY_COMPONENTS[category.name as PreferenceCategoryName]
               return (
-                <TabsContent key={category.name} value={category.name} className="p-6 space-y-6">
+                <TabsContent key={category.name} value={category.name} className="p-3 sm:p-6 space-y-4 sm:space-y-6">
                   <div>
                     <h2 className="text-2xl font-semibold flex items-center gap-2">
                       {React.createElement(CATEGORY_ICONS[category.name as PreferenceCategoryName], { className: "h-6 w-6" })}

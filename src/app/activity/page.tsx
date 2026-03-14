@@ -93,7 +93,7 @@ export default function ActivityPage() {
   }
 
   return (
-    <main className="container mx-auto p-6 space-y-8">
+    <main className="container mx-auto p-3 sm:p-6 space-y-4 sm:space-y-8">
       {/* Header */}
       <motion.div 
         className="flex flex-col sm:flex-row sm:items-center justify-between gap-4"
@@ -102,7 +102,7 @@ export default function ActivityPage() {
         transition={{ duration: 0.5 }}
       >
         <div>
-          <h1 className="text-3xl font-bold text-white flex items-center gap-3">
+          <h1 className="text-2xl sm:text-3xl font-bold text-white flex items-center gap-2 sm:gap-3">
             <Activity className="w-8 h-8" />
             Activity Feed
             {connectionStatus === 'connected' && (
@@ -141,7 +141,7 @@ export default function ActivityPage() {
 
       {/* Activity Statistics Cards */}
       <motion.section
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+        className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}
@@ -150,7 +150,7 @@ export default function ActivityPage() {
           // Loading skeletons
           Array.from({ length: 4 }).map((_, i) => (
             <Card key={i} className="bg-slate-800/50 backdrop-blur-xl border-slate-700/50 animate-pulse">
-              <CardContent className="p-6">
+              <CardContent className="p-3 sm:p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="h-4 bg-slate-700 rounded w-24 mb-2"></div>
@@ -171,7 +171,7 @@ export default function ActivityPage() {
         ) : (
           <>
             <Card className="bg-slate-800/50 backdrop-blur-xl border-slate-700/50">
-              <CardContent className="p-6">
+              <CardContent className="p-3 sm:p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-slate-400">Total Activities</p>
@@ -187,7 +187,7 @@ export default function ActivityPage() {
             </Card>
 
             <Card className="bg-slate-800/50 backdrop-blur-xl border-slate-700/50">
-              <CardContent className="p-6">
+              <CardContent className="p-3 sm:p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-slate-400">Last 24 Hours</p>
@@ -203,7 +203,7 @@ export default function ActivityPage() {
             </Card>
 
             <Card className="bg-slate-800/50 backdrop-blur-xl border-slate-700/50">
-              <CardContent className="p-6">
+              <CardContent className="p-3 sm:p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-slate-400">Most Active Project</p>
@@ -219,7 +219,7 @@ export default function ActivityPage() {
             </Card>
 
             <Card className="bg-slate-800/50 backdrop-blur-xl border-slate-700/50">
-              <CardContent className="p-6">
+              <CardContent className="p-3 sm:p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-slate-400">Most Active Agent</p>

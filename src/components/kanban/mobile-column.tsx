@@ -18,6 +18,7 @@ interface MobileColumnProps {
   onCreateTask?: (status: TaskStatus) => void
   onEditTask?: (task: Task) => void
   onDeleteTask?: (task: Task) => void
+  onMoveTask?: (taskId: number, newStatus: TaskStatus) => Promise<void>
   isSingleView?: boolean
 }
 
@@ -42,6 +43,7 @@ export function MobileColumn({
   onCreateTask, 
   onEditTask, 
   onDeleteTask,
+  onMoveTask,
   isSingleView = false
 }: MobileColumnProps) {
   const { actualTheme } = useTheme()
@@ -169,6 +171,7 @@ export function MobileColumn({
                   index={index}
                   onEdit={onEditTask}
                   onDelete={onDeleteTask}
+                  onMoveTask={onMoveTask}
                   isCompact={!isSingleView}
                 />
               ))

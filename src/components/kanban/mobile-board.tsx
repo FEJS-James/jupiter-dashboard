@@ -262,6 +262,7 @@ export function MobileBoard({ tasks, onCreateTask, onEditTask, onDeleteTask, onM
                 onCreateTask={onCreateTask}
                 onEditTask={onEditTask}
                 onDeleteTask={onDeleteTask}
+                onMoveTask={onMoveTask}
                 isSingleView={true}
               />
             </motion.div>
@@ -291,6 +292,7 @@ export function MobileBoard({ tasks, onCreateTask, onEditTask, onDeleteTask, onM
                       onCreateTask={onCreateTask}
                       onEditTask={onEditTask}
                       onDeleteTask={onDeleteTask}
+                      onMoveTask={onMoveTask}
                       isSingleView={false}
                     />
                   </div>
