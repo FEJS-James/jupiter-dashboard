@@ -1,5 +1,5 @@
 import React from 'react'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { vi, describe, it, expect, beforeEach } from 'vitest'
 import { ThemeProvider } from '@/contexts/theme-context'
 import { ThemeToggle } from './theme-toggle'
@@ -56,20 +56,19 @@ describe('ThemeToggle Component', () => {
       
       const button = screen.getByRole('button')
       
-      // Initially should be light theme (default)
-      fireEvent.click(button)
-      
-      // Should have called localStorage.setItem
-      await waitFor(() => {
-        expect(localStorageMock.setItem).toHaveBeenCalledWith('theme', 'dark')
+      // First click: system → dark (since systemTheme is 'light' due to matchMedia mock)
+      await act(async () => {
+        fireEvent.click(button)
       })
       
-      // Click again to toggle back
-      fireEvent.click(button)
+      expect(localStorageMock.setItem).toHaveBeenCalledWith('theme', 'dark')
       
-      await waitFor(() => {
-        expect(localStorageMock.setItem).toHaveBeenCalledWith('theme', 'light')
+      // Second click: dark → light — act flushes all state updates and effects
+      await act(async () => {
+        fireEvent.click(button)
       })
+      
+      expect(localStorageMock.setItem).toHaveBeenCalledWith('theme', 'light')
     })
 
     it('displays correct icon for current theme', () => {

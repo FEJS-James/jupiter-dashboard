@@ -2,11 +2,15 @@
  * @vitest-environment node
  */
 
+import { vi } from 'vitest'
+
+// Unmock activity-logger so we test the REAL implementation (global setup mocks it)
+vi.unmock('./activity-logger')
+
 import { ActivityLogger } from './activity-logger'
 import { db } from './db'
 import { websocketManager } from './websocket-manager'
 import { projects, tasks, agents, activity } from './schema'
-import { vi } from 'vitest'
 
 // Mock database
 vi.mock('./db', () => ({
@@ -351,7 +355,7 @@ describe('ActivityLogger', () => {
         projectId: 1,
         agentId: 1,
         action: 'task_completed',
-        details: undefined,
+        details: {},
       })
     })
 

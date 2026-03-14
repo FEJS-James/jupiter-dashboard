@@ -64,7 +64,7 @@ describe('TaskCard Component', () => {
   })
 
   it('shows urgent priority with red icon', () => {
-    render(<TaskCard task={mockTask} index={0} />)
+    const { container } = render(<TaskCard task={mockTaskOverdue} index={0} />)
     
     // Urgent priority should have red icon
     expect(container.querySelector('.text-red-500')).toBeInTheDocument()

@@ -171,7 +171,7 @@ describe('Board Integration Tests', () => {
     render(<Board tasks={mockTasksWithVariousStatuses} />)
     
     // Total tasks
-    expect(screen.getByText('6 total tasks across 6 columns')).toBeInTheDocument()
+    expect(screen.getByText(/Showing 6 tasks across 6 columns/)).toBeInTheDocument()
     
     // Status-specific counts
     expect(screen.getByText('1 completed')).toBeInTheDocument() // done status
@@ -240,7 +240,7 @@ describe('Board Integration Tests', () => {
     render(<Board tasks={[]} />)
     
     // Should show 0 in header
-    expect(screen.getByText('0 total tasks across 6 columns')).toBeInTheDocument()
+    expect(screen.getByText(/Showing 0 tasks across 6 columns/)).toBeInTheDocument()
     
     // All columns should show empty state
     expect(screen.getByText('No tasks in backlog')).toBeInTheDocument()
@@ -313,7 +313,7 @@ describe('Board Integration Tests', () => {
     
     // Blocked task should appear (though not in a visible column since it's not in the columnConfig)
     // but the board should handle it gracefully
-    expect(screen.getByText('7 total tasks across 6 columns')).toBeInTheDocument()
+    expect(screen.getByText(/Showing 7 tasks across 6 columns/)).toBeInTheDocument()
   })
 
   it('preserves task order within columns', () => {

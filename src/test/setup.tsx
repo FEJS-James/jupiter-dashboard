@@ -4,184 +4,254 @@ import { beforeAll, afterEach, afterAll, vi } from 'vitest'
 import { server } from './mocks/server'
 import { mockWebsocketManager } from './mocks/websocket-manager'
 
-// Mock Radix UI Select to prevent pointer capture issues
-vi.mock('@radix-ui/react-select', () => ({
-  Root: ({ children, ...props }: any) => React.createElement('div', { ...props, 'data-testid': 'select-root' }, children),
-  Group: ({ children, ...props }: any) => React.createElement('div', { ...props, 'data-testid': 'select-group' }, children),
-  Value: ({ children, ...props }: any) => React.createElement('span', { ...props, 'data-testid': 'select-value' }, children),
-  Trigger: ({ children, ...props }: any) => React.createElement('button', { ...props, 'data-testid': 'select-trigger' }, children),
-  Portal: ({ children, ...props }: any) => React.createElement('div', { ...props, 'data-testid': 'select-portal' }, children),
-  Content: ({ children, ...props }: any) => React.createElement('div', { ...props, 'data-testid': 'select-content' }, children),
-  Viewport: ({ children, ...props }: any) => React.createElement('div', { ...props, 'data-testid': 'select-viewport' }, children),
-  Item: ({ children, ...props }: any) => React.createElement('div', { ...props, 'data-testid': 'select-item', onClick: props.onSelect }, children),
-  ItemText: ({ children, ...props }: any) => React.createElement('span', { ...props, 'data-testid': 'select-item-text' }, children),
-  ItemIndicator: ({ children, ...props }: any) => React.createElement('span', { ...props, 'data-testid': 'select-item-indicator' }, children),
-  Label: ({ children, ...props }: any) => React.createElement('div', { ...props, 'data-testid': 'select-label' }, children),
-  Separator: ({ children, ...props }: any) => React.createElement('div', { ...props, 'data-testid': 'select-separator' }, children),
-  ScrollUpButton: ({ children, ...props }: any) => React.createElement('button', { ...props, 'data-testid': 'select-scroll-up' }, children),
-  ScrollDownButton: ({ children, ...props }: any) => React.createElement('button', { ...props, 'data-testid': 'select-scroll-down' }, children),
-  Icon: ({ children, ...props }: any) => React.createElement('span', { ...props, 'data-testid': 'select-icon' }, children),
-}))
+// Mock framer-motion to prevent animation issues in tests
+vi.mock('framer-motion', () => {
+  const React = require('react')
+  const invalidProps = new Set(['initial', 'animate', 'exit', 'transition', 'variants', 'whileHover', 'whileTap', 'whileFocus', 'whileDrag', 'whileInView', 'layout', 'layoutId', 'onAnimationStart', 'onAnimationComplete', 'drag', 'dragConstraints', 'dragElastic', 'dragMomentum', 'dragTransition', 'onDrag', 'onDragStart', 'onDragEnd'])
+  
+  // Cache component references so React doesn't remount on every render
+  const componentCache = new Map()
+  
+  return {
+  motion: new Proxy({}, {
+    get: (_target: any, prop: string) => {
+      if (!componentCache.has(prop)) {
+        const Component = React.forwardRef(({ children, ...props }: any, ref: any) => {
+          const validProps: Record<string, any> = {}
+          for (const [key, val] of Object.entries(props)) {
+            if (!invalidProps.has(key)) {
+              validProps[key] = val
+            }
+          }
+          return React.createElement(prop, { ...validProps, ref }, children)
+        })
+        Component.displayName = `motion.${prop}`
+        componentCache.set(prop, Component)
+      }
+      return componentCache.get(prop)
+    }
+  }),
+  AnimatePresence: ({ children }: { children: React.ReactNode }) => React.createElement(React.Fragment, null, children),
+  useAnimation: () => ({
+    start: vi.fn(),
+    stop: vi.fn(),
+    set: vi.fn(),
+  }),
+  useMotionValue: (initial: any) => ({
+    get: () => initial,
+    set: vi.fn(),
+    onChange: vi.fn(),
+  }),
+  useTransform: () => ({
+    get: () => 0,
+    set: vi.fn(),
+  }),
+  useSpring: () => ({
+    get: () => 0,
+    set: vi.fn(),
+  }),
+  useInView: () => [null, true],
+  useReducedMotion: () => false,
+  }
+})
+
+// Mock Radix UI Select — implements onValueChange so tests can interact with select dropdowns
+vi.mock('@radix-ui/react-select', async () => {
+  const React = await import('react')
+  const SelectContext = React.createContext<{ onValueChange?: (value: string) => void }>({})
+
+  return {
+    Root: ({ children, onValueChange, ...props }: any) => {
+      return React.createElement(
+        SelectContext.Provider,
+        { value: { onValueChange } },
+        React.createElement('div', { ...props, 'data-testid': 'select-root' }, children)
+      )
+    },
+    Group: ({ children, ...props }: any) => React.createElement('div', { ...props, 'data-testid': 'select-group' }, children),
+    Value: ({ children, placeholder, ...props }: any) => React.createElement('span', { ...props, 'data-testid': 'select-value' }, children || placeholder),
+    Trigger: ({ children, ...props }: any) => React.createElement('button', { ...props, 'data-testid': 'select-trigger' }, children),
+    Portal: ({ children, ...props }: any) => React.createElement('div', { ...props, 'data-testid': 'select-portal' }, children),
+    Content: ({ children, ...props }: any) => React.createElement('div', { ...props, 'data-testid': 'select-content' }, children),
+    Viewport: ({ children, ...props }: any) => React.createElement('div', { ...props, 'data-testid': 'select-viewport' }, children),
+    Item: ({ children, value, ...props }: any) => {
+      const ctx = React.useContext(SelectContext)
+      return React.createElement('div', {
+        ...props,
+        'data-testid': 'select-item',
+        'data-value': value,
+        role: 'option',
+        onClick: () => ctx.onValueChange?.(value),
+      }, children)
+    },
+    ItemText: ({ children, ...props }: any) => React.createElement('span', { ...props, 'data-testid': 'select-item-text' }, children),
+    ItemIndicator: ({ children, ...props }: any) => React.createElement('span', { ...props, 'data-testid': 'select-item-indicator' }, children),
+    Label: ({ children, ...props }: any) => React.createElement('div', { ...props, 'data-testid': 'select-label' }, children),
+    Separator: ({ children, ...props }: any) => React.createElement('div', { ...props, 'data-testid': 'select-separator' }, children),
+    ScrollUpButton: ({ children, ...props }: any) => React.createElement('button', { ...props, 'data-testid': 'select-scroll-up' }, children),
+    ScrollDownButton: ({ children, ...props }: any) => React.createElement('button', { ...props, 'data-testid': 'select-scroll-down' }, children),
+    Icon: ({ children, ...props }: any) => React.createElement('span', { ...props, 'data-testid': 'select-icon' }, children),
+  }
+})
 
 
+
+// Guard browser-only mocks — API route tests use @vitest-environment node
+const isBrowser = typeof window !== 'undefined'
 
 // Mock browser APIs
-Object.defineProperty(window, 'IntersectionObserver', {
-  writable: true,
-  configurable: true,
-  value: class IntersectionObserver {
-    constructor(callback: IntersectionObserverCallback) {
-      this.callback = callback
+if (isBrowser) {
+  Object.defineProperty(window, 'IntersectionObserver', {
+    writable: true,
+    configurable: true,
+    value: class IntersectionObserver {
+      constructor(callback: IntersectionObserverCallback) {
+        this.callback = callback
+      }
+      callback: IntersectionObserverCallback
+      observe = vi.fn()
+      unobserve = vi.fn()
+      disconnect = vi.fn()
     }
-    callback: IntersectionObserverCallback
-    observe = vi.fn()
-    unobserve = vi.fn()
-    disconnect = vi.fn()
+  })
+
+  Object.defineProperty(window, 'ResizeObserver', {
+    writable: true,
+    configurable: true,
+    value: class ResizeObserver {
+      constructor(callback: ResizeObserverCallback) {
+        this.callback = callback
+      }
+      callback: ResizeObserverCallback
+      observe = vi.fn()
+      unobserve = vi.fn()
+      disconnect = vi.fn()
+    }
+  })
+
+  // Mock matchMedia
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    configurable: true,
+    value: vi.fn().mockImplementation(query => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })),
+  })
+
+  // Mock localStorage
+  const localStorageMock = {
+    getItem: vi.fn(),
+    setItem: vi.fn(),
+    removeItem: vi.fn(),
+    clear: vi.fn(),
+    length: 0,
+    key: vi.fn(),
+  }
+  Object.defineProperty(window, 'localStorage', {
+    writable: true,
+    configurable: true,
+    value: localStorageMock
+  })
+
+  // Mock sessionStorage
+  Object.defineProperty(window, 'sessionStorage', {
+    writable: true,
+    configurable: true,
+    value: localStorageMock
+  })
+
+  // Mock HTMLElement scrollIntoView
+  Element.prototype.scrollIntoView = vi.fn()
+
+  // Mock window.scrollTo
+  Object.defineProperty(window, 'scrollTo', {
+    writable: true,
+    configurable: true,
+    value: vi.fn(),
+  })
+
+  // Mock CSS.supports for modern CSS features
+  Object.defineProperty(window, 'CSS', {
+    writable: true,
+    configurable: true,
+    value: {
+      supports: vi.fn().mockReturnValue(true),
+    },
+  })
+
+  // Mock pointer capture for Radix UI components
+  HTMLElement.prototype.hasPointerCapture = vi.fn().mockReturnValue(false)
+  HTMLElement.prototype.setPointerCapture = vi.fn()
+  HTMLElement.prototype.releasePointerCapture = vi.fn()
+  Element.prototype.hasPointerCapture = vi.fn().mockReturnValue(false)
+  Element.prototype.setPointerCapture = vi.fn()
+  Element.prototype.releasePointerCapture = vi.fn()
+
+  // Mock pointer events
+  Object.defineProperty(window, 'PointerEvent', {
+    writable: true,
+    configurable: true,
+    value: class MockPointerEvent extends Event {
+      pointerId = 1
+      isPrimary = true
+      pointerType = 'mouse'
+      constructor(type: string, init?: PointerEventInit) {
+        super(type, {
+          ...init,
+          bubbles: init?.bubbles,
+          cancelable: init?.cancelable
+        })
+        if (init?.pointerId !== undefined) this.pointerId = init.pointerId
+        if (init?.isPrimary !== undefined) this.isPrimary = init.isPrimary
+        if (init?.pointerType !== undefined) this.pointerType = init.pointerType
+      }
+    }
+  })
+} // end isBrowser
+
+// Mock Radix UI Popover to render content inline (jsdom doesn't support portals well)
+vi.mock('@radix-ui/react-popover', async () => {
+  const React = await import('react')
+  return {
+    Root: ({ children, ...props }: any) => React.createElement('div', { 'data-testid': 'popover-root' }, children),
+    Trigger: React.forwardRef(({ children, asChild, ...props }: any, ref: any) => {
+      if (asChild && React.isValidElement(children)) {
+        return React.cloneElement(children as React.ReactElement, { ...props, ref })
+      }
+      return React.createElement('button', { ...props, ref }, children)
+    }),
+    Portal: ({ children }: any) => React.createElement(React.Fragment, null, children),
+    Content: React.forwardRef(({ children, ...props }: any, ref: any) => 
+      React.createElement('div', { ...props, ref, 'data-testid': 'popover-content' }, children)
+    ),
+    Anchor: ({ children, ...props }: any) => React.createElement('div', props, children),
+    Close: ({ children, ...props }: any) => React.createElement('button', props, children),
+    Arrow: () => null,
   }
 })
 
-Object.defineProperty(window, 'ResizeObserver', {
-  writable: true,
-  configurable: true,
-  value: class ResizeObserver {
-    constructor(callback: ResizeObserverCallback) {
-      this.callback = callback
-    }
-    callback: ResizeObserverCallback
-    observe = vi.fn()
-    unobserve = vi.fn()
-    disconnect = vi.fn()
-  }
-})
+// Note: document.createRange is natively supported by jsdom.
+// Do NOT mock it — mocking it breaks userEvent click handling
+// which relies on native Selection/Range APIs.
 
-// Mock matchMedia
-Object.defineProperty(window, 'matchMedia', {
-  writable: true,
-  configurable: true,
-  value: vi.fn().mockImplementation(query => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: vi.fn(), // deprecated
-    removeListener: vi.fn(), // deprecated
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    dispatchEvent: vi.fn(),
-  })),
-})
-
-// Mock localStorage
-const localStorageMock = {
-  getItem: vi.fn(),
-  setItem: vi.fn(),
-  removeItem: vi.fn(),
-  clear: vi.fn(),
-  length: 0,
-  key: vi.fn(),
-}
-Object.defineProperty(window, 'localStorage', {
-  writable: true,
-  configurable: true,
-  value: localStorageMock
-})
-
-// Mock sessionStorage
-Object.defineProperty(window, 'sessionStorage', {
-  writable: true,
-  configurable: true,
-  value: localStorageMock
-})
-
-// Mock HTMLElement scrollIntoView
-Element.prototype.scrollIntoView = vi.fn()
-
-// Mock window.scrollTo
-Object.defineProperty(window, 'scrollTo', {
-  writable: true,
-  configurable: true,
-  value: vi.fn(),
-})
-
-// Mock CSS.supports for modern CSS features
-Object.defineProperty(window, 'CSS', {
-  writable: true,
-  configurable: true,
-  value: {
-    supports: vi.fn().mockReturnValue(true),
-  },
-})
-
-// Mock pointer capture for Radix UI components
-HTMLElement.prototype.hasPointerCapture = vi.fn().mockReturnValue(false)
-HTMLElement.prototype.setPointerCapture = vi.fn()
-HTMLElement.prototype.releasePointerCapture = vi.fn()
-Element.prototype.hasPointerCapture = vi.fn().mockReturnValue(false)
-Element.prototype.setPointerCapture = vi.fn()
-Element.prototype.releasePointerCapture = vi.fn()
-
-// Mock pointer events
-Object.defineProperty(window, 'PointerEvent', {
-  writable: true,
-  configurable: true,
-  value: class MockPointerEvent extends Event {
-    pointerId = 1
-    isPrimary = true
-    pointerType = 'mouse'
-    constructor(type: string, init?: PointerEventInit) {
-      super(type, {
-        ...init,
-        // Remove properties that have read-only getters
-        bubbles: init?.bubbles,
-        cancelable: init?.cancelable
-      })
-      // Only set properties that don't conflict with read-only getters
-      if (init?.pointerId !== undefined) this.pointerId = init.pointerId
-      if (init?.isPrimary !== undefined) this.isPrimary = init.isPrimary
-      if (init?.pointerType !== undefined) this.pointerType = init.pointerType
-    }
-  }
-})
-
-// Mock for range APIs
-if (typeof document !== 'undefined') {
-  document.createRange = () => ({
-    setStart: vi.fn(),
-    setEnd: vi.fn(),
-    commonAncestorContainer: document.body,
-    collapsed: false,
-    endContainer: document.body,
-    endOffset: 0,
-    startContainer: document.body,
-    startOffset: 0,
-    selectNode: vi.fn(),
-    selectNodeContents: vi.fn(),
-    cloneContents: vi.fn(() => document.createDocumentFragment()),
-    cloneRange: vi.fn(),
-    collapse: vi.fn(),
-    compareBoundaryPoints: vi.fn(),
-    deleteContents: vi.fn(),
-    detach: vi.fn(),
-    extractContents: vi.fn(),
-    getBoundingClientRect: vi.fn(() => ({ x: 0, y: 0, width: 0, height: 0, top: 0, left: 0, right: 0, bottom: 0 })),
-    getClientRects: vi.fn(() => ({ length: 0, item: () => null, [Symbol.iterator]: function* () {} })),
-    insertNode: vi.fn(),
-    isPointInRange: vi.fn(() => false),
-    comparePoint: vi.fn(() => 0),
-    intersectsNode: vi.fn(() => false),
-    surroundContents: vi.fn(),
-    toString: vi.fn(() => ''),
+// Mock getComputedStyle (browser-only)
+if (isBrowser) {
+  Object.defineProperty(window, 'getComputedStyle', {
+    writable: true,
+    configurable: true,
+    value: vi.fn().mockImplementation(() => ({
+      getPropertyValue: vi.fn().mockReturnValue(''),
+      setProperty: vi.fn(),
+    })),
   })
 }
-
-// Mock getComputedStyle
-Object.defineProperty(window, 'getComputedStyle', {
-  writable: true,
-  configurable: true,
-  value: vi.fn().mockImplementation(() => ({
-    getPropertyValue: vi.fn().mockReturnValue(''),
-    setProperty: vi.fn(),
-  })),
-})
 
 // Mock the WebSocket manager module
 vi.mock('../lib/websocket-manager', () => ({
@@ -199,6 +269,7 @@ vi.mock('../contexts/websocket-context', () => ({
   useWebSocket: () => ({
     socket: null,
     connected: true,
+    connectionStatus: 'connected',
     users: [],
     activities: [],
     joinBoard: vi.fn(),
@@ -216,12 +287,20 @@ vi.mock('../contexts/websocket-context', () => ({
 // Mock the drag and drop library
 vi.mock('@hello-pangea/dnd', () => ({
   DragDropContext: ({ children }: { children: React.ReactNode }) => children,
-  Droppable: ({ children }: { children: (provided: any) => React.ReactNode }) => 
-    children({
-      droppableProps: {},
-      innerRef: () => {},
-      placeholder: null,
-    }),
+  Droppable: ({ children }: { children: (provided: any, snapshot: any) => React.ReactNode }) => 
+    children(
+      {
+        droppableProps: {},
+        innerRef: () => {},
+        placeholder: null,
+      },
+      {
+        isDraggingOver: false,
+        draggingOverWith: null,
+        draggingFromThisWith: null,
+        isUsingPlaceholder: false,
+      }
+    ),
   Draggable: ({ children }: { children: (provided: any, snapshot: any) => React.ReactNode }) =>
     children(
       {

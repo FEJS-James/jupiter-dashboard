@@ -138,13 +138,12 @@ describe('TaskFiltersComponent', () => {
     expect(screen.getByPlaceholderText('Search in title and description...')).toBeInTheDocument()
   })
 
-  it('calls onFiltersChange when search input changes', async () => {
-    const user = userEvent.setup()
+  it('calls onFiltersChange when search input changes', () => {
     render(<TaskFiltersComponent {...defaultProps} />)
     
     const searchInput = screen.getByPlaceholderText('Search in title and description...')
-    await user.clear(searchInput)
-    await user.type(searchInput, 'test search')
+    // Use fireEvent.change for a single change event (component is controlled)
+    fireEvent.change(searchInput, { target: { value: 'test search' } })
     
     expect(defaultProps.onFiltersChange).toHaveBeenLastCalledWith({ search: 'test search' })
   })
@@ -156,9 +155,11 @@ describe('TaskFiltersComponent', () => {
       filters: { ...mockFilters, search: 'test' }
     }
     
-    render(<TaskFiltersComponent {...propsWithSearch} />)
+    const { container } = render(<TaskFiltersComponent {...propsWithSearch} />)
     
-    const clearButton = screen.getByText(/×/).closest('button')
+    // The clear button is a small button overlaying the search input with an X icon
+    // Find it by its class (absolute positioned clear button)
+    const clearButton = container.querySelector('button.absolute')
     expect(clearButton).toBeInTheDocument()
     await user.click(clearButton!)
     

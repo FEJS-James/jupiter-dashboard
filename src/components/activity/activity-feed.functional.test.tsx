@@ -34,14 +34,13 @@ describe('ActivityFeed Core Functionality', () => {
       expect(screen.getByText(/CodeAgent created task/)).toBeInTheDocument()
     })
 
-    // Should display agent information
-    expect(screen.getAllByText('CodeAgent').length).toBeGreaterThan(0)
-    expect(screen.getAllByText('ReviewAgent').length).toBeGreaterThan(0)
-    expect(screen.getAllByText('DeployAgent').length).toBeGreaterThan(0)
+    // Should display agent information (agent names appear in description text and agent info spans)
+    expect(screen.getByText(/CodeAgent created task/)).toBeInTheDocument()
+    expect(screen.getByText(/ReviewAgent commented on/)).toBeInTheDocument()
+    expect(screen.getByText(/DeployAgent joined/)).toBeInTheDocument()
 
-    // Should display project and task information
-    expect(screen.getByText(/Test Project 1/)).toBeInTheDocument()
-    expect(screen.getByText(/Test Task/)).toBeInTheDocument()
+    // Should display project and task information in descriptions
+    expect(screen.getByText(/CodeAgent created task "Test Task" in Test Project 1/)).toBeInTheDocument()
   })
 
   it('should handle compact mode', async () => {
@@ -97,13 +96,14 @@ describe('ActivityFeed Core Functionality', () => {
 
     // Wait for data to load
     await waitFor(() => {
-      expect(screen.getAllByText('coder').length).toBeGreaterThan(0)
+      expect(screen.getByText(/CodeAgent created task/)).toBeInTheDocument()
     })
 
-    // Should show agent roles
-    expect(screen.getAllByText('coder').length).toBeGreaterThan(0)
-    expect(screen.getAllByText('reviewer').length).toBeGreaterThan(0)
-    expect(screen.getAllByText('deployer').length).toBeGreaterThan(0)
+    // Agent roles are displayed in "AgentName • role" format within span elements
+    // Multiple activities may have the same agent, so use getAllByText
+    expect(screen.getAllByText(/CodeAgent • coder/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/ReviewAgent • reviewer/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/DeployAgent • deployer/).length).toBeGreaterThan(0)
   })
 
   it('should handle custom title and description', () => {
@@ -139,8 +139,9 @@ describe('ActivityFeed Core Functionality', () => {
       expect(screen.getByText(/CodeAgent created task/)).toBeInTheDocument()
     })
 
-    // The mock date-fns should return 'Mar 12, 10:30' format
-    const timestamps = screen.getAllByText(/Mar 12,/)
+    // Timestamps are formatted as 'MMM dd, HH:mm' (e.g., "Mar 14, 10:30")
+    // Since MSW mock data uses Date.now()-relative timestamps, match any date format
+    const timestamps = screen.getAllByText(/[A-Z][a-z]{2} \d{2}, \d{2}:\d{2}/)
     expect(timestamps.length).toBeGreaterThan(0)
   })
 })

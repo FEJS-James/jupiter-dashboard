@@ -61,7 +61,7 @@ describe('Board Component', () => {
   it('shows correct task counts', () => {
     render(<Board tasks={mockTasks} />)
     
-    expect(screen.getByText(/total tasks across/)).toBeInTheDocument()
+    expect(screen.getByText(/tasks across/)).toBeInTheDocument()
     expect(screen.getByText(/0.*completed/)).toBeInTheDocument()
     expect(screen.getByText(/1.*in progress/)).toBeInTheDocument()
     expect(screen.getByText(/1.*backlog/)).toBeInTheDocument()
