@@ -73,6 +73,9 @@ vi.mock('@/lib/api-utils', () => ({
   createSuccessResponse: vi.fn((data) => 
     new Response(JSON.stringify({ success: true, data }), { status: 200 })
   ),
+  createCachedSuccessResponse: vi.fn((data) => 
+    new Response(JSON.stringify({ success: true, data }), { status: 200 })
+  ),
   createErrorResponse: vi.fn((message, status) => 
     new Response(JSON.stringify({ error: message }), { status })
   ),

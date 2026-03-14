@@ -1,10 +1,13 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import { describe, it, expect } from 'vitest'
-import Home from './page'
+
+// Test the DashboardContent component directly (the page uses next/dynamic with ssr:false
+// which renders a loading skeleton in test environments without a browser)
+import { DashboardContent } from '@/components/dashboard/dashboard-content'
 
 describe('Home Page', () => {
   it('renders the AgentFlow welcome heading', async () => {
-    render(<Home />)
+    render(<DashboardContent />)
     
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: /Welcome to AgentFlow/i })).toBeInTheDocument()
@@ -12,7 +15,7 @@ describe('Home Page', () => {
   })
 
   it('displays the dashboard description', async () => {
-    render(<Home />)
+    render(<DashboardContent />)
     
     await waitFor(() => {
       expect(screen.getByText(/Your autonomous development pipeline is ready for action/i)).toBeInTheDocument()
@@ -20,7 +23,7 @@ describe('Home Page', () => {
   })
 
   it('contains dashboard action buttons', async () => {
-    render(<Home />)
+    render(<DashboardContent />)
     
     await waitFor(() => {
       const newProjectButton = screen.getByRole('button', { name: /Create new project/i })
@@ -36,7 +39,7 @@ describe('Home Page', () => {
   })
 
   it('displays dashboard stats cards', async () => {
-    render(<Home />)
+    render(<DashboardContent />)
     
     await waitFor(() => {
       // Use getAllByText for elements that appear multiple times
