@@ -45,24 +45,44 @@ vi.mock('framer-motion', () => ({
   useReducedMotion: () => false,
 }))
 
-// Mock Radix UI Select to prevent pointer capture issues
-vi.mock('@radix-ui/react-select', () => ({
-  Root: ({ children, ...props }: any) => React.createElement('div', { ...props, 'data-testid': 'select-root' }, children),
-  Group: ({ children, ...props }: any) => React.createElement('div', { ...props, 'data-testid': 'select-group' }, children),
-  Value: ({ children, ...props }: any) => React.createElement('span', { ...props, 'data-testid': 'select-value' }, children),
-  Trigger: ({ children, ...props }: any) => React.createElement('button', { ...props, 'data-testid': 'select-trigger' }, children),
-  Portal: ({ children, ...props }: any) => React.createElement('div', { ...props, 'data-testid': 'select-portal' }, children),
-  Content: ({ children, ...props }: any) => React.createElement('div', { ...props, 'data-testid': 'select-content' }, children),
-  Viewport: ({ children, ...props }: any) => React.createElement('div', { ...props, 'data-testid': 'select-viewport' }, children),
-  Item: ({ children, ...props }: any) => React.createElement('div', { ...props, 'data-testid': 'select-item', onClick: props.onSelect }, children),
-  ItemText: ({ children, ...props }: any) => React.createElement('span', { ...props, 'data-testid': 'select-item-text' }, children),
-  ItemIndicator: ({ children, ...props }: any) => React.createElement('span', { ...props, 'data-testid': 'select-item-indicator' }, children),
-  Label: ({ children, ...props }: any) => React.createElement('div', { ...props, 'data-testid': 'select-label' }, children),
-  Separator: ({ children, ...props }: any) => React.createElement('div', { ...props, 'data-testid': 'select-separator' }, children),
-  ScrollUpButton: ({ children, ...props }: any) => React.createElement('button', { ...props, 'data-testid': 'select-scroll-up' }, children),
-  ScrollDownButton: ({ children, ...props }: any) => React.createElement('button', { ...props, 'data-testid': 'select-scroll-down' }, children),
-  Icon: ({ children, ...props }: any) => React.createElement('span', { ...props, 'data-testid': 'select-icon' }, children),
-}))
+// Mock Radix UI Select — implements onValueChange so tests can interact with select dropdowns
+vi.mock('@radix-ui/react-select', async () => {
+  const React = await import('react')
+  const SelectContext = React.createContext<{ onValueChange?: (value: string) => void }>({})
+
+  return {
+    Root: ({ children, onValueChange, ...props }: any) => {
+      return React.createElement(
+        SelectContext.Provider,
+        { value: { onValueChange } },
+        React.createElement('div', { ...props, 'data-testid': 'select-root' }, children)
+      )
+    },
+    Group: ({ children, ...props }: any) => React.createElement('div', { ...props, 'data-testid': 'select-group' }, children),
+    Value: ({ children, placeholder, ...props }: any) => React.createElement('span', { ...props, 'data-testid': 'select-value' }, children || placeholder),
+    Trigger: ({ children, ...props }: any) => React.createElement('button', { ...props, 'data-testid': 'select-trigger' }, children),
+    Portal: ({ children, ...props }: any) => React.createElement('div', { ...props, 'data-testid': 'select-portal' }, children),
+    Content: ({ children, ...props }: any) => React.createElement('div', { ...props, 'data-testid': 'select-content' }, children),
+    Viewport: ({ children, ...props }: any) => React.createElement('div', { ...props, 'data-testid': 'select-viewport' }, children),
+    Item: ({ children, value, ...props }: any) => {
+      const ctx = React.useContext(SelectContext)
+      return React.createElement('div', {
+        ...props,
+        'data-testid': 'select-item',
+        'data-value': value,
+        role: 'option',
+        onClick: () => ctx.onValueChange?.(value),
+      }, children)
+    },
+    ItemText: ({ children, ...props }: any) => React.createElement('span', { ...props, 'data-testid': 'select-item-text' }, children),
+    ItemIndicator: ({ children, ...props }: any) => React.createElement('span', { ...props, 'data-testid': 'select-item-indicator' }, children),
+    Label: ({ children, ...props }: any) => React.createElement('div', { ...props, 'data-testid': 'select-label' }, children),
+    Separator: ({ children, ...props }: any) => React.createElement('div', { ...props, 'data-testid': 'select-separator' }, children),
+    ScrollUpButton: ({ children, ...props }: any) => React.createElement('button', { ...props, 'data-testid': 'select-scroll-up' }, children),
+    ScrollDownButton: ({ children, ...props }: any) => React.createElement('button', { ...props, 'data-testid': 'select-scroll-down' }, children),
+    Icon: ({ children, ...props }: any) => React.createElement('span', { ...props, 'data-testid': 'select-icon' }, children),
+  }
+})
 
 
 
@@ -183,36 +203,30 @@ Object.defineProperty(window, 'PointerEvent', {
   }
 })
 
-// Mock for range APIs
-if (typeof document !== 'undefined') {
-  document.createRange = () => ({
-    setStart: vi.fn(),
-    setEnd: vi.fn(),
-    commonAncestorContainer: document.body,
-    collapsed: false,
-    endContainer: document.body,
-    endOffset: 0,
-    startContainer: document.body,
-    startOffset: 0,
-    selectNode: vi.fn(),
-    selectNodeContents: vi.fn(),
-    cloneContents: vi.fn(() => document.createDocumentFragment()),
-    cloneRange: vi.fn(),
-    collapse: vi.fn(),
-    compareBoundaryPoints: vi.fn(),
-    deleteContents: vi.fn(),
-    detach: vi.fn(),
-    extractContents: vi.fn(),
-    getBoundingClientRect: vi.fn(() => ({ x: 0, y: 0, width: 0, height: 0, top: 0, left: 0, right: 0, bottom: 0 })),
-    getClientRects: vi.fn(() => ({ length: 0, item: () => null, [Symbol.iterator]: function* () {} })),
-    insertNode: vi.fn(),
-    isPointInRange: vi.fn(() => false),
-    comparePoint: vi.fn(() => 0),
-    intersectsNode: vi.fn(() => false),
-    surroundContents: vi.fn(),
-    toString: vi.fn(() => ''),
-  })
-}
+// Mock Radix UI Popover to render content inline (jsdom doesn't support portals well)
+vi.mock('@radix-ui/react-popover', async () => {
+  const React = await import('react')
+  return {
+    Root: ({ children, ...props }: any) => React.createElement('div', { 'data-testid': 'popover-root' }, children),
+    Trigger: React.forwardRef(({ children, asChild, ...props }: any, ref: any) => {
+      if (asChild && React.isValidElement(children)) {
+        return React.cloneElement(children as React.ReactElement, { ...props, ref })
+      }
+      return React.createElement('button', { ...props, ref }, children)
+    }),
+    Portal: ({ children }: any) => React.createElement(React.Fragment, null, children),
+    Content: React.forwardRef(({ children, ...props }: any, ref: any) => 
+      React.createElement('div', { ...props, ref, 'data-testid': 'popover-content' }, children)
+    ),
+    Anchor: ({ children, ...props }: any) => React.createElement('div', props, children),
+    Close: ({ children, ...props }: any) => React.createElement('button', props, children),
+    Arrow: () => null,
+  }
+})
+
+// Note: document.createRange is natively supported by jsdom.
+// Do NOT mock it — mocking it breaks userEvent click handling
+// which relies on native Selection/Range APIs.
 
 // Mock getComputedStyle
 Object.defineProperty(window, 'getComputedStyle', {
@@ -240,6 +254,7 @@ vi.mock('../contexts/websocket-context', () => ({
   useWebSocket: () => ({
     socket: null,
     connected: true,
+    connectionStatus: 'connected',
     users: [],
     activities: [],
     joinBoard: vi.fn(),
