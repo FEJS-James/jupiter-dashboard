@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { AlertCircle, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useTaskOperations } from '@/hooks/use-task-operations'
+import { ProjectBrief } from '@/components/project-brief'
 import { toast } from 'sonner'
 
 interface ApiResponse<T> {
@@ -160,9 +161,9 @@ export default function ProjectBoardPage() {
                   {project.name}
                 </h1>
                 {project.description && (
-                  <p className="text-slate-400 mb-3">
-                    {project.description}
-                  </p>
+                  <div className="mb-3">
+                    <ProjectBrief content={project.description} />
+                  </div>
                 )}
                 <div className="flex items-center gap-4 text-sm">
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${
