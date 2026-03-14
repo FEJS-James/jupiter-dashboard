@@ -5,7 +5,8 @@ import { agents, tasks } from '@/lib/schema';
 import { createAgentSchema, agentFiltersSchema } from '@/lib/validation';
 import { ZodError } from 'zod';
 import { 
-  createSuccessResponse, 
+  createSuccessResponse,
+  createCachedSuccessResponse,
   createErrorResponse,
   handleDatabaseError,
   handleZodError,
@@ -93,7 +94,7 @@ export async function GET(request: NextRequest) {
       })
     );
     
-    return createSuccessResponse(agentsWithCounts);
+    return createCachedSuccessResponse(agentsWithCounts, undefined, { maxAge: 15, swr: 60 });
   } catch (error) {
     return handleDatabaseError(error);
   }

@@ -124,6 +124,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: overview,
+    }, {
+      headers: { "Cache-Control": "public, s-maxage=30, stale-while-revalidate=120" },
     })
 
   } catch (error) {
