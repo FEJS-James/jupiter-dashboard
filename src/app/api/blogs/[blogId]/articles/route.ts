@@ -3,7 +3,7 @@ import { eq, and, sql, desc, asc } from 'drizzle-orm';
 import { blogDb } from '@/lib/blog-db';
 import { blogs, articles } from '@/lib/blog-schema';
 import { verifyBlogApiKey, computeWordCount, computeReadingTime } from '@/lib/blog-auth';
-import { createErrorResponse, toISO, parseJsonField } from '@/lib/api-utils';
+import { createErrorResponse, toISO, parseJsonField, isUniqueConstraintError } from '@/lib/api-utils';
 
 function serializeArticle(article: typeof articles.$inferSelect) {
   return {
@@ -203,12 +203,7 @@ export async function POST(
     try {
       [inserted] = await blogDb.insert(articles).values(newArticle).returning();
     } catch (err: unknown) {
-      // Check for unique constraint violation (slug conflict)
-      if (err && typeof err === 'object' && 'code' in err && (err as { code: string }).code === 'SQLITE_CONSTRAINT_UNIQUE') {
-        return createErrorResponse('An article with this slug already exists in this blog', 409);
-      }
-      // Also check message-based detection for libSQL
-      if (err instanceof Error && err.message && err.message.includes('UNIQUE constraint failed')) {
+      if (isUniqueConstraintError(err)) {
         return createErrorResponse('An article with this slug already exists in this blog', 409);
       }
       throw err;

@@ -26,13 +26,13 @@ export function handleDatabaseError(error: unknown) {
   console.error('Database error:', error);
   
   // Handle common SQLite errors
+  if (isUniqueConstraintError(error)) {
+    return createErrorResponse('Resource already exists', 409);
+  }
+
   if (error && typeof error === 'object' && 'code' in error) {
     if (error.code === 'SQLITE_CONSTRAINT_FOREIGNKEY') {
       return createErrorResponse('Referenced resource not found', 400);
-    }
-    
-    if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
-      return createErrorResponse('Resource already exists', 409);
     }
   }
   
@@ -53,6 +53,46 @@ export function extractIdFromParams(params: { id: string }): number {
     throw new Error('Invalid ID parameter');
   }
   return id;
+}
+
+/**
+ * Detect unique constraint violations from Drizzle ORM / SQLite.
+ *
+ * Drizzle wraps the underlying SQLite error, so the unique-constraint
+ * indicator can appear at multiple levels:
+ *   - err.code            (top-level, sometimes 'SQLITE_CONSTRAINT')
+ *   - err.cause?.code     (nested, 'SQLITE_CONSTRAINT_UNIQUE')
+ *   - err.message         (may contain 'UNIQUE constraint failed')
+ *   - err.cause?.message  (may contain 'UNIQUE constraint failed')
+ */
+export function isUniqueConstraintError(err: unknown): boolean {
+  if (!err || typeof err !== 'object') return false;
+
+  const e = err as Record<string, unknown>;
+
+  // Direct code check (works when the driver doesn't wrap)
+  if (e.code === 'SQLITE_CONSTRAINT_UNIQUE') return true;
+
+  // Message-level check (top-level)
+  if (typeof e.message === 'string' && e.message.includes('UNIQUE constraint failed')) return true;
+
+  // Nested cause check (Drizzle ORM wrapping)
+  const cause = e.cause;
+  if (cause && typeof cause === 'object') {
+    const c = cause as Record<string, unknown>;
+    if (c.code === 'SQLITE_CONSTRAINT_UNIQUE') return true;
+    if (typeof c.message === 'string' && c.message.includes('UNIQUE constraint failed')) return true;
+
+    // Double-nested cause (observed in some driver versions)
+    const cc = c.cause;
+    if (cc && typeof cc === 'object') {
+      const inner = cc as Record<string, unknown>;
+      if (inner.code === 'SQLITE_CONSTRAINT_UNIQUE') return true;
+      if (typeof inner.message === 'string' && inner.message.includes('UNIQUE constraint failed')) return true;
+    }
+  }
+
+  return false;
 }
 
 /** Safely convert DB timestamp (Date | number | string) to ISO string */
