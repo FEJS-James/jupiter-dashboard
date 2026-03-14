@@ -14,6 +14,7 @@ import { Task, TaskStatus, TaskPriority, Project, Agent } from '@/types'
 import { cn } from '@/lib/utils'
 import { useTheme } from '@/contexts/theme-context'
 import { useMediaQuery } from '@/hooks/use-media-query'
+import { useMounted } from '@/hooks/use-mounted'
 import { 
   X, 
   Plus, 
@@ -63,6 +64,7 @@ export function MobileTaskFormDialog({
   agents
 }: MobileTaskFormDialogProps) {
   const { actualTheme } = useTheme()
+  const mounted = useMounted()
   const isMobile = useMediaQuery('(max-width: 768px)')
   
   const [currentStep, setCurrentStep] = useState(0)
@@ -171,8 +173,8 @@ export function MobileTaskFormDialog({
     }
   }
 
-  if (!isMobile) {
-    return null // Use desktop version for non-mobile
+  if (!mounted || !isMobile) {
+    return null // Use desktop version for non-mobile; skip pre-mount to avoid hydration mismatch
   }
 
   return (

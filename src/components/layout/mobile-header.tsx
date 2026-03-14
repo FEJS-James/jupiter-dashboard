@@ -17,6 +17,7 @@ import { useTheme } from '@/contexts/theme-context'
 import { ThemeToggle } from '@/components/theme/theme-toggle'
 import { NotificationBell } from '@/components/notifications/notification-bell'
 import { useMediaQuery } from '@/hooks/use-media-query'
+import { useMounted } from '@/hooks/use-mounted'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { generateBreadcrumbs } from '@/lib/breadcrumbs'
@@ -38,6 +39,7 @@ export function MobileHeader({
   const [searchExpanded, setSearchExpanded] = useState(false)
   const { actualTheme } = useTheme()
   
+  const mounted = useMounted()
   const isTablet = useMediaQuery('(min-width: 768px) and (max-width: 1024px)')
   const isDesktop = useMediaQuery('(min-width: 1024px)')
   const pathname = usePathname()
@@ -106,7 +108,7 @@ export function MobileHeader({
             {/* Desktop Breadcrumbs */}
             {!isMobile && (
               <div className="hidden md:flex items-center space-x-2 ml-4">
-                {breadcrumbs.slice(0, isTablet ? 2 : breadcrumbs.length).map((crumb, index) => (
+                {breadcrumbs.slice(0, (mounted && isTablet) ? 2 : breadcrumbs.length).map((crumb, index) => (
                   <div key={crumb.href} className="flex items-center space-x-2">
                     {index > 0 && (
                       <ChevronRight className={cn(

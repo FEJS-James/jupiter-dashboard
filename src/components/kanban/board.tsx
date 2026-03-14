@@ -6,6 +6,7 @@ import { Task, TaskStatus } from '@/types'
 import { Column } from './column'
 import { MobileBoard } from './mobile-board'
 import { useMediaQuery } from '@/hooks/use-media-query'
+import { useMounted } from '@/hooks/use-mounted'
 
 interface BoardProps {
   tasks: (Task & { isOptimistic?: boolean })[]
@@ -31,10 +32,11 @@ const columnConfig: Array<{
 export function Board({ tasks, onCreateTask, onEditTask, onDeleteTask, onMoveTask }: BoardProps) {
   const [isDragging, setIsDragging] = useState(false)
   const [draggedTask, setDraggedTask] = useState<Task | null>(null)
+  const mounted = useMounted()
   const isMobile = useMediaQuery('(max-width: 768px)')
 
-  // Use mobile board on mobile devices
-  if (isMobile) {
+  // Use mobile board on mobile devices — only after mount to avoid hydration mismatch
+  if (mounted && isMobile) {
     return (
       <MobileBoard 
         tasks={tasks}
