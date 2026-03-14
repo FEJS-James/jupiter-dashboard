@@ -19,6 +19,7 @@ import { useTheme } from '@/contexts/theme-context'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useSidebarData } from '@/hooks/use-sidebar-data'
+import { useProjectContext } from '@/contexts/project-context'
 
 interface MobileSidebarProps {
   isOpen: boolean
@@ -30,7 +31,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const { projects, agents, loading } = useSidebarData()
-  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null)
+  const { selectedProjectId, setSelectedProjectId } = useProjectContext()
   const [showProjects, setShowProjects] = useState(false)
 
   // Explicit navigation handler — bypasses <Link> internal click handling
@@ -178,7 +179,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                           'text-sm font-medium truncate',
                           actualTheme === 'dark' ? 'text-white' : 'text-slate-900'
                         )}>
-                          {selectedProject?.name ?? 'Select project'}
+                          {selectedProject?.name ?? 'All Projects'}
                         </span>
                       </div>
                       <ChevronDown className={cn(
@@ -197,12 +198,29 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                           exit={{ opacity: 0, height: 0 }}
                           className="mt-2 space-y-1"
                         >
+                          {/* "All Projects" option */}
+                          <button
+                            className={cn(
+                              'w-full text-left px-3 py-2 rounded text-sm transition-colors',
+                              selectedProjectId === null
+                                ? 'bg-blue-600/20 text-blue-400'
+                                : actualTheme === 'dark'
+                                  ? 'text-slate-300 hover:bg-slate-800/50'
+                                  : 'text-slate-700 hover:bg-slate-100/50'
+                            )}
+                            onClick={() => {
+                              setSelectedProjectId(null)
+                              setShowProjects(false)
+                            }}
+                          >
+                            All Projects
+                          </button>
                           {projects.map((project) => (
                             <button
                               key={project.id}
                               className={cn(
                                 'w-full text-left px-3 py-2 rounded text-sm transition-colors',
-                                project.id === (selectedProject?.id ?? null)
+                                project.id === selectedProjectId
                                   ? 'bg-blue-600/20 text-blue-400'
                                   : actualTheme === 'dark'
                                     ? 'text-slate-300 hover:bg-slate-800/50'
