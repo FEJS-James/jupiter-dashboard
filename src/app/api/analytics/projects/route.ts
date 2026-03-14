@@ -132,7 +132,7 @@ export async function GET(request: NextRequest) {
           projectId: item.projectId,
           projectName: item.projectName,
           byPriority: { low: 0, medium: 0, high: 0, urgent: 0 },
-          byStatus: { backlog: 0, 'in-progress': 0, 'code-review': 0, testing: 0, deploying: 0, done: 0, blocked: 0 }
+          byStatus: { backlog: 0, 'in-progress': 0, 'code-review': 0, testing: 0, deploying: 0, done: 0, blocked: 0, archived: 0 }
         })
       }
       

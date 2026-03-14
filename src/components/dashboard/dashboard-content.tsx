@@ -79,6 +79,7 @@ const statusColors = {
   'deploying': '#06b6d4',
   'done': '#10b981',
   'blocked': '#ef4444',
+  'archived': '#78716c',
 }
 
 const statusLabels = {
@@ -89,6 +90,7 @@ const statusLabels = {
   'deploying': 'Deploying',
   'done': 'Done',
   'blocked': 'Blocked',
+  'archived': 'Archived',
 }
 
 const priorityColors = {

@@ -18,7 +18,7 @@ export const TaskSchema = z.object({
   projectId: z.number().int().positive(),
   title: z.string().min(1).max(500),
   description: z.string().max(5000).optional(),
-  status: z.enum(['backlog', 'in-progress', 'code-review', 'testing', 'deploying', 'done', 'blocked'] as const),
+  status: z.enum(['backlog', 'in-progress', 'code-review', 'testing', 'deploying', 'done', 'blocked', 'archived'] as const),
   priority: z.enum(['low', 'medium', 'high', 'urgent'] as const),
   assignedAgent: z.string().max(100).optional(),
   tags: z.array(z.string().max(50)).max(20).optional(),
@@ -61,8 +61,8 @@ export const TaskDeletedEventSchema = z.object({
 
 export const TaskMovedEventSchema = z.object({
   taskId: z.number().int().positive(),
-  fromStatus: z.enum(['backlog', 'in-progress', 'code-review', 'testing', 'deploying', 'done', 'blocked'] as const),
-  toStatus: z.enum(['backlog', 'in-progress', 'code-review', 'testing', 'deploying', 'done', 'blocked'] as const),
+  fromStatus: z.enum(['backlog', 'in-progress', 'code-review', 'testing', 'deploying', 'done', 'blocked', 'archived'] as const),
+  toStatus: z.enum(['backlog', 'in-progress', 'code-review', 'testing', 'deploying', 'done', 'blocked', 'archived'] as const),
   task: TaskSchema
 })
 

@@ -55,7 +55,7 @@ export async function GET(
     }, {} as Record<string, number>);
     
     // Ensure all statuses are represented
-    const allStatuses = ['backlog', 'in-progress', 'code-review', 'testing', 'deploying', 'done', 'blocked'];
+    const allStatuses = ['backlog', 'in-progress', 'code-review', 'testing', 'deploying', 'done', 'blocked', 'archived'];
     allStatuses.forEach(status => {
       if (!stats[status]) {
         stats[status] = 0;

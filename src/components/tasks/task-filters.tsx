@@ -53,7 +53,8 @@ const statusConfig = [
   { value: 'testing', label: 'Testing', color: '#8b5cf6' },
   { value: 'deploying', label: 'Deploying', color: '#06b6d4' },
   { value: 'done', label: 'Done', color: '#059669' },
-  { value: 'blocked', label: 'Blocked', color: '#ef4444' }
+  { value: 'blocked', label: 'Blocked', color: '#ef4444' },
+  { value: 'archived', label: 'Archived', color: '#78716c' }
 ] as const
 
 const priorityConfig = [
