@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import { Task, Project, TaskStatus } from '@/types'
 import { Board } from '@/components/kanban/board'
@@ -48,7 +48,7 @@ export default function ProjectBoardPage() {
     }
   })
 
-  const fetchProjectData = async () => {
+  const fetchProjectData = useCallback(async () => {
     setLoading(true)
     setError(null)
 
@@ -80,7 +80,7 @@ export default function ProjectBoardPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [projectId])
 
   useEffect(() => {
     if (projectId) {
