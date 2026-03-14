@@ -1,14 +1,13 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from 'vitest'
+import { server } from '@/test/mocks/server'
 import { ArchiveView } from './archive-view'
 
-// Mock framer-motion to avoid animation issues in tests
-vi.mock('framer-motion', () => ({
-  motion: {
-    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
-  },
-  AnimatePresence: ({ children }: any) => <>{children}</>,
-}))
+// Disable MSW for this test file — uses manual fetch mocking
+beforeAll(() => { server.close() })
+afterAll(() => { server.listen({ onUnhandledRequest: 'warn' }) })
+
+// framer-motion is globally mocked in test/setup.tsx
 
 // Mock sonner toast
 vi.mock('sonner', () => ({
@@ -178,8 +177,9 @@ describe('ArchiveView Component', () => {
 
     // First call returns tasks, unarchive call succeeds
     let callCount = 0
-    global.fetch = vi.fn().mockImplementation((url: string) => {
-      if (url.includes('/api/tasks/archived')) {
+    global.fetch = vi.fn().mockImplementation((url: string, options?: any) => {
+      // Archive list fetch: /api/tasks?status=archived&...
+      if (url.includes('/api/tasks') && url.includes('status=archived')) {
         return Promise.resolve({
           ok: true,
           json: () =>
@@ -189,10 +189,17 @@ describe('ArchiveView Component', () => {
             }),
         })
       }
-      // The unarchive call (POST to /api/tasks/:id/move)
+      // The unarchive call (PATCH to /api/tasks/:id/move)
+      if (url.includes('/move')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ success: true }),
+        })
+      }
+      // Default
       return Promise.resolve({
         ok: true,
-        json: () => Promise.resolve({ success: true }),
+        json: () => Promise.resolve({ success: true, data: [] }),
       })
     })
 

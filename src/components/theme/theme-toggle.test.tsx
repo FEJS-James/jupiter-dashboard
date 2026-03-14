@@ -56,15 +56,19 @@ describe('ThemeToggle Component', () => {
       
       const button = screen.getByRole('button')
       
-      // Initially should be light theme (default)
+      // Initially should be system theme (default)
+      // First click: system → dark (since systemTheme is 'light' due to matchMedia mock)
       fireEvent.click(button)
       
-      // Should have called localStorage.setItem
       await waitFor(() => {
         expect(localStorageMock.setItem).toHaveBeenCalledWith('theme', 'dark')
       })
       
-      // Click again to toggle back
+      // Need to wait for React to re-render with new `theme` state
+      // so that `toggleTheme`'s useCallback picks up `theme === 'dark'`
+      await new Promise(resolve => setTimeout(resolve, 50))
+      
+      // Click again to toggle: dark → light
       fireEvent.click(button)
       
       await waitFor(() => {

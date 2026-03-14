@@ -401,11 +401,11 @@ describe('TaskFormDialog Component', () => {
       
       expect(screen.getByLabelText(/title/i)).toBeInTheDocument()
       expect(screen.getByLabelText(/description/i)).toBeInTheDocument()
-      // Check for presence of label text instead of form control association
-      expect(screen.getByText(/project/i)).toBeInTheDocument()
-      expect(screen.getByText(/status/i)).toBeInTheDocument()
-      expect(screen.getByText(/priority/i)).toBeInTheDocument()
-      expect(screen.getByText(/assigned agent/i)).toBeInTheDocument()
+      // Check for presence of label text (may appear in label and select options)
+      expect(screen.getAllByText(/project/i).length).toBeGreaterThan(0)
+      expect(screen.getAllByText(/status/i).length).toBeGreaterThan(0)
+      expect(screen.getAllByText(/priority/i).length).toBeGreaterThan(0)
+      expect(screen.getAllByText(/assigned agent/i).length).toBeGreaterThan(0)
     })
 
     it('marks required fields with asterisk', () => {
