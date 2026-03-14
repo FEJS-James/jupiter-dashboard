@@ -146,7 +146,9 @@ describe('/api/activity/export API Routes', () => {
       expect(response.headers.get('content-type')).toBe('text/csv')
       expect(response.headers.get('content-disposition')).toContain('attachment')
       expect(csvContent).toContain('ID,Timestamp,Action,Agent ID,Agent Name')
-      expect(csvContent).toContain('1,2026-03-12 10:00:00,task_created')
+      // date-fns format() uses local timezone, so verify the date portion and action
+      expect(csvContent).toContain('task_created')
+      expect(csvContent).toMatch(/1,2026-03-12 \d{2}:00:00,task_created/)
       expect(csvContent).toContain('Test Agent')
       expect(csvContent).toContain('Test Project')
     })

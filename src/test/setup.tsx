@@ -86,122 +86,125 @@ vi.mock('@radix-ui/react-select', async () => {
 
 
 
+// Guard browser-only mocks — API route tests use @vitest-environment node
+const isBrowser = typeof window !== 'undefined'
+
 // Mock browser APIs
-Object.defineProperty(window, 'IntersectionObserver', {
-  writable: true,
-  configurable: true,
-  value: class IntersectionObserver {
-    constructor(callback: IntersectionObserverCallback) {
-      this.callback = callback
+if (isBrowser) {
+  Object.defineProperty(window, 'IntersectionObserver', {
+    writable: true,
+    configurable: true,
+    value: class IntersectionObserver {
+      constructor(callback: IntersectionObserverCallback) {
+        this.callback = callback
+      }
+      callback: IntersectionObserverCallback
+      observe = vi.fn()
+      unobserve = vi.fn()
+      disconnect = vi.fn()
     }
-    callback: IntersectionObserverCallback
-    observe = vi.fn()
-    unobserve = vi.fn()
-    disconnect = vi.fn()
-  }
-})
+  })
 
-Object.defineProperty(window, 'ResizeObserver', {
-  writable: true,
-  configurable: true,
-  value: class ResizeObserver {
-    constructor(callback: ResizeObserverCallback) {
-      this.callback = callback
+  Object.defineProperty(window, 'ResizeObserver', {
+    writable: true,
+    configurable: true,
+    value: class ResizeObserver {
+      constructor(callback: ResizeObserverCallback) {
+        this.callback = callback
+      }
+      callback: ResizeObserverCallback
+      observe = vi.fn()
+      unobserve = vi.fn()
+      disconnect = vi.fn()
     }
-    callback: ResizeObserverCallback
-    observe = vi.fn()
-    unobserve = vi.fn()
-    disconnect = vi.fn()
+  })
+
+  // Mock matchMedia
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    configurable: true,
+    value: vi.fn().mockImplementation(query => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })),
+  })
+
+  // Mock localStorage
+  const localStorageMock = {
+    getItem: vi.fn(),
+    setItem: vi.fn(),
+    removeItem: vi.fn(),
+    clear: vi.fn(),
+    length: 0,
+    key: vi.fn(),
   }
-})
+  Object.defineProperty(window, 'localStorage', {
+    writable: true,
+    configurable: true,
+    value: localStorageMock
+  })
 
-// Mock matchMedia
-Object.defineProperty(window, 'matchMedia', {
-  writable: true,
-  configurable: true,
-  value: vi.fn().mockImplementation(query => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: vi.fn(), // deprecated
-    removeListener: vi.fn(), // deprecated
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    dispatchEvent: vi.fn(),
-  })),
-})
+  // Mock sessionStorage
+  Object.defineProperty(window, 'sessionStorage', {
+    writable: true,
+    configurable: true,
+    value: localStorageMock
+  })
 
-// Mock localStorage
-const localStorageMock = {
-  getItem: vi.fn(),
-  setItem: vi.fn(),
-  removeItem: vi.fn(),
-  clear: vi.fn(),
-  length: 0,
-  key: vi.fn(),
-}
-Object.defineProperty(window, 'localStorage', {
-  writable: true,
-  configurable: true,
-  value: localStorageMock
-})
+  // Mock HTMLElement scrollIntoView
+  Element.prototype.scrollIntoView = vi.fn()
 
-// Mock sessionStorage
-Object.defineProperty(window, 'sessionStorage', {
-  writable: true,
-  configurable: true,
-  value: localStorageMock
-})
+  // Mock window.scrollTo
+  Object.defineProperty(window, 'scrollTo', {
+    writable: true,
+    configurable: true,
+    value: vi.fn(),
+  })
 
-// Mock HTMLElement scrollIntoView
-Element.prototype.scrollIntoView = vi.fn()
+  // Mock CSS.supports for modern CSS features
+  Object.defineProperty(window, 'CSS', {
+    writable: true,
+    configurable: true,
+    value: {
+      supports: vi.fn().mockReturnValue(true),
+    },
+  })
 
-// Mock window.scrollTo
-Object.defineProperty(window, 'scrollTo', {
-  writable: true,
-  configurable: true,
-  value: vi.fn(),
-})
+  // Mock pointer capture for Radix UI components
+  HTMLElement.prototype.hasPointerCapture = vi.fn().mockReturnValue(false)
+  HTMLElement.prototype.setPointerCapture = vi.fn()
+  HTMLElement.prototype.releasePointerCapture = vi.fn()
+  Element.prototype.hasPointerCapture = vi.fn().mockReturnValue(false)
+  Element.prototype.setPointerCapture = vi.fn()
+  Element.prototype.releasePointerCapture = vi.fn()
 
-// Mock CSS.supports for modern CSS features
-Object.defineProperty(window, 'CSS', {
-  writable: true,
-  configurable: true,
-  value: {
-    supports: vi.fn().mockReturnValue(true),
-  },
-})
-
-// Mock pointer capture for Radix UI components
-HTMLElement.prototype.hasPointerCapture = vi.fn().mockReturnValue(false)
-HTMLElement.prototype.setPointerCapture = vi.fn()
-HTMLElement.prototype.releasePointerCapture = vi.fn()
-Element.prototype.hasPointerCapture = vi.fn().mockReturnValue(false)
-Element.prototype.setPointerCapture = vi.fn()
-Element.prototype.releasePointerCapture = vi.fn()
-
-// Mock pointer events
-Object.defineProperty(window, 'PointerEvent', {
-  writable: true,
-  configurable: true,
-  value: class MockPointerEvent extends Event {
-    pointerId = 1
-    isPrimary = true
-    pointerType = 'mouse'
-    constructor(type: string, init?: PointerEventInit) {
-      super(type, {
-        ...init,
-        // Remove properties that have read-only getters
-        bubbles: init?.bubbles,
-        cancelable: init?.cancelable
-      })
-      // Only set properties that don't conflict with read-only getters
-      if (init?.pointerId !== undefined) this.pointerId = init.pointerId
-      if (init?.isPrimary !== undefined) this.isPrimary = init.isPrimary
-      if (init?.pointerType !== undefined) this.pointerType = init.pointerType
+  // Mock pointer events
+  Object.defineProperty(window, 'PointerEvent', {
+    writable: true,
+    configurable: true,
+    value: class MockPointerEvent extends Event {
+      pointerId = 1
+      isPrimary = true
+      pointerType = 'mouse'
+      constructor(type: string, init?: PointerEventInit) {
+        super(type, {
+          ...init,
+          bubbles: init?.bubbles,
+          cancelable: init?.cancelable
+        })
+        if (init?.pointerId !== undefined) this.pointerId = init.pointerId
+        if (init?.isPrimary !== undefined) this.isPrimary = init.isPrimary
+        if (init?.pointerType !== undefined) this.pointerType = init.pointerType
+      }
     }
-  }
-})
+  })
+} // end isBrowser
 
 // Mock Radix UI Popover to render content inline (jsdom doesn't support portals well)
 vi.mock('@radix-ui/react-popover', async () => {
@@ -228,15 +231,17 @@ vi.mock('@radix-ui/react-popover', async () => {
 // Do NOT mock it — mocking it breaks userEvent click handling
 // which relies on native Selection/Range APIs.
 
-// Mock getComputedStyle
-Object.defineProperty(window, 'getComputedStyle', {
-  writable: true,
-  configurable: true,
-  value: vi.fn().mockImplementation(() => ({
-    getPropertyValue: vi.fn().mockReturnValue(''),
-    setProperty: vi.fn(),
-  })),
-})
+// Mock getComputedStyle (browser-only)
+if (isBrowser) {
+  Object.defineProperty(window, 'getComputedStyle', {
+    writable: true,
+    configurable: true,
+    value: vi.fn().mockImplementation(() => ({
+      getPropertyValue: vi.fn().mockReturnValue(''),
+      setProperty: vi.fn(),
+    })),
+  })
+}
 
 // Mock the WebSocket manager module
 vi.mock('../lib/websocket-manager', () => ({

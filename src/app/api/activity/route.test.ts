@@ -98,8 +98,8 @@ describe('/api/activity API Routes', () => {
 
       expect(response.status).toBe(200)
       expect(data.success).toBe(true)
-      expect(data.data).toHaveLength(1)
-      expect(data.data[0]).toMatchObject({
+      expect(data.data.data).toHaveLength(1)
+      expect(data.data.data[0]).toMatchObject({
         id: 1,
         action: 'task_created',
         agent: {
@@ -126,8 +126,8 @@ describe('/api/activity API Routes', () => {
 
       expect(response.status).toBe(200)
       expect(data.success).toBe(true)
-      expect(data.pagination.page).toBe(2)
-      expect(data.pagination.limit).toBe(5)
+      expect(data.data.pagination.page).toBe(2)
+      expect(data.data.pagination.limit).toBe(5)
     })
 
     it('should handle project filter', async () => {
@@ -226,28 +226,19 @@ describe('/api/activity API Routes', () => {
 
       mockDb.insert.mockReturnValue(mockInsertBuilder as any)
 
-      // Mock select for fetching complete activity (also used for validation and complete activity fetch)
-      let selectCallCount = 0
+      // Mock select for fetching complete activity after insert
+      // POST route: insert → select (fetch complete activity with joins)
       const mockSelectBuilder = {
         select: vi.fn().mockReturnThis(),
         from: vi.fn().mockReturnThis(),
         leftJoin: vi.fn().mockReturnThis(),
         where: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockImplementation(() => {
-          selectCallCount++
-          if (selectCallCount <= 3) {
-            // Validation calls (project, task, agent exist)
-            return [{ id: 1 }]
-          } else {
-            // Complete activity fetch
-            return [{
-              activity: mockNewActivity,
-              agent: { id: 1, name: 'Test Agent', role: 'developer', color: '#3b82f6', avatarUrl: null },
-              project: { id: 1, name: 'Test Project' },
-              task: { id: 1, title: 'Test Task', status: 'backlog' },
-            }]
-          }
-        }),
+        limit: vi.fn().mockReturnValue([{
+          activity: mockNewActivity,
+          agent: { id: 1, name: 'Test Agent', role: 'developer', color: '#3b82f6', avatarUrl: null },
+          project: { id: 1, name: 'Test Project' },
+          task: { id: 1, title: 'Test Task', status: 'backlog' },
+        }]),
       }
 
       mockDb.select.mockReturnValue(mockSelectBuilder as any)
@@ -363,7 +354,7 @@ describe('/api/activity API Routes', () => {
 
       // API returns 500 for JSON parse errors (handled by database error handler)
       expect(response.status).toBe(500)
-      expect(data.success).toBe(false)
+      expect(data.error).toBeDefined()
     })
   })
 

@@ -1,22 +1,23 @@
 /**
- * @jest-environment node
+ * @vitest-environment node
  */
+import { vi } from 'vitest'
 import { POST } from './route'
 import { db } from '@/lib/db'
 import { tasks, agents, projects } from '@/lib/schema'
 import { eq } from 'drizzle-orm'
 
 // Mock the database
-jest.mock('@/lib/db')
-jest.mock('@/lib/websocket-manager')
-jest.mock('@/lib/activity-logger')
-jest.mock('@/lib/notification-service')
+vi.mock('@/lib/db')
+vi.mock('@/lib/websocket-manager')
+vi.mock('@/lib/activity-logger')
+vi.mock('@/lib/notification-service')
 
-const mockDb = db as jest.Mocked<typeof db>
+const mockDb = db as any<typeof db>
 
 describe('/api/tasks/bulk', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   describe('POST - Bulk Move Operation', () => {
@@ -33,17 +34,17 @@ describe('/api/tasks/bulk', () => {
       }))
 
       // Mock database calls
-      mockDb.transaction = jest.fn().mockImplementation(async (callback) => {
+      mockDb.transaction = vi.fn().mockImplementation(async (callback) => {
         const mockTx = {
-          select: jest.fn().mockReturnValue({
-            from: jest.fn().mockReturnValue({
-              where: jest.fn().mockResolvedValue(existingTasks)
+          select: vi.fn().mockReturnValue({
+            from: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue(existingTasks), then: (r: any) => r(existingTasks) })
             })
           }),
-          update: jest.fn().mockReturnValue({
-            set: jest.fn().mockReturnValue({
-              where: jest.fn().mockReturnValue({
-                returning: jest.fn().mockResolvedValue(updatedTasks)
+          update: vi.fn().mockReturnValue({
+            set: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({
+                returning: vi.fn().mockResolvedValue(updatedTasks)
               })
             })
           })
@@ -113,25 +114,25 @@ describe('/api/tasks/bulk', () => {
       const mockAgent = { id: 1, name: 'john-doe', role: 'coder' }
 
       // Mock database calls
-      mockDb.select = jest.fn().mockReturnValue({
-        from: jest.fn().mockReturnValue({
-          where: jest.fn().mockReturnValue({
-            limit: jest.fn().mockResolvedValue([mockAgent])
+      mockDb.select = vi.fn().mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            limit: vi.fn().mockResolvedValue([mockAgent])
           })
         })
       })
 
-      mockDb.transaction = jest.fn().mockImplementation(async (callback) => {
+      mockDb.transaction = vi.fn().mockImplementation(async (callback) => {
         const mockTx = {
-          select: jest.fn().mockReturnValue({
-            from: jest.fn().mockReturnValue({
-              where: jest.fn().mockResolvedValue(existingTasks)
+          select: vi.fn().mockReturnValue({
+            from: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue(existingTasks), then: (r: any) => r(existingTasks) })
             })
           }),
-          update: jest.fn().mockReturnValue({
-            set: jest.fn().mockReturnValue({
-              where: jest.fn().mockReturnValue({
-                returning: jest.fn().mockResolvedValue(updatedTasks)
+          update: vi.fn().mockReturnValue({
+            set: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({
+                returning: vi.fn().mockResolvedValue(updatedTasks)
               })
             })
           })
@@ -158,10 +159,10 @@ describe('/api/tasks/bulk', () => {
 
     it('should return error when agent not found', async () => {
       // Mock database calls
-      mockDb.select = jest.fn().mockReturnValue({
-        from: jest.fn().mockReturnValue({
-          where: jest.fn().mockReturnValue({
-            limit: jest.fn().mockResolvedValue([]) // Agent not found
+      mockDb.select = vi.fn().mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            limit: vi.fn().mockResolvedValue([]) // Agent not found
           })
         })
       })
@@ -196,17 +197,17 @@ describe('/api/tasks/bulk', () => {
       }))
 
       // Mock database calls
-      mockDb.transaction = jest.fn().mockImplementation(async (callback) => {
+      mockDb.transaction = vi.fn().mockImplementation(async (callback) => {
         const mockTx = {
-          select: jest.fn().mockReturnValue({
-            from: jest.fn().mockReturnValue({
-              where: jest.fn().mockResolvedValue(existingTasks)
+          select: vi.fn().mockReturnValue({
+            from: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue(existingTasks), then: (r: any) => r(existingTasks) })
             })
           }),
-          update: jest.fn().mockReturnValue({
-            set: jest.fn().mockReturnValue({
-              where: jest.fn().mockReturnValue({
-                returning: jest.fn().mockResolvedValue(updatedTasks)
+          update: vi.fn().mockReturnValue({
+            set: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({
+                returning: vi.fn().mockResolvedValue(updatedTasks)
               })
             })
           })
@@ -245,16 +246,16 @@ describe('/api/tasks/bulk', () => {
       ]
 
       // Mock database calls
-      mockDb.transaction = jest.fn().mockImplementation(async (callback) => {
+      mockDb.transaction = vi.fn().mockImplementation(async (callback) => {
         const mockTx = {
-          select: jest.fn().mockReturnValue({
-            from: jest.fn().mockReturnValue({
-              where: jest.fn().mockResolvedValue(tasksToDelete)
+          select: vi.fn().mockReturnValue({
+            from: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue(tasksToDelete), then: (r: any) => r(tasksToDelete) })
             })
           }),
-          delete: jest.fn().mockReturnValue({
-            where: jest.fn().mockReturnValue({
-              returning: jest.fn().mockResolvedValue(deletedTasks)
+          delete: vi.fn().mockReturnValue({
+            where: vi.fn().mockReturnValue({
+              returning: vi.fn().mockResolvedValue(deletedTasks)
             })
           })
         }

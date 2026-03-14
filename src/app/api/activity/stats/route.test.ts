@@ -23,45 +23,81 @@ const createRequest = (url: string = '/api/activity/stats') => {
 }
 
 describe('/api/activity/stats API Route', () => {
+  // Helper to create a query builder that resolves to given data when awaited
+  // Drizzle query chains are thenable — the final method in the chain resolves the promise
+  const createMockBuilder = (results: any[]) => {
+    let callCount = 0
+    return {
+      select: vi.fn().mockReturnThis(),
+      from: vi.fn().mockImplementation(function(this: any) { 
+        callCount++
+        // Queries 1 & 2 end at from/where (no limit), so make them thenable
+        this._currentResult = results[callCount - 1] || []
+        return this
+      }),
+      leftJoin: vi.fn().mockReturnThis(),
+      where: vi.fn().mockImplementation(function(this: any) {
+        return this
+      }),
+      groupBy: vi.fn().mockReturnThis(),
+      orderBy: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockImplementation(function(this: any) {
+        return this._currentResult
+      }),
+      // Make thenable so `await db.select().from()` resolves correctly
+      then: vi.fn().mockImplementation(function(this: any, resolve: any) {
+        return resolve(this._currentResult)
+      }),
+    }
+  }
+
   beforeEach(() => {
     vi.clearAllMocks()
 
-    // Mock various query builders for different stat queries
-    let callCount = 0
-    const mockQueryBuilder = {
-      select: vi.fn().mockReturnThis(),
-      from: vi.fn().mockReturnThis(),
-      leftJoin: vi.fn().mockReturnThis(),
-      where: vi.fn().mockReturnThis(),
-      groupBy: vi.fn().mockReturnThis(),
-      orderBy: vi.fn().mockReturnThis(),
-      limit: vi.fn().mockImplementation(() => {
-        callCount++
-        // Return different mock data based on call order
-        switch (callCount) {
-          case 1: // Total activities count
-            return [{ count: 150 }]
-          case 2: // Last 24 hours count
-            return [{ count: 25 }]
-          case 3: // Most active project
-            return [{ projectId: 1, projectName: 'Test Project Alpha', count: 45 }]
-          case 4: // Most active agent
-            return [{ agentId: 2, agentName: 'Alice Developer', count: 38 }]
-          case 5: // Top activity types
-            return [
-              { action: 'task_created', count: 35 },
-              { action: 'task_updated', count: 28 },
-              { action: 'task_moved', count: 22 },
-              { action: 'comment_added', count: 15 },
-              { action: 'task_completed', count: 10 },
-            ]
-          default:
-            return []
-        }
-      }),
-    }
+    // 5 sequential db.select() calls in the stats route:
+    // 1. Total count (no limit) 2. 24h count (no limit)
+    // 3. Most active project (limit 1) 4. Most active agent (limit 1) 
+    // 5. Top activity types (limit 5)
+    let selectCallCount = 0
+    const queryResults = [
+      [{ count: 150 }],                    // Total activities
+      [{ count: 25 }],                     // Last 24 hours
+      [{ projectId: 1, projectName: 'Test Project Alpha', count: 45 }],  // Most active project
+      [{ agentId: 2, agentName: 'Alice Developer', count: 38 }],        // Most active agent
+      [                                     // Top activity types
+        { action: 'task_created', count: 35 },
+        { action: 'task_updated', count: 28 },
+        { action: 'task_moved', count: 22 },
+        { action: 'comment_added', count: 15 },
+        { action: 'task_completed', count: 10 },
+      ],
+    ]
 
-    mockDb.select.mockReturnValue(mockQueryBuilder as any)
+    mockDb.select.mockImplementation(() => {
+      const result = queryResults[selectCallCount] || []
+      selectCallCount++
+      
+      // Create a chainable builder that resolves to the correct result
+      const builder: any = {
+        from: vi.fn().mockReturnValue(undefined as any), // will be set below
+        leftJoin: vi.fn(),
+        where: vi.fn(),
+        groupBy: vi.fn(),
+        orderBy: vi.fn(),
+        limit: vi.fn().mockReturnValue(result),
+      }
+      // Each chainable method returns builder for chaining
+      builder.from.mockReturnValue(builder)
+      builder.leftJoin.mockReturnValue(builder)
+      builder.where.mockReturnValue(builder)
+      builder.groupBy.mockReturnValue(builder)
+      builder.orderBy.mockReturnValue(builder)
+      
+      // Make builder thenable so `await db.select().from()` works for queries without .limit()
+      builder.then = (resolve: any, reject?: any) => Promise.resolve(result).then(resolve, reject)
+      
+      return builder
+    })
   })
 
   it('should return comprehensive activity statistics', async () => {
@@ -117,29 +153,27 @@ describe('/api/activity/stats API Route', () => {
   })
 
   it('should handle case when no activities exist', async () => {
-    // Mock empty results for all queries
-    let callCount = 0
-    const mockEmptyQueryBuilder = {
-      select: vi.fn().mockReturnThis(),
-      from: vi.fn().mockReturnThis(),
-      leftJoin: vi.fn().mockReturnThis(),
-      where: vi.fn().mockReturnThis(),
-      groupBy: vi.fn().mockReturnThis(),
-      orderBy: vi.fn().mockReturnThis(),
-      limit: vi.fn().mockImplementation(() => {
-        callCount++
-        switch (callCount) {
-          case 1: case 2: // Total and 24h counts
-            return [{ count: 0 }]
-          case 3: case 4: case 5: // Project, agent, and activity types
-            return []
-          default:
-            return []
-        }
-      }),
-    }
-
-    mockDb.select.mockReturnValue(mockEmptyQueryBuilder as any)
+    // Override mock with empty results
+    let selectCallCount = 0
+    const emptyResults = [
+      [{ count: 0 }], [{ count: 0 }], [], [], [],
+    ]
+    mockDb.select.mockImplementation(() => {
+      const result = emptyResults[selectCallCount] || []
+      selectCallCount++
+      const builder: any = {
+        from: vi.fn(), leftJoin: vi.fn(), where: vi.fn(),
+        groupBy: vi.fn(), orderBy: vi.fn(),
+        limit: vi.fn().mockReturnValue(result),
+      }
+      builder.from.mockReturnValue(builder)
+      builder.leftJoin.mockReturnValue(builder)
+      builder.where.mockReturnValue(builder)
+      builder.groupBy.mockReturnValue(builder)
+      builder.orderBy.mockReturnValue(builder)
+      builder.then = (resolve: any, reject?: any) => Promise.resolve(result).then(resolve, reject)
+      return builder
+    })
 
     const request = createRequest()
     const response = await GET(request)
@@ -157,35 +191,30 @@ describe('/api/activity/stats API Route', () => {
   })
 
   it('should handle case with no project/agent names', async () => {
-    // Mock results without names
-    let callCount = 0
-    const mockQueryBuilder = {
-      select: vi.fn().mockReturnThis(),
-      from: vi.fn().mockReturnThis(),
-      leftJoin: vi.fn().mockReturnThis(),
-      where: vi.fn().mockReturnThis(),
-      groupBy: vi.fn().mockReturnThis(),
-      orderBy: vi.fn().mockReturnThis(),
-      limit: vi.fn().mockImplementation(() => {
-        callCount++
-        switch (callCount) {
-          case 1: // Total activities count
-            return [{ count: 50 }]
-          case 2: // Last 24 hours count
-            return [{ count: 5 }]
-          case 3: // Most active project (no name)
-            return [{ projectId: 1, projectName: null, count: 10 }]
-          case 4: // Most active agent (no name)
-            return [{ agentId: 1, agentName: null, count: 8 }]
-          case 5: // Top activity types
-            return [{ action: 'task_created', count: 15 }]
-          default:
-            return []
-        }
-      }),
-    }
-
-    mockDb.select.mockReturnValue(mockQueryBuilder as any)
+    // Override with results that have null names
+    let selectCallCount = 0
+    const nullNameResults = [
+      [{ count: 50 }], [{ count: 5 }],
+      [{ projectId: 1, projectName: null, count: 10 }],
+      [{ agentId: 1, agentName: null, count: 8 }],
+      [{ action: 'task_created', count: 15 }],
+    ]
+    mockDb.select.mockImplementation(() => {
+      const result = nullNameResults[selectCallCount] || []
+      selectCallCount++
+      const builder: any = {
+        from: vi.fn(), leftJoin: vi.fn(), where: vi.fn(),
+        groupBy: vi.fn(), orderBy: vi.fn(),
+        limit: vi.fn().mockReturnValue(result),
+      }
+      builder.from.mockReturnValue(builder)
+      builder.leftJoin.mockReturnValue(builder)
+      builder.where.mockReturnValue(builder)
+      builder.groupBy.mockReturnValue(builder)
+      builder.orderBy.mockReturnValue(builder)
+      builder.then = (resolve: any, reject?: any) => Promise.resolve(result).then(resolve, reject)
+      return builder
+    })
 
     const request = createRequest()
     const response = await GET(request)
@@ -202,14 +231,10 @@ describe('/api/activity/stats API Route', () => {
   })
 
   it('should handle database errors gracefully', async () => {
-    // Mock database error
-    const mockErrorQueryBuilder = {
-      select: vi.fn().mockImplementation(() => {
-        throw new Error('Database connection failed')
-      }),
-    }
-
-    mockDb.select.mockReturnValue(mockErrorQueryBuilder as any)
+    // Mock database error on first select call
+    mockDb.select.mockImplementation(() => {
+      throw new Error('Database connection failed')
+    })
 
     const request = createRequest()
     const response = await GET(request)
@@ -222,37 +247,35 @@ describe('/api/activity/stats API Route', () => {
   })
 
   it('should return top 5 activity types only', async () => {
-    // Mock more than 5 activity types
-    let callCount = 0
-    const mockQueryBuilder = {
-      select: vi.fn().mockReturnThis(),
-      from: vi.fn().mockReturnThis(),
-      leftJoin: vi.fn().mockReturnThis(),
-      where: vi.fn().mockReturnThis(),
-      groupBy: vi.fn().mockReturnThis(),
-      orderBy: vi.fn().mockReturnThis(),
-      limit: vi.fn().mockImplementation(() => {
-        callCount++
-        switch (callCount) {
-          case 1: return [{ count: 200 }]
-          case 2: return [{ count: 50 }]
-          case 3: return [{ projectId: 1, projectName: 'Test Project', count: 100 }]
-          case 4: return [{ agentId: 1, agentName: 'Test Agent', count: 75 }]
-          case 5: 
-            return [
-              { action: 'task_created', count: 40 },
-              { action: 'task_updated', count: 35 },
-              { action: 'task_moved', count: 30 },
-              { action: 'comment_added', count: 25 },
-              { action: 'task_completed', count: 20 },
-            ]
-          default:
-            return []
-        }
-      }),
-    }
-
-    mockDb.select.mockReturnValue(mockQueryBuilder as any)
+    let selectCallCount = 0
+    const top5Results = [
+      [{ count: 200 }], [{ count: 50 }],
+      [{ projectId: 1, projectName: 'Test Project', count: 100 }],
+      [{ agentId: 1, agentName: 'Test Agent', count: 75 }],
+      [
+        { action: 'task_created', count: 40 },
+        { action: 'task_updated', count: 35 },
+        { action: 'task_moved', count: 30 },
+        { action: 'comment_added', count: 25 },
+        { action: 'task_completed', count: 20 },
+      ],
+    ]
+    mockDb.select.mockImplementation(() => {
+      const result = top5Results[selectCallCount] || []
+      selectCallCount++
+      const builder: any = {
+        from: vi.fn(), leftJoin: vi.fn(), where: vi.fn(),
+        groupBy: vi.fn(), orderBy: vi.fn(),
+        limit: vi.fn().mockReturnValue(result),
+      }
+      builder.from.mockReturnValue(builder)
+      builder.leftJoin.mockReturnValue(builder)
+      builder.where.mockReturnValue(builder)
+      builder.groupBy.mockReturnValue(builder)
+      builder.orderBy.mockReturnValue(builder)
+      builder.then = (resolve: any, reject?: any) => Promise.resolve(result).then(resolve, reject)
+      return builder
+    })
 
     const request = createRequest()
     const response = await GET(request)
