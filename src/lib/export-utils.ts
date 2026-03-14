@@ -163,11 +163,11 @@ export function downloadFile(
  */
 export function generateFilename(
   baseName: string,
-  format: string,
+  fileFormat: string,
   includeTimestamp: boolean = true
 ): string {
   const timestamp = includeTimestamp ? `-${format(new Date(), 'yyyy-MM-dd-HHmm')}` : ''
-  return `${baseName}${timestamp}.${format}`
+  return `${baseName}${timestamp}.${fileFormat}`
 }
 
 /**

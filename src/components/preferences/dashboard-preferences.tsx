@@ -123,17 +123,28 @@ function SortableKanbanColumn({ column, isVisible, onToggleVisibility }: {
 
 export function DashboardPreferences() {
   const {
-    preferences,
-    updatePreferences,
-    isLoading
+    defaultLandingPage,
+    defaultTaskView,
+    tasksPerPage,
+    sidebarCollapsed,
+    kanbanColumnsVisible,
+    kanbanColumnOrder,
+    defaultDateRange,
+    setDefaultLandingPage,
+    setDefaultTaskView,
+    setTasksPerPage,
+    setSidebarCollapsed,
+    setKanbanColumnsVisible,
+    setKanbanColumnOrder,
+    setDefaultDateRange,
   } = useDashboardPreferences()
   
   const handleColumnVisibilityToggle = (columnId: string) => {
-    const newVisible = preferences.kanbanColumnsVisible.includes(columnId)
-      ? preferences.kanbanColumnsVisible.filter(id => id !== columnId)
-      : [...preferences.kanbanColumnsVisible, columnId]
+    const newVisible = kanbanColumnsVisible.includes(columnId)
+      ? kanbanColumnsVisible.filter((id: string) => id !== columnId)
+      : [...kanbanColumnsVisible, columnId]
     
-    updatePreferences({ kanbanColumnsVisible: newVisible })
+    setKanbanColumnsVisible(newVisible)
   }
   
   const sensors = useSensors(
@@ -147,16 +158,16 @@ export function DashboardPreferences() {
     const { active, over } = event
     
     if (over && active.id !== over.id) {
-      const oldIndex = preferences.kanbanColumnOrder.indexOf(active.id as string)
-      const newIndex = preferences.kanbanColumnOrder.indexOf(over.id as string)
+      const oldIndex = kanbanColumnOrder.indexOf(active.id as string)
+      const newIndex = kanbanColumnOrder.indexOf(over.id as string)
       
-      const newOrder = arrayMove(preferences.kanbanColumnOrder, oldIndex, newIndex)
-      updatePreferences({ kanbanColumnOrder: newOrder })
+      const newOrder = arrayMove(kanbanColumnOrder, oldIndex, newIndex)
+      setKanbanColumnOrder(newOrder)
     }
   }
   
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" role="region" aria-label="Dashboard preferences">
       {/* Default Landing Page */}
       <Card>
         <CardHeader>
@@ -166,40 +177,44 @@ export function DashboardPreferences() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-4">
-            {LANDING_PAGE_OPTIONS.map((option) => (
-              <label
-                key={option.value}
-                className={`flex items-center space-x-3 p-4 border rounded-lg cursor-pointer transition-colors ${
-                  preferences.landingPage === option.value
-                    ? 'border-primary bg-primary/5'
-                    : 'border-border hover:bg-accent'
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="landing-page"
-                  value={option.value}
-                  checked={preferences.landingPage === option.value}
-                  onChange={() => updatePreferences({ landingPage: option.value })}
-                  className="sr-only"
-                />
-                <div className={`w-4 h-4 rounded-full border-2 ${
-                  preferences.landingPage === option.value
-                    ? 'border-primary bg-primary'
-                    : 'border-gray-300'
-                }`}>
-                  {preferences.landingPage === option.value && (
-                    <div className="w-2 h-2 bg-white rounded-full m-0.5" />
-                  )}
-                </div>
-                <div className="flex-1">
-                  <div className="font-medium">{option.label}</div>
-                  <div className="text-sm text-gray-600">{option.description}</div>
-                </div>
-              </label>
-            ))}
-          </div>
+          <fieldset>
+            <legend className="sr-only">Default landing page</legend>
+            <div className="grid gap-4" role="radiogroup" aria-label="Landing page options">
+              {LANDING_PAGE_OPTIONS.map((option) => (
+                <label
+                  key={option.value}
+                  className={`flex items-center space-x-3 p-4 border rounded-lg cursor-pointer transition-colors ${
+                    defaultLandingPage === option.value
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border hover:bg-accent'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="landing-page"
+                    value={option.value}
+                    checked={defaultLandingPage === option.value}
+                    onChange={() => setDefaultLandingPage(option.value)}
+                    className="sr-only"
+                    aria-label={`${option.label}: ${option.description}`}
+                  />
+                  <div className={`w-4 h-4 rounded-full border-2 ${
+                    defaultLandingPage === option.value
+                      ? 'border-primary bg-primary'
+                      : 'border-gray-300'
+                  }`} aria-hidden="true">
+                    {defaultLandingPage === option.value && (
+                      <div className="w-2 h-2 bg-white rounded-full m-0.5" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-medium">{option.label}</div>
+                    <div className="text-sm text-gray-600">{option.description}</div>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </fieldset>
         </CardContent>
       </Card>
       
@@ -215,7 +230,7 @@ export function DashboardPreferences() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="default-task-view">Default Task View</Label>
-              <Select value={preferences.taskView} onValueChange={(value) => updatePreferences({ taskView: value as any })}>
+              <Select value={defaultTaskView} onValueChange={(value) => setDefaultTaskView(value as TaskView)}>
                 <SelectTrigger id="default-task-view">
                   <SelectValue />
                 </SelectTrigger>
@@ -234,7 +249,7 @@ export function DashboardPreferences() {
             
             <div className="space-y-2">
               <Label htmlFor="tasks-per-page">Tasks Per Page</Label>
-              <Select value={preferences.tasksPerPage.toString()} onValueChange={(value) => updatePreferences({ tasksPerPage: parseInt(value) })}>
+              <Select value={tasksPerPage.toString()} onValueChange={(value) => setTasksPerPage(parseInt(value))}>
                 <SelectTrigger id="tasks-per-page">
                   <SelectValue />
                 </SelectTrigger>
@@ -271,13 +286,13 @@ export function DashboardPreferences() {
               collisionDetection={closestCenter}
               onDragEnd={handleDragEnd}
             >
-              <SortableContext items={preferences.kanbanColumnOrder} strategy={verticalListSortingStrategy}>
-                <div className="space-y-2">
-                  {preferences.kanbanColumnOrder.map((columnId) => {
+              <SortableContext items={kanbanColumnOrder} strategy={verticalListSortingStrategy}>
+                <div className="space-y-2" role="list" aria-label="Kanban columns">
+                  {kanbanColumnOrder.map((columnId: string) => {
                     const column = KANBAN_COLUMNS.find(col => col.id === columnId)
                     if (!column) return null
                     
-                    const isVisible = preferences.kanbanColumnsVisible.includes(columnId)
+                    const isVisible = kanbanColumnsVisible.includes(columnId)
                     
                     return (
                       <SortableKanbanColumn
@@ -309,20 +324,21 @@ export function DashboardPreferences() {
               <Label htmlFor="sidebar-collapsed" className="text-base font-medium">
                 Sidebar Collapsed by Default
               </Label>
-              <p className="text-sm text-gray-600">
+              <p id="sidebar-collapsed-desc" className="text-sm text-gray-600">
                 Start with the sidebar collapsed to maximize content space
               </p>
             </div>
             <Switch
               id="sidebar-collapsed"
-              checked={preferences.sidebarCollapsed}
-              onCheckedChange={(checked) => updatePreferences({ sidebarCollapsed: checked })}
+              checked={sidebarCollapsed}
+              onCheckedChange={setSidebarCollapsed}
+              aria-describedby="sidebar-collapsed-desc"
             />
           </div>
           
           <div className="space-y-2">
             <Label htmlFor="default-date-range">Default Date Range for Reports</Label>
-            <Select value={preferences.dateRange} onValueChange={(value) => updatePreferences({ dateRange: value as any })}>
+            <Select value={defaultDateRange} onValueChange={(value) => setDefaultDateRange(value as DateRange)}>
               <SelectTrigger id="default-date-range" className="w-full md:w-48">
                 <SelectValue />
               </SelectTrigger>

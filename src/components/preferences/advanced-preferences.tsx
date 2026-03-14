@@ -61,11 +61,18 @@ const EXPORT_PREFERENCES_SCHEMA = {
 
 export function AdvancedPreferences() {
   const {
-    preferences,
-    updatePreferences,
-    isLoading,
-    exportPreferences,
-    importPreferences
+    keyboardShortcuts,
+    analyticsPreferences: analyticsPrefs,
+    exportPreferences: exportPrefs,
+    customSettings,
+    setKeyboardShortcuts,
+    setAnalyticsPreferences,
+    setExportPreferences,
+    setCustomSettings,
+    updateKeyboardShortcut,
+    updateAnalyticsPreference: updateAnalyticsPref,
+    updateExportPreference: updateExportPref,
+    updateCustomSetting,
   } = useAdvancedPreferences()
 
   const [editingShortcut, setEditingShortcut] = useState<string | null>(null)
@@ -76,13 +83,12 @@ export function AdvancedPreferences() {
 
   const handleShortcutEdit = (action: string) => {
     setEditingShortcut(action)
-    setShortcutInput(preferences.keyboardShortcuts[action] || '')
+    setShortcutInput(keyboardShortcuts[action] || '')
   }
 
   const handleShortcutSave = async (action: string) => {
     if (shortcutInput.trim()) {
-      const newShortcuts = { ...preferences.keyboardShortcuts, [action]: shortcutInput.trim() }
-      await updatePreferences({ keyboardShortcuts: newShortcuts })
+      await updateKeyboardShortcut(action, shortcutInput.trim())
     }
     setEditingShortcut(null)
     setShortcutInput('')
@@ -94,37 +100,37 @@ export function AdvancedPreferences() {
   }
 
   const resetShortcutsToDefault = () => {
-    updatePreferences({ keyboardShortcuts: DEFAULT_KEYBOARD_SHORTCUTS })
+    setKeyboardShortcuts(DEFAULT_KEYBOARD_SHORTCUTS)
   }
 
   const handleAddCustomSetting = () => {
     if (customSettingKey.trim() && customSettingValue.trim()) {
-      const newSettings = { ...preferences.customSettings, [customSettingKey.trim()]: customSettingValue.trim() }
-      updatePreferences({ customSettings: newSettings })
+      updateCustomSetting(customSettingKey.trim(), customSettingValue.trim())
       setCustomSettingKey('')
       setCustomSettingValue('')
     }
   }
 
   const handleRemoveCustomSetting = (key: string) => {
-    const newSettings = { ...preferences.customSettings }
+    const newSettings = { ...customSettings }
     delete newSettings[key]
-    updatePreferences({ customSettings: newSettings })
+    setCustomSettings(newSettings)
   }
 
-  const updateAnalyticsPreference = (key: string, value: any) => {
-    const newAnalytics = { ...preferences.analyticsPreferences, [key]: value }
-    updatePreferences({ analyticsPreferences: newAnalytics })
+  const handleUpdateAnalyticsPreference = (key: string, value: unknown) => {
+    updateAnalyticsPref(key, value)
   }
 
-  const updateExportPreference = (key: string, value: any) => {
-    const newExport = { ...preferences.exportPreferences, [key]: value }
-    updatePreferences({ exportPreferences: newExport })
+  const handleUpdateExportPreference = (key: string, value: unknown) => {
+    updateExportPref(key, value)
   }
 
   const exportAllSettings = () => {
     const allSettings = {
-      ...preferences,
+      keyboardShortcuts,
+      analyticsPreferences: analyticsPrefs,
+      exportPreferences: exportPrefs,
+      customSettings,
       exportedAt: new Date().toISOString(),
     }
 
@@ -139,12 +145,12 @@ export function AdvancedPreferences() {
 
   const importAllSettings = () => {
     try {
-      const parsed = JSON.parse(importData)
+      const parsed = JSON.parse(importData) as Record<string, unknown>
 
-      if (parsed.keyboardShortcuts) updatePreferences({ keyboardShortcuts: parsed.keyboardShortcuts })
-      if (parsed.analyticsPreferences) updatePreferences({ analyticsPreferences: parsed.analyticsPreferences })
-      if (parsed.exportPreferences) updatePreferences({ exportPreferences: parsed.exportPreferences })
-      if (parsed.customSettings) updatePreferences({ customSettings: parsed.customSettings })
+      if (parsed.keyboardShortcuts) setKeyboardShortcuts(parsed.keyboardShortcuts as Record<string, string>)
+      if (parsed.analyticsPreferences) setAnalyticsPreferences(parsed.analyticsPreferences as Record<string, unknown>)
+      if (parsed.exportPreferences) setExportPreferences(parsed.exportPreferences as Record<string, unknown>)
+      if (parsed.customSettings) setCustomSettings(parsed.customSettings as Record<string, unknown>)
 
       setImportData('')
     } catch (error) {
@@ -199,7 +205,7 @@ export function AdvancedPreferences() {
                   <h4 className="font-medium text-lg mb-3">{category}</h4>
                   <div className="space-y-3">
                     {shortcuts.map((action) => {
-                      const currentShortcut = preferences.keyboardShortcuts[action] || (DEFAULT_KEYBOARD_SHORTCUTS as any)[action] || ''
+                      const currentShortcut = keyboardShortcuts[action] || DEFAULT_KEYBOARD_SHORTCUTS[action as keyof typeof DEFAULT_KEYBOARD_SHORTCUTS] || ''
                       const isEditing = editingShortcut === action
 
                       return (
@@ -301,13 +307,13 @@ export function AdvancedPreferences() {
                   <div>
                     {config.type === 'boolean' ? (
                       <Switch
-                        checked={preferences.analyticsPreferences[key] as boolean || false}
-                        onCheckedChange={(checked) => updateAnalyticsPreference(key, checked)}
+                        checked={analyticsPrefs[key] as boolean || false}
+                        onCheckedChange={(checked) => handleUpdateAnalyticsPreference(key, checked)}
                       />
                     ) : config.type === 'select' ? (
                       <select
-                        value={preferences.analyticsPreferences[key] as string || ('options' in config ? config.options[0] : '')}
-                        onChange={(e) => updateAnalyticsPreference(key, e.target.value)}
+                        value={analyticsPrefs[key] as string || ('options' in config ? config.options[0] : '')}
+                        onChange={(e) => handleUpdateAnalyticsPreference(key, e.target.value)}
                         className="px-3 py-1 border rounded text-sm"
                       >
                         {'options' in config && config.options.map((option) => (
@@ -318,8 +324,8 @@ export function AdvancedPreferences() {
                       </select>
                     ) : (
                       <Input
-                        value={preferences.analyticsPreferences[key] as string || ''}
-                        onChange={(e) => updateAnalyticsPreference(key, e.target.value)}
+                        value={analyticsPrefs[key] as string || ''}
+                        onChange={(e) => handleUpdateAnalyticsPreference(key, e.target.value)}
                         className="w-32 text-sm"
                       />
                     )}
@@ -355,13 +361,13 @@ export function AdvancedPreferences() {
                   <div>
                     {config.type === 'boolean' ? (
                       <Switch
-                        checked={preferences.exportPreferences[key] as boolean || false}
-                        onCheckedChange={(checked) => updateExportPreference(key, checked)}
+                        checked={exportPrefs[key] as boolean || false}
+                        onCheckedChange={(checked) => handleUpdateExportPreference(key, checked)}
                       />
                     ) : config.type === 'select' ? (
                       <select
-                        value={preferences.exportPreferences[key] as string || ('options' in config ? config.options[0] : '')}
-                        onChange={(e) => updateExportPreference(key, e.target.value)}
+                        value={exportPrefs[key] as string || ('options' in config ? config.options[0] : '')}
+                        onChange={(e) => handleUpdateExportPreference(key, e.target.value)}
                         className="px-3 py-1 border rounded text-sm"
                       >
                         {'options' in config && config.options.map((option) => (
@@ -372,8 +378,8 @@ export function AdvancedPreferences() {
                       </select>
                     ) : (
                       <Input
-                        value={preferences.exportPreferences[key] as string || ''}
-                        onChange={(e) => updateExportPreference(key, e.target.value)}
+                        value={exportPrefs[key] as string || ''}
+                        onChange={(e) => handleUpdateExportPreference(key, e.target.value)}
                         placeholder={key === 'filename-template' ? 'export-{date}-{type}' : ''}
                         className="w-48 text-sm"
                       />
@@ -420,10 +426,10 @@ export function AdvancedPreferences() {
               </div>
 
               {/* Existing Settings */}
-              {Object.keys(preferences.customSettings).length > 0 && (
+              {Object.keys(customSettings).length > 0 && (
                 <div className="space-y-3">
                   <Label className="font-medium">Current Custom Settings</Label>
-                  {Object.entries(preferences.customSettings).map(([key, value]) => (
+                  {Object.entries(customSettings).map(([key, value]) => (
                     <div key={key} className="flex items-center justify-between p-3 border rounded-lg">
                       <div className="flex-1 grid grid-cols-2 gap-4">
                         <div>

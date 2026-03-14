@@ -130,7 +130,7 @@ export default function PreferencesPage() {
   }
   
   return (
-    <div className="container mx-auto py-8 space-y-6">
+    <div className="container mx-auto py-8 space-y-6" role="main" aria-label="User preferences">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -203,20 +203,21 @@ export default function PreferencesPage() {
       )}
       
       {/* Search */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+      <div className="relative max-w-md" role="search" aria-label="Search preferences">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" aria-hidden="true" />
         <Input
           placeholder="Search preferences..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="pl-10"
+          aria-label="Search preferences by name or description"
         />
       </div>
       
       {/* Main Content */}
       <Card>
         <CardContent className="p-0">
-          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as PreferenceCategoryName)} className="w-full">
+          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as PreferenceCategoryName)} className="w-full" aria-label="Preference categories">
             {/* Tabs List */}
             <div className="border-b">
               <TabsList className="grid w-full grid-cols-6 h-auto p-1 bg-transparent">

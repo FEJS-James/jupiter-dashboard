@@ -133,34 +133,20 @@ export function ProductivityPreferences() {
     })
   )
   
-  // Load available projects
+  // Load available projects from API
   useEffect(() => {
     const loadProjects = async () => {
       try {
-        // In a real implementation, this would fetch from the API
-        const mockProjects: Project[] = [
-          {
-            id: 1,
-            name: 'Dev Dashboard',
-            description: 'Task management dashboard',
-            status: 'active',
-            techStack: ['Next.js', 'TypeScript', 'Tailwind'],
-            createdAt: '2024-01-01T00:00:00Z',
-            updatedAt: '2024-01-01T00:00:00Z',
-          },
-          {
-            id: 2,
-            name: 'Mobile App',
-            description: 'React Native mobile application',
-            status: 'planning',
-            techStack: ['React Native', 'TypeScript'],
-            createdAt: '2024-01-01T00:00:00Z',
-            updatedAt: '2024-01-01T00:00:00Z',
-          },
-        ]
-        setProjects(mockProjects)
+        const response = await fetch('/api/projects')
+        if (!response.ok) {
+          throw new Error(`Failed to load projects: ${response.statusText}`)
+        }
+        const data: Project[] = await response.json()
+        setProjects(data)
       } catch (error) {
         console.error('Failed to load projects:', error)
+        // Set empty array on failure — UI will show "No default project" as the only option
+        setProjects([])
       } finally {
         setLoadingProjects(false)
       }
@@ -192,7 +178,7 @@ export function ProductivityPreferences() {
   const getActionById = (id: string) => AVAILABLE_QUICK_ACTIONS.find(action => action.id === id)
   
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" role="region" aria-label="Productivity preferences">
       {/* Default Values */}
       <Card>
         <CardHeader>

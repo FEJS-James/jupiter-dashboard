@@ -31,7 +31,7 @@ export class NotificationService {
     maxRetries: number = this.MAX_RETRIES,
     baseDelay: number = this.RETRY_DELAY
   ): Promise<T> {
-    let lastError: Error
+    let lastError: Error = new Error('Operation failed')
     
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {

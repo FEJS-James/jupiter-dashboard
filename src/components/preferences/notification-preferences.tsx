@@ -4,261 +4,189 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Bell, Mail, Smartphone, BellOff } from 'lucide-react'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Bell, Clock, Moon, Info } from 'lucide-react'
 import { useNotificationPreferences } from '@/hooks/use-preference-hooks'
+import type { NotificationFrequency } from '@/types'
 
 interface NotificationPreferencesProps {
   className?: string
 }
 
+const FREQUENCY_OPTIONS: { value: NotificationFrequency; label: string; description: string }[] = [
+  { value: 'immediate', label: 'Immediate', description: 'Get notified right away' },
+  { value: 'batched', label: 'Batched', description: 'Grouped notifications at intervals' },
+  { value: 'digest', label: 'Digest', description: 'Periodic summary of all notifications' },
+]
+
 export function NotificationPreferencesPanel({ className }: NotificationPreferencesProps) {
-  const { preferences, updatePreferences, resetToDefaults, isLoading } = useNotificationPreferences()
+  const {
+    notificationFrequency,
+    quietHoursStart,
+    quietHoursEnd,
+    quietHoursEnabled,
+    isQuietHoursActive,
+    setNotificationFrequency,
+    setQuietHoursStart,
+    setQuietHoursEnd,
+    setQuietHoursEnabled,
+  } = useNotificationPreferences()
 
   return (
-    <div className={className}>
+    <div className={className} role="region" aria-label="Notification preferences">
+      {/* Notification Frequency */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Bell className="w-5 h-5" />
-            Notifications
+            <Bell className="w-5 h-5" aria-hidden="true" />
+            Notification Frequency
           </CardTitle>
           <CardDescription>
-            Manage how and when you receive notifications
+            Control how often you receive notifications
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Global Enable/Disable */}
+          <div className="space-y-2">
+            <Label htmlFor="notification-frequency">Delivery Frequency</Label>
+            <Select
+              value={notificationFrequency}
+              onValueChange={(value) => setNotificationFrequency(value as NotificationFrequency)}
+            >
+              <SelectTrigger id="notification-frequency" aria-label="Notification delivery frequency">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {FREQUENCY_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    <div>
+                      <div className="font-medium">{option.label}</div>
+                      <div className="text-sm text-muted-foreground">{option.description}</div>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <Alert>
+            <Info className="h-4 w-4" aria-hidden="true" />
+            <AlertDescription>
+              {notificationFrequency === 'immediate' && 'You will receive notifications as soon as events occur.'}
+              {notificationFrequency === 'batched' && 'Notifications will be grouped and delivered at regular intervals.'}
+              {notificationFrequency === 'digest' && 'You will receive a periodic digest summarizing all notifications.'}
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+
+      {/* Quiet Hours */}
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Moon className="w-5 h-5" aria-hidden="true" />
+            Quiet Hours
+          </CardTitle>
+          <CardDescription>
+            Pause notifications during specific hours
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
           <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="notifications-enabled">Enable Notifications</Label>
-              <p className="text-sm text-muted-foreground">
-                Master toggle for all notification types
+            <div>
+              <Label htmlFor="quiet-hours-enabled" className="text-base font-medium">
+                Enable Quiet Hours
+              </Label>
+              <p id="quiet-hours-desc" className="text-sm text-muted-foreground">
+                Suppress notifications during the specified time window
               </p>
             </div>
             <Switch
-              id="notifications-enabled"
-              checked={preferences.enabled}
-              onCheckedChange={(checked) => 
-                updatePreferences({ enabled: checked })
-              }
-              disabled={isLoading}
+              id="quiet-hours-enabled"
+              checked={quietHoursEnabled}
+              onCheckedChange={setQuietHoursEnabled}
+              aria-describedby="quiet-hours-desc"
             />
           </div>
 
-          {preferences.enabled && (
-            <>
-              {/* Email Notifications */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <Mail className="w-4 h-4" />
-                  <Label className="text-base font-medium">Email Notifications</Label>
+          {quietHoursEnabled && (
+            <div className="space-y-4" role="group" aria-label="Quiet hours time range">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="quiet-hours-start">
+                    <Clock className="inline w-4 h-4 mr-1" aria-hidden="true" />
+                    Start Time
+                  </Label>
+                  <Input
+                    id="quiet-hours-start"
+                    type="time"
+                    value={quietHoursStart}
+                    onChange={(e) => setQuietHoursStart(e.target.value)}
+                    aria-label="Quiet hours start time"
+                  />
                 </div>
-                
-                <div className="ml-6 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label htmlFor="email-task-assigned">Task Assignments</Label>
-                      <p className="text-xs text-muted-foreground">When tasks are assigned to you</p>
-                    </div>
-                    <Switch
-                      id="email-task-assigned"
-                      checked={preferences.email.taskAssigned}
-                      onCheckedChange={(checked) => 
-                        updatePreferences({ 
-                          email: { ...preferences.email, taskAssigned: checked }
-                        })
-                      }
-                      disabled={isLoading}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label htmlFor="email-task-updates">Task Updates</Label>
-                      <p className="text-xs text-muted-foreground">Status changes and comments</p>
-                    </div>
-                    <Switch
-                      id="email-task-updates"
-                      checked={preferences.email.taskUpdates}
-                      onCheckedChange={(checked) => 
-                        updatePreferences({ 
-                          email: { ...preferences.email, taskUpdates: checked }
-                        })
-                      }
-                      disabled={isLoading}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label htmlFor="email-mentions">Mentions</Label>
-                      <p className="text-xs text-muted-foreground">When you're mentioned in comments</p>
-                    </div>
-                    <Switch
-                      id="email-mentions"
-                      checked={preferences.email.mentions}
-                      onCheckedChange={(checked) => 
-                        updatePreferences({ 
-                          email: { ...preferences.email, mentions: checked }
-                        })
-                      }
-                      disabled={isLoading}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="email-frequency">Email Frequency</Label>
-                    <Select
-                      value={preferences.email.frequency}
-                      onValueChange={(value) => 
-                        updatePreferences({ 
-                          email: { ...preferences.email, frequency: value as any }
-                        })
-                      }
-                      disabled={isLoading}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="immediate">Immediate</SelectItem>
-                        <SelectItem value="hourly">Hourly Digest</SelectItem>
-                        <SelectItem value="daily">Daily Digest</SelectItem>
-                        <SelectItem value="weekly">Weekly Summary</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="quiet-hours-end">
+                    <Clock className="inline w-4 h-4 mr-1" aria-hidden="true" />
+                    End Time
+                  </Label>
+                  <Input
+                    id="quiet-hours-end"
+                    type="time"
+                    value={quietHoursEnd}
+                    onChange={(e) => setQuietHoursEnd(e.target.value)}
+                    aria-label="Quiet hours end time"
+                  />
                 </div>
               </div>
 
-              {/* Push Notifications */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <Smartphone className="w-4 h-4" />
-                  <Label className="text-base font-medium">Push Notifications</Label>
-                  <Badge variant="secondary" className="text-xs">Browser</Badge>
-                </div>
-                
-                <div className="ml-6 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label htmlFor="push-enabled">Enable Push Notifications</Label>
-                      <p className="text-xs text-muted-foreground">Real-time browser notifications</p>
-                    </div>
-                    <Switch
-                      id="push-enabled"
-                      checked={preferences.push.enabled}
-                      onCheckedChange={(checked) => 
-                        updatePreferences({ 
-                          push: { ...preferences.push, enabled: checked }
-                        })
-                      }
-                      disabled={isLoading}
-                    />
+              {isQuietHoursActive && (
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg" role="status" aria-live="polite">
+                  <div className="flex items-center gap-2">
+                    <Moon className="h-4 w-4 text-amber-600" aria-hidden="true" />
+                    <span className="font-medium text-amber-800">Quiet Hours Active</span>
+                    <Badge variant="outline" className="text-amber-700">
+                      {quietHoursStart} – {quietHoursEnd}
+                    </Badge>
                   </div>
-
-                  {preferences.push.enabled && (
-                    <>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <Label htmlFor="push-task-updates">Task Updates</Label>
-                          <p className="text-xs text-muted-foreground">Status changes and assignments</p>
-                        </div>
-                        <Switch
-                          id="push-task-updates"
-                          checked={preferences.push.taskUpdates}
-                          onCheckedChange={(checked) => 
-                            updatePreferences({ 
-                              push: { ...preferences.push, taskUpdates: checked }
-                            })
-                          }
-                          disabled={isLoading}
-                        />
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <Label htmlFor="push-mentions">Mentions</Label>
-                          <p className="text-xs text-muted-foreground">When mentioned in comments</p>
-                        </div>
-                        <Switch
-                          id="push-mentions"
-                          checked={preferences.push.mentions}
-                          onCheckedChange={(checked) => 
-                            updatePreferences({ 
-                              push: { ...preferences.push, mentions: checked }
-                            })
-                          }
-                          disabled={isLoading}
-                        />
-                      </div>
-                    </>
-                  )}
+                  <p className="text-sm text-amber-700 mt-1">
+                    Notifications are currently paused and will resume after quiet hours end.
+                  </p>
                 </div>
-              </div>
+              )}
 
-              {/* In-App Notifications */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <BellOff className="w-4 h-4" />
-                  <Label className="text-base font-medium">In-App Notifications</Label>
+              {!isQuietHoursActive && (
+                <div className="text-sm text-muted-foreground">
+                  Quiet hours are scheduled from <strong>{quietHoursStart}</strong> to <strong>{quietHoursEnd}</strong>.
+                  Notifications will be paused during this window.
                 </div>
-                
-                <div className="ml-6 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label htmlFor="inapp-sound">Sound Effects</Label>
-                      <p className="text-xs text-muted-foreground">Play sounds for notifications</p>
-                    </div>
-                    <Switch
-                      id="inapp-sound"
-                      checked={preferences.inApp.sound}
-                      onCheckedChange={(checked) => 
-                        updatePreferences({ 
-                          inApp: { ...preferences.inApp, sound: checked }
-                        })
-                      }
-                      disabled={isLoading}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="inapp-position">Notification Position</Label>
-                    <Select
-                      value={preferences.inApp.position}
-                      onValueChange={(value) => 
-                        updatePreferences({ 
-                          inApp: { ...preferences.inApp, position: value as any }
-                        })
-                      }
-                      disabled={isLoading}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="top-right">Top Right</SelectItem>
-                        <SelectItem value="top-left">Top Left</SelectItem>
-                        <SelectItem value="bottom-right">Bottom Right</SelectItem>
-                        <SelectItem value="bottom-left">Bottom Left</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
-            </>
+              )}
+            </div>
           )}
+        </CardContent>
+      </Card>
 
-          <div className="flex justify-end">
-            <Button 
-              variant="outline" 
-              onClick={resetToDefaults}
-              disabled={isLoading}
-            >
-              Reset to Defaults
-            </Button>
+      {/* Summary */}
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>Notification Summary</CardTitle>
+          <CardDescription>
+            Overview of your notification settings
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4" role="list" aria-label="Notification settings summary">
+            <div className="flex items-center justify-between" role="listitem">
+              <span className="text-sm">Delivery Frequency</span>
+              <Badge variant="outline" className="capitalize">{notificationFrequency}</Badge>
+            </div>
+            <div className="flex items-center justify-between" role="listitem">
+              <span className="text-sm">Quiet Hours</span>
+              <Badge variant={quietHoursEnabled ? 'default' : 'secondary'}>
+                {quietHoursEnabled ? `${quietHoursStart} – ${quietHoursEnd}` : 'Disabled'}
+              </Badge>
+            </div>
           </div>
         </CardContent>
       </Card>

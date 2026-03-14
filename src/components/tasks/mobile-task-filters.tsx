@@ -19,6 +19,7 @@ import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { useTheme } from '@/contexts/theme-context'
 import { Task, TaskPriority, TaskStatus, Project, Agent } from '@/types'
+import { FilterStats } from '@/hooks/use-task-filters'
 
 interface TaskFilters {
   search?: string
@@ -33,12 +34,7 @@ interface MobileTaskFiltersProps {
   filters: TaskFilters
   onFiltersChange: (filters: TaskFilters) => void
   onClearFilters: () => void
-  filterStats: {
-    total: number
-    filtered: number
-    byStatus: Record<TaskStatus, number>
-    byPriority: Record<TaskPriority, number>
-  }
+  filterStats: FilterStats
   tasks: Task[]
   projects: Project[]
   agents: Agent[]
@@ -153,7 +149,7 @@ export function MobileTaskFilters({
             'text-slate-500',
             actualTheme === 'dark' ? 'text-slate-400' : 'text-slate-600'
           )}>
-            {filterStats.filtered} of {filterStats.total} tasks
+            {filterStats.filteredTasks} of {filterStats.totalTasks} tasks
           </span>
           {hasActiveFilters && (
             <Button
@@ -236,7 +232,7 @@ export function MobileTaskFilters({
                         <div className={cn('w-3 h-3 rounded-full', option.color)} />
                         <span className="text-sm font-medium">{option.label}</span>
                         <span className="text-xs text-slate-500 ml-auto">
-                          {filterStats.byStatus[option.value] || 0}
+                          {filterStats.statusCounts[option.value] || 0}
                         </span>
                       </button>
                     ))}
@@ -267,7 +263,7 @@ export function MobileTaskFilters({
                         <div className={cn('w-3 h-3 rounded-full', option.color)} />
                         <span className="text-sm font-medium">{option.label}</span>
                         <span className="text-xs text-slate-500 ml-auto">
-                          {filterStats.byPriority[option.value] || 0}
+                          {filterStats.priorityCounts[option.value] || 0}
                         </span>
                       </button>
                     ))}
@@ -325,7 +321,7 @@ export function MobileTaskFilters({
                     >
                       <span className="text-sm font-medium">Unassigned</span>
                       <span className="text-xs text-slate-500">
-                        {tasks.filter(task => !task.agentId).length}
+                        {tasks.filter(task => !task.agent?.id).length}
                       </span>
                     </button>
                     {agents.map((agent) => (
@@ -350,7 +346,7 @@ export function MobileTaskFilters({
                           <span className="text-sm font-medium">{agent.name}</span>
                         </div>
                         <span className="text-xs text-slate-500">
-                          {tasks.filter(task => task.agentId === agent.id).length}
+                          {tasks.filter(task => task.agent?.id === agent.id).length}
                         </span>
                       </button>
                     ))}

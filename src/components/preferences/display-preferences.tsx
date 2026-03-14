@@ -54,21 +54,30 @@ const LOCALE_OPTIONS = [
 
 export function DisplayPreferences() {
   const {
-    preferences,
-    updatePreferences,
-    isLoading
+    theme,
+    fontSize,
+    interfaceDensity,
+    accentColor,
+    reducedMotion,
+    locale,
+    setTheme,
+    setFontSize,
+    setInterfaceDensity,
+    setAccentColor,
+    setReducedMotion,
+    setLocale,
   } = useDisplayPreferences()
   
-  const [customColor, setCustomColor] = useState(preferences.accentColor)
-  const [showCustomColorInput, setShowCustomColorInput] = useState(!ACCENT_COLORS.some(color => color.value === preferences.accentColor))
+  const [customColor, setCustomColor] = useState(accentColor)
+  const [showCustomColorInput, setShowCustomColorInput] = useState(!ACCENT_COLORS.some(color => color.value === accentColor))
   
   const handleCustomColorChange = (color: string) => {
     setCustomColor(color)
-    updatePreferences({ accentColor: color })
+    setAccentColor(color)
   }
   
   const handleAccentColorSelect = (color: string) => {
-    updatePreferences({ accentColor: color })
+    setAccentColor(color)
     setCustomColor(color)
     setShowCustomColorInput(false)
   }
@@ -94,7 +103,7 @@ export function DisplayPreferences() {
                 <label
                   key={option.value}
                   className={`flex flex-col items-center p-4 border-2 rounded-lg cursor-pointer transition-all hover:border-primary/50 ${
-                    preferences.theme === option.value
+                    theme === option.value
                       ? 'border-primary bg-primary/5'
                       : 'border-border'
                   }`}
@@ -103,12 +112,12 @@ export function DisplayPreferences() {
                     type="radio"
                     name="theme"
                     value={option.value}
-                    checked={preferences.theme === option.value}
-                    onChange={() => updatePreferences({ theme: option.value as 'light' | 'dark' | 'system' })}
+                    checked={theme === option.value}
+                    onChange={() => setTheme(option.value as 'light' | 'dark' | 'system')}
                     className="sr-only"
                   />
                   <Icon className={`h-8 w-8 mb-2 ${
-                    preferences.theme === option.value ? 'text-primary' : 'text-gray-500'
+                    theme === option.value ? 'text-primary' : 'text-gray-500'
                   }`} />
                   <div className="font-medium">{option.label}</div>
                   <div className="text-sm text-gray-600 text-center">{option.description}</div>
@@ -138,7 +147,7 @@ export function DisplayPreferences() {
                 <label
                   key={option.value}
                   className={`flex flex-col items-center p-4 border rounded-lg cursor-pointer transition-colors ${
-                    preferences.fontSize === option.value
+                    fontSize === option.value
                       ? 'border-primary bg-primary/5'
                       : 'border-border hover:bg-accent'
                   }`}

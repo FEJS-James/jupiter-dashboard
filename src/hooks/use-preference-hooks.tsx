@@ -11,7 +11,8 @@ import {
   DateRange, 
   NotificationFrequency, 
   ExportFormat,
-  TaskPriority 
+  TaskPriority,
+  UserPreferencesWithRelations
 } from '@/types'
 
 // Dashboard & View Preferences Hook
@@ -26,7 +27,7 @@ export function useDashboardPreferences() {
   const kanbanColumnOrder = getPreference<string[]>('kanbanColumnOrder', ['backlog', 'in-progress', 'code-review', 'testing', 'deploying', 'done'])
   const defaultDateRange = getPreference<DateRange>('defaultDateRange', 'month')
   
-  const updateDashboardPreference = useCallback(async (field: string, value: unknown) => {
+  const updateDashboardPreference = useCallback(async (field: keyof UserPreferencesWithRelations, value: unknown) => {
     await updatePreference(field, value)
   }, [updatePreference])
   
@@ -63,7 +64,7 @@ export function useDisplayPreferences() {
   const reducedMotion = getPreference<boolean>('reducedMotion', false)
   const locale = getPreference<string>('locale', 'en')
   
-  const updateDisplayPreference = useCallback(async (field: string, value: unknown) => {
+  const updateDisplayPreference = useCallback(async (field: keyof UserPreferencesWithRelations, value: unknown) => {
     await updatePreference(field, value)
   }, [updatePreference])
   
@@ -134,7 +135,7 @@ export function useAccessibilityPreferences() {
   const textScaling = getPreference<number>('textScaling', 1.0)
   const audioFeedbackEnabled = getPreference<boolean>('audioFeedbackEnabled', false)
   
-  const updateAccessibilityPreference = useCallback(async (field: string, value: unknown) => {
+  const updateAccessibilityPreference = useCallback(async (field: keyof UserPreferencesWithRelations, value: unknown) => {
     await updatePreference(field, value)
   }, [updatePreference])
   
@@ -205,7 +206,7 @@ export function useNotificationPreferences() {
   const quietHoursEnd = getPreference<string>('quietHoursEnd', '08:00')
   const quietHoursEnabled = getPreference<boolean>('quietHoursEnabled', false)
   
-  const updateNotificationPreference = useCallback(async (field: string, value: unknown) => {
+  const updateNotificationPreference = useCallback(async (field: keyof UserPreferencesWithRelations, value: unknown) => {
     await updatePreference(field, value)
   }, [updatePreference])
   
@@ -256,7 +257,7 @@ export function useProductivityPreferences() {
   const quickActionButtons = getPreference<string[]>('quickActionButtons', ['create-task', 'assign-task', 'change-status'])
   const defaultExportFormat = getPreference<ExportFormat>('defaultExportFormat', 'json')
   
-  const updateProductivityPreference = useCallback(async (field: string, value: unknown) => {
+  const updateProductivityPreference = useCallback(async (field: keyof UserPreferencesWithRelations, value: unknown) => {
     await updatePreference(field, value)
   }, [updatePreference])
   
@@ -286,7 +287,7 @@ export function useAdvancedPreferences() {
   const exportPreferences = getPreference<Record<string, unknown>>('exportPreferences', {})
   const customSettings = getPreference<Record<string, unknown>>('customSettings', {})
   
-  const updateAdvancedPreference = useCallback(async (field: string, value: unknown) => {
+  const updateAdvancedPreference = useCallback(async (field: keyof UserPreferencesWithRelations, value: unknown) => {
     await updatePreference(field, value)
   }, [updatePreference])
   

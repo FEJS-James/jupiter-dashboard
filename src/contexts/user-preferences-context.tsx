@@ -18,15 +18,15 @@ interface UserPreferencesContextType {
   // Actions
   loadPreferences: (agentId: number) => Promise<void>
   updatePreferences: (data: Partial<PreferenceFormData>) => Promise<void>
-  updatePreference: (field: string, value: unknown) => Promise<void>
+  updatePreference: (field: keyof UserPreferencesWithRelations, value: unknown) => Promise<void>
   batchUpdatePreferences: (updates: PreferenceBatchUpdateRequest['updates']) => Promise<void>
   resetPreferences: () => Promise<void>
   exportPreferences: (format?: string) => Promise<void>
-  importPreferences: (importData: any, overwrite?: boolean) => Promise<void>
+  importPreferences: (importData: Partial<PreferenceFormData>, overwrite?: boolean) => Promise<void>
   
   // Utilities
-  getPreference: <T>(field: string, defaultValue?: T) => T
-  isPreferenceDefault: (field: string) => boolean
+  getPreference: <T,>(field: keyof UserPreferencesWithRelations, defaultValue?: T) => T
+  isPreferenceDefault: (field: keyof UserPreferencesWithRelations) => boolean
 }
 
 const UserPreferencesContext = createContext<UserPreferencesContextType | undefined>(undefined)
@@ -160,7 +160,7 @@ export function UserPreferencesProvider({ children, agentId }: UserPreferencesPr
   }, [preferences, agentId, processUpdateQueue])
   
   // Update single preference field
-  const updatePreference = useCallback(async (field: string, value: unknown) => {
+  const updatePreference = useCallback(async (field: keyof UserPreferencesWithRelations, value: unknown) => {
     if (!preferences || !agentId) return
     
     // Optimistic update
@@ -213,10 +213,11 @@ export function UserPreferencesProvider({ children, agentId }: UserPreferencesPr
   const batchUpdatePreferences = useCallback(async (updates: PreferenceBatchUpdateRequest['updates']) => {
     if (!preferences || !agentId || updates.length === 0) return
     
-    // Optimistic update
-    const optimisticData = { ...preferences }
+    // Optimistic update — use Record view for dynamic field assignment
+    const optimisticData: UserPreferencesWithRelations = { ...preferences }
+    const optimisticRecord = optimisticData as unknown as Record<string, unknown>
     updates.forEach(({ field, value }) => {
-      (optimisticData as any)[field] = value
+      optimisticRecord[field] = value
     })
     optimisticUpdate.current = optimisticData
     setPreferences(optimisticData)
@@ -233,12 +234,14 @@ export function UserPreferencesProvider({ children, agentId }: UserPreferencesPr
           throw new Error(`Failed to batch update preferences: ${response.statusText}`)
         }
         
-        const updatedData = await response.json()
+        const updatedData: UserPreferencesWithRelations = await response.json()
         
         // Merge batch updates with existing preferences
-        const mergedData = { ...preferences }
+        const mergedData: UserPreferencesWithRelations = { ...preferences }
+        const mergedRecord = mergedData as unknown as Record<string, unknown>
+        const updatedRecord = updatedData as unknown as Record<string, unknown>
         updates.forEach(({ field }) => {
-          (mergedData as any)[field] = (updatedData as any)[field]
+          mergedRecord[field] = updatedRecord[field]
         })
         
         setPreferences(mergedData)
@@ -330,7 +333,7 @@ export function UserPreferencesProvider({ children, agentId }: UserPreferencesPr
   }, [agentId])
   
   // Import preferences
-  const importPreferences = useCallback(async (importData: any, overwrite = false) => {
+  const importPreferences = useCallback(async (importData: Partial<PreferenceFormData>, overwrite = false) => {
     if (!agentId) return
     
     try {
@@ -360,23 +363,23 @@ export function UserPreferencesProvider({ children, agentId }: UserPreferencesPr
   }, [agentId])
   
   // Get preference value with fallback
-  const getPreference = useCallback(<T>(field: string, defaultValue?: T): T => {
+  const getPreference = useCallback(<T,>(field: keyof UserPreferencesWithRelations, defaultValue?: T): T => {
     const currentPrefs = optimisticUpdate.current || preferences
     if (!currentPrefs) {
-      return defaultValue !== undefined ? defaultValue : (DEFAULT_USER_PREFERENCES as any)[field]
+      return defaultValue !== undefined ? defaultValue : DEFAULT_USER_PREFERENCES[field] as T
     }
     
-    const value = (currentPrefs as any)[field]
-    return value !== undefined ? value : (defaultValue !== undefined ? defaultValue : (DEFAULT_USER_PREFERENCES as any)[field])
+    const value = currentPrefs[field]
+    return value !== undefined ? (value as T) : (defaultValue !== undefined ? defaultValue : DEFAULT_USER_PREFERENCES[field] as T)
   }, [preferences])
   
   // Check if preference is at default value
-  const isPreferenceDefault = useCallback((field: string): boolean => {
+  const isPreferenceDefault = useCallback((field: keyof UserPreferencesWithRelations): boolean => {
     const currentPrefs = optimisticUpdate.current || preferences
     if (!currentPrefs) return true
     
-    const currentValue = (currentPrefs as any)[field]
-    const defaultValue = (DEFAULT_USER_PREFERENCES as any)[field]
+    const currentValue = currentPrefs[field]
+    const defaultValue = DEFAULT_USER_PREFERENCES[field]
     
     return JSON.stringify(currentValue) === JSON.stringify(defaultValue)
   }, [preferences])
