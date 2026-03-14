@@ -7,6 +7,7 @@ import { LayoutWrapper } from "@/components/layout/layout-wrapper"
 import { ThemeProvider } from "@/contexts/theme-context"
 import { UserPreferencesProvider } from "@/contexts/user-preferences-context"
 import { StaticDataProvider } from "@/providers/static-data-provider"
+import { ProjectProvider } from "@/contexts/project-context"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -32,9 +33,11 @@ export default function RootLayout({
         <StaticDataProvider>
           <ThemeProvider>
             <UserPreferencesProvider agentId={1}>
-              <LayoutWrapper>
-                {children}
-              </LayoutWrapper>
+              <ProjectProvider>
+                <LayoutWrapper>
+                  {children}
+                </LayoutWrapper>
+              </ProjectProvider>
             </UserPreferencesProvider>
           </ThemeProvider>
         </StaticDataProvider>
