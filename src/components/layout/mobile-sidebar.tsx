@@ -43,8 +43,10 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
     router.push(href)
   }, [router, onClose])
 
-  // Derive selected project — default to first project from API
-  const selectedProject = projects.find(p => p.id === selectedProjectId) ?? projects[0] ?? null
+  // Derive selected project — null means "All Projects"
+  const selectedProject = selectedProjectId !== null
+    ? (projects.find(p => p.id === selectedProjectId) ?? null)
+    : null
 
   const navigationItems = [
     { icon: Home, label: 'Dashboard', href: '/', active: pathname === '/' },

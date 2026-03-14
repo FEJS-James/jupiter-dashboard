@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { 
   ChevronLeft,
@@ -79,8 +79,24 @@ export function Sidebar({ className, onCollapseChange }: SidebarProps) {
     onCollapseChange?.(newCollapsedState)
   }
 
-  // Derive selected project name — default to first project
-  const selectedProject = projects.find(p => p.id === selectedProjectId) ?? projects[0]
+  // Derive selected project name — null means "All Projects"
+  const selectedProject = selectedProjectId !== null
+    ? (projects.find(p => p.id === selectedProjectId) ?? null)
+    : null
+
+  // Click-outside handler for project dropdown
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!showProjectDropdown) return
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setShowProjectDropdown(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showProjectDropdown])
 
   const navigationItems = [
     { icon: Home, label: 'Dashboard', href: '/' },
@@ -164,7 +180,7 @@ export function Sidebar({ className, onCollapseChange }: SidebarProps) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
           >
-            <div className="relative">
+            <div className="relative" ref={dropdownRef}>
               {loading ? (
                 <div className={cn(
                   'flex items-center space-x-3 p-3 rounded-lg',
