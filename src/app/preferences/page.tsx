@@ -24,13 +24,15 @@ import {
 import { useUserPreferences } from '@/contexts/user-preferences-context'
 import { PREFERENCE_CATEGORIES, type PreferenceCategoryName } from '@/types'
 
-// Import preference category components
-import { DashboardPreferences } from '@/components/preferences/dashboard-preferences'
-import { DisplayPreferences } from '@/components/preferences/display-preferences'
-import { NotificationPreferencesPanel } from '@/components/preferences/notification-preferences'
-import { AccessibilityPreferences } from '@/components/preferences/accessibility-preferences'
-import { ProductivityPreferences } from '@/components/preferences/productivity-preferences'
-import { AdvancedPreferences } from '@/components/preferences/advanced-preferences'
+// Import preference category components — lazy loaded for code splitting
+import {
+  LazyDashboardPreferences as DashboardPreferences,
+  LazyDisplayPreferences as DisplayPreferences,
+  LazyNotificationPreferencesPanel as NotificationPreferencesPanel,
+  LazyAccessibilityPreferences as AccessibilityPreferences,
+  LazyProductivityPreferences as ProductivityPreferences,
+  LazyAdvancedPreferences as AdvancedPreferences,
+} from '@/components/preferences/lazy-preferences'
 
 const CATEGORY_ICONS = {
   dashboard: LayoutDashboard,
