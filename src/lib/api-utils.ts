@@ -54,3 +54,18 @@ export function extractIdFromParams(params: { id: string }): number {
   }
   return id;
 }
+
+/** Safely convert DB timestamp (Date | number | string) to ISO string */
+export function toISO(val: unknown): string {
+  if (!val) return new Date().toISOString();
+  if (val instanceof Date) return val.toISOString();
+  if (typeof val === 'number') return new Date(val * 1000).toISOString();
+  return String(val);
+}
+
+/** Safely parse JSON text fields from DB (handles string, array, null) */
+export function parseJsonField<T>(val: unknown): T | undefined {
+  if (val == null) return undefined;
+  if (typeof val === 'string') { try { return JSON.parse(val); } catch { return undefined; } }
+  return val as T;
+}

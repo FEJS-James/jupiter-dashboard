@@ -354,11 +354,11 @@ export async function GET(request: NextRequest) {
       projectId: result.task.projectId,
       projectName: result.project?.name || '',
       tags: Array.isArray(result.task.tags) ? result.task.tags.join('; ') : '',
-      dueDate: result.task.dueDate ? result.task.dueDate.toISOString() : '',
+      dueDate: result.task.dueDate ? typeof result.task.dueDate === 'number' ? new Date(result.task.dueDate * 1000).toISOString() : (result.task.dueDate instanceof Date ? result.task.dueDate.toISOString() : String(result.task.dueDate)) : '',
       effort: result.task.effort || '',
       dependencies: Array.isArray(result.task.dependencies) ? result.task.dependencies.join('; ') : '',
-      createdAt: result.task.createdAt.toISOString(),
-      updatedAt: result.task.updatedAt.toISOString(),
+      createdAt: typeof result.task.createdAt === 'number' ? new Date(result.task.createdAt * 1000).toISOString() : (result.task.createdAt instanceof Date ? result.task.createdAt.toISOString() : String(result.task.createdAt)),
+      updatedAt: typeof result.task.updatedAt === 'number' ? new Date(result.task.updatedAt * 1000).toISOString() : (result.task.updatedAt instanceof Date ? result.task.updatedAt.toISOString() : String(result.task.updatedAt)),
     }))
 
     if (exportFormat === 'json') {

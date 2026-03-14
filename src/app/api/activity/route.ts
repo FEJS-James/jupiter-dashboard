@@ -155,7 +155,7 @@ export async function GET(request: NextRequest) {
       agentId: result.activity.agentId,
       action: result.activity.action,
       details: result.activity.details || {},
-      timestamp: result.activity.timestamp.toISOString(),
+      timestamp: typeof result.activity.timestamp === 'number' ? new Date(result.activity.timestamp * 1000).toISOString() : (result.activity.timestamp instanceof Date ? result.activity.timestamp.toISOString() : String(result.activity.timestamp)),
       agent: result.agent?.id ? {
         id: result.agent.id,
         name: result.agent.name,
@@ -269,7 +269,7 @@ export async function POST(request: NextRequest) {
       agentId: result.activity.agentId,
       action: result.activity.action,
       details: result.activity.details || {},
-      timestamp: result.activity.timestamp.toISOString(),
+      timestamp: typeof result.activity.timestamp === 'number' ? new Date(result.activity.timestamp * 1000).toISOString() : (result.activity.timestamp instanceof Date ? result.activity.timestamp.toISOString() : String(result.activity.timestamp)),
       agent: result.agent?.id ? {
         id: result.agent.id,
         name: result.agent.name,

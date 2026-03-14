@@ -16,7 +16,9 @@ import {
   handleZodError, 
   handleDatabaseError,
   parseRequestBody,
-  extractIdFromParams
+  extractIdFromParams,
+  toISO,
+  parseJsonField
 } from '@/lib/api-utils';
 import { websocketManager } from '@/lib/websocket-manager';
 import { ActivityLogger } from '@/lib/activity-logger';
@@ -317,19 +319,19 @@ export async function POST(
       {
         ...existingTask[0],
         description: existingTask[0].description ?? undefined,
-        dueDate: existingTask[0].dueDate?.toISOString() ?? undefined,
+        dueDate: existingTask[0].dueDate ? toISO(existingTask[0].dueDate) : undefined,
         assignedAgent: existingTask[0].assignedAgent ?? undefined,
         effort: existingTask[0].effort ?? undefined,
-        tags: existingTask[0].tags ?? undefined,
-        createdAt: existingTask[0].createdAt.toISOString(),
-        updatedAt: existingTask[0].updatedAt.toISOString()
+        tags: parseJsonField<string[]>(existingTask[0].tags),
+        createdAt: toISO(existingTask[0].createdAt),
+        updatedAt: toISO(existingTask[0].updatedAt)
       } as Task, // task
       {
         ...commenterAgent,
         avatarUrl: commenterAgent.avatarUrl ?? undefined,
         currentTaskId: commenterAgent.currentTaskId ?? undefined,
-        createdAt: commenterAgent.createdAt.toISOString(),
-        updatedAt: commenterAgent.updatedAt.toISOString()
+        createdAt: toISO(commenterAgent.createdAt),
+        updatedAt: toISO(commenterAgent.updatedAt)
       } as Agent   // commenter
     );
     

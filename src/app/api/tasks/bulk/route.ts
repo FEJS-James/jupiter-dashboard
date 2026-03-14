@@ -8,7 +8,9 @@ import {
   createSuccessResponse, 
   handleZodError, 
   handleDatabaseError,
-  parseRequestBody
+  parseRequestBody,
+  toISO,
+  parseJsonField
 } from '@/lib/api-utils';
 import { websocketManager } from '@/lib/websocket-manager';
 import { ActivityLogger } from '@/lib/activity-logger';
@@ -20,12 +22,12 @@ function convertDbTaskToApiTask(dbTask: any): Task {
   return {
     ...dbTask,
     description: dbTask.description ?? undefined,
-    dueDate: dbTask.dueDate?.toISOString() ?? undefined,
+    dueDate: dbTask.dueDate ? toISO(dbTask.dueDate) : undefined,
     assignedAgent: dbTask.assignedAgent ?? undefined,
     effort: dbTask.effort ?? undefined,
-    tags: dbTask.tags ?? undefined,
-    createdAt: dbTask.createdAt.toISOString(),
-    updatedAt: dbTask.updatedAt.toISOString()
+    tags: parseJsonField<string[]>(dbTask.tags),
+    createdAt: toISO(dbTask.createdAt),
+    updatedAt: toISO(dbTask.updatedAt)
   };
 }
 

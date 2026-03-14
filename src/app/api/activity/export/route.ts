@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
     // Transform data for export
     const exportData = activities.map(result => ({
       id: result.activity.id,
-      timestamp: result.activity.timestamp.toISOString(),
+      timestamp: typeof result.activity.timestamp === 'number' ? new Date(result.activity.timestamp * 1000).toISOString() : (result.activity.timestamp instanceof Date ? result.activity.timestamp.toISOString() : String(result.activity.timestamp)),
       action: result.activity.action,
       agentId: result.activity.agentId,
       agentName: result.agent?.name || null,
@@ -250,7 +250,7 @@ export async function GET(request: NextRequest) {
     // Transform data for export
     const exportData = activities.map(result => ({
       id: result.activity.id,
-      timestamp: result.activity.timestamp.toISOString(),
+      timestamp: typeof result.activity.timestamp === 'number' ? new Date(result.activity.timestamp * 1000).toISOString() : (result.activity.timestamp instanceof Date ? result.activity.timestamp.toISOString() : String(result.activity.timestamp)),
       action: result.activity.action,
       agentId: result.activity.agentId,
       agentName: result.agent?.name || null,
