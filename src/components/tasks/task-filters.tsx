@@ -27,6 +27,7 @@ import {
   Search, 
   X, 
   ChevronDown, 
+  ChevronUp,
   Users, 
   FolderOpen, 
   AlertCircle,
@@ -34,6 +35,7 @@ import {
   Clock,
   Tag as TagIcon
 } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { TaskFilters, FilterStats } from '@/hooks/use-task-filters'
 import { Task, TaskStatus, TaskPriority, Project, Agent } from '@/types'

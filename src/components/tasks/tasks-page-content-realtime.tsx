@@ -13,7 +13,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Plus, RefreshCw, AlertCircle, Activity, ChevronDown, ChevronUp, Users } from 'lucide-react'
+import { Plus, RefreshCw, AlertCircle, Activity, ChevronDown, ChevronUp, Users, SlidersHorizontal } from 'lucide-react'
 import { Task, TaskStatus, Project, Agent } from '@/types'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
@@ -36,6 +36,7 @@ export default function TasksPageContentRealtime() {
   const [defaultStatus, setDefaultStatus] = useState<TaskStatus>('backlog')
   const [activityExpanded, setActivityExpanded] = useState(false)
   const [activityTab, setActivityTab] = useState<string>('activity')
+  const [filtersExpanded, setFiltersExpanded] = useState(false)
 
   // Selected project from sidebar dropdown
   const { selectedProjectId } = useProjectContext()
@@ -289,17 +290,70 @@ export default function TasksPageContentRealtime() {
           </Alert>
         )}
 
-        {/* Enhanced Filters and Search */}
-        <TaskFiltersComponent
-          filters={filters}
-          onFiltersChange={setFilters}
-          onClearFilters={clearFilters}
-          filterStats={filterStats}
-          tasks={tasks}
-          projects={projects}
-          agents={agents}
-          isLoading={filtersLoading}
-        />
+        {/* Collapsible Filters Section */}
+        {(() => {
+          const activeFilterCount =
+            filters.statuses.length +
+            filters.priorities.length +
+            filters.assignees.length +
+            filters.projectIds.length +
+            filters.tags.length +
+            (filters.search ? 1 : 0)
+          return (
+            <Card className="bg-slate-800/50 border-slate-700">
+              <button
+                onClick={() => setFiltersExpanded(!filtersExpanded)}
+                className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-slate-700/30 transition-colors rounded-t-lg"
+                aria-expanded={filtersExpanded}
+                aria-controls="filters-panel"
+              >
+                <div className="flex items-center gap-2">
+                  <SlidersHorizontal className="w-4 h-4 text-slate-400" />
+                  <span className="text-sm font-medium text-slate-200">Filters</span>
+                  {activeFilterCount > 0 && (
+                    <span className="bg-blue-500/20 text-blue-300 text-xs px-2 py-0.5 rounded-full font-medium">
+                      {activeFilterCount}
+                    </span>
+                  )}
+                  {!filtersExpanded && activeFilterCount > 0 && (
+                    <span className="text-xs text-slate-500 ml-1">
+                      {filterStats.filteredTasks} of {filterStats.totalTasks} tasks
+                    </span>
+                  )}
+                </div>
+                <div className="text-slate-400">
+                  {filtersExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                </div>
+              </button>
+
+              <AnimatePresence>
+                {filtersExpanded && (
+                  <motion.div
+                    id="filters-panel"
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden border-t border-slate-700"
+                  >
+                    <CardContent className="p-4">
+                      <TaskFiltersComponent
+                        filters={filters}
+                        onFiltersChange={setFilters}
+                        onClearFilters={clearFilters}
+                        filterStats={filterStats}
+                        tasks={tasks}
+                        projects={projects}
+                        agents={agents}
+                        isLoading={filtersLoading}
+                      />
+                    </CardContent>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </Card>
+          )
+        })()}
       </motion.div>
 
       {/* Collapsible Activity & Users Bar */}
