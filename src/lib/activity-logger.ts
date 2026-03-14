@@ -106,8 +106,8 @@ export class ActivityLogger {
     timestamp: string
   }): void {
     try {
-      const io = websocketManager.getIO()
-      if (io) {
+      const io = websocketManager.getIO() as any
+      if (io && typeof io.emit === 'function') {
         // Broadcast to all connected clients
         io.emit('activity', activityData)
       }

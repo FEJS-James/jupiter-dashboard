@@ -1,8 +1,7 @@
 'use client'
 
-import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react'
-import io, { Socket } from 'socket.io-client'
-import { Task, TaskStatus, Notification, NotificationWithRelations } from '@/types'
+import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react'
+import { Task, TaskStatus, NotificationWithRelations } from '@/types'
 
 export interface ConnectedUser {
   id: string
@@ -42,7 +41,7 @@ export interface NotificationEvent {
 }
 
 interface WebSocketContextValue {
-  socket: Socket | null
+  socket: null
   connectionStatus: ConnectionStatus
   connectedUsers: ConnectedUser[]
   activities: ActivityEvent[]
@@ -67,7 +66,7 @@ interface WebSocketContextValue {
   // Presence methods
   updatePresence: (presence: UserPresence) => void
   
-  // Event listeners
+  // Event listeners (no-ops in polling mode — data is fetched via API)
   onTaskCreated: (callback: (task: Task) => void) => () => void
   onTaskUpdated: (callback: (task: Task) => void) => () => void
   onTaskDeleted: (callback: (taskId: number) => void) => () => void
@@ -100,347 +99,89 @@ interface WebSocketProviderProps {
   url?: string
 }
 
-export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ 
-  children, 
-  url = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:3000' 
-}) => {
-  const [socket, setSocket] = useState<Socket | null>(null)
-  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('disconnected')
-  const [connectedUsers, setConnectedUsers] = useState<ConnectedUser[]>([])
+/**
+ * WebSocket Provider — Polling Mode
+ * 
+ * In the Vercel deployment, there's no persistent WebSocket server.
+ * This provider maintains the same interface but uses polling for real-time updates.
+ * Components that need fresh data should refetch from API endpoints.
+ */
+export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children }) => {
+  const [connectionStatus] = useState<ConnectionStatus>('connected')
+  const [connectedUsers] = useState<ConnectedUser[]>([])
   const [activities, setActivities] = useState<ActivityEvent[]>([])
-  
-  // Refs for race condition handling
-  const rollbackTimersRef = useRef<Map<string, NodeJS.Timeout>>(new Map())
-  const pendingOperationsRef = useRef<Map<string, any>>(new Map())
-  const connectionAttemptsRef = useRef<number>(0)
 
-  // Clear rollback timer when server confirms success
-  const clearRollbackTimer = useCallback((operationId: string) => {
-    const timer = rollbackTimersRef.current.get(operationId)
-    if (timer) {
-      clearTimeout(timer)
-      rollbackTimersRef.current.delete(operationId)
-    }
-    pendingOperationsRef.current.delete(operationId)
-  }, [])
+  // Event callback refs for polling-triggered updates
+  const taskCreatedCallbacks = useRef<Set<(task: Task) => void>>(new Set())
+  const taskUpdatedCallbacks = useRef<Set<(task: Task) => void>>(new Set())
+  const taskDeletedCallbacks = useRef<Set<(taskId: number) => void>>(new Set())
+  const taskMovedCallbacks = useRef<Set<(taskId: number, fromStatus: TaskStatus, toStatus: TaskStatus, task: Task) => void>>(new Set())
+  const notificationCreatedCallbacks = useRef<Set<(notification: NotificationWithRelations) => void>>(new Set())
+  const notificationUpdatedCallbacks = useRef<Set<(notification: NotificationWithRelations) => void>>(new Set())
+  const notificationDeletedCallbacks = useRef<Set<(notificationId: number) => void>>(new Set())
 
-  // Set rollback timer for optimistic updates
-  const setRollbackTimer = useCallback((operationId: string, rollbackFn: () => void, timeoutMs: number = 5000) => {
-    const timer = setTimeout(() => {
-      console.warn(`Operation ${operationId} timed out, rolling back`)
-      rollbackFn()
-      rollbackTimersRef.current.delete(operationId)
-      pendingOperationsRef.current.delete(operationId)
-    }, timeoutMs)
-    
-    rollbackTimersRef.current.set(operationId, timer)
-  }, [])
+  // No-op connection methods (always "connected" in polling mode)
+  const connect = useCallback(() => {}, [])
+  const disconnect = useCallback(() => {}, [])
+  const joinBoard = useCallback((_boardId: string, _user: ConnectedUser) => {}, [])
+  const leaveBoard = useCallback((_boardId: string) => {}, [])
 
-  const connect = useCallback(() => {
-    if (socket?.connected) return
+  // Task emit methods — these are no-ops since the API routes handle persistence
+  // The UI should refetch after mutations
+  const emitTaskCreated = useCallback((_task: Task, _optimistic?: boolean) => {}, [])
+  const emitTaskUpdated = useCallback((_task: Task, _optimistic?: boolean) => {}, [])
+  const emitTaskDeleted = useCallback((_taskId: number, _optimistic?: boolean) => {}, [])
+  const emitTaskMoved = useCallback((_taskId: number, _fromStatus: TaskStatus, _toStatus: TaskStatus, _task: Task, _optimistic?: boolean) => {}, [])
 
-    setConnectionStatus('connecting')
-    connectionAttemptsRef.current++
-    
-    const newSocket = io(url, {
-      path: '/api/socket',
-      transports: ['websocket', 'polling'],
-      reconnection: true,
-      reconnectionDelay: Math.min(1000 * Math.pow(2, connectionAttemptsRef.current - 1), 30000), // Exponential backoff
-      reconnectionAttempts: 5,
-      timeout: 20000,
-      auth: {
-        // Add authentication token if available
-        token: typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null
-      }
-    })
+  // Notification emit methods — no-ops
+  const emitNotificationRead = useCallback((_notificationId: number) => {}, [])
+  const emitNotificationDeleted = useCallback((_notificationId: number) => {}, [])
+  const emitNotificationsReadAll = useCallback((_recipientId: number) => {}, [])
 
-    newSocket.on('connect', () => {
-      console.log('WebSocket connected')
-      setConnectionStatus('connected')
-      connectionAttemptsRef.current = 0 // Reset on successful connection
-    })
+  // Presence — no-op
+  const updatePresence = useCallback((_presence: UserPresence) => {}, [])
 
-    newSocket.on('disconnect', (reason) => {
-      console.log('WebSocket disconnected:', reason)
-      setConnectionStatus('disconnected')
-      
-      // Clear all pending operations on disconnect
-      for (const [operationId, timer] of rollbackTimersRef.current) {
-        clearTimeout(timer)
-      }
-      rollbackTimersRef.current.clear()
-      pendingOperationsRef.current.clear()
-    })
-
-    newSocket.on('reconnecting', (attempt) => {
-      console.log(`WebSocket reconnecting... (attempt ${attempt})`)
-      setConnectionStatus('reconnecting')
-    })
-
-    newSocket.on('reconnect', (attempt) => {
-      console.log(`WebSocket reconnected after ${attempt} attempts`)
-      setConnectionStatus('connected')
-      connectionAttemptsRef.current = 0
-    })
-
-    newSocket.on('connect_error', (error) => {
-      console.error('WebSocket connection error:', error)
-      setConnectionStatus('error')
-      
-      // Handle specific error types
-      if (error.message.includes('Authentication')) {
-        console.error('Authentication failed, clearing token')
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('auth_token')
-        }
-      }
-    })
-
-    // Handle server errors
-    newSocket.on('error', (error) => {
-      console.error('WebSocket server error:', error)
-      // Handle validation errors from server
-      if (error.message) {
-        console.warn('Server validation error:', error.message)
-      }
-    })
-
-    // User presence events
-    newSocket.on('userJoined', (user: ConnectedUser) => {
-      setConnectedUsers(prev => [...prev.filter(u => u.id !== user.id), user])
-    })
-
-    newSocket.on('userLeft', (userId: string) => {
-      setConnectedUsers(prev => prev.filter(u => u.id !== userId))
-    })
-
-    newSocket.on('userPresence', (users: ConnectedUser[]) => {
-      setConnectedUsers(users)
-    })
-
-    // Activity events
-    newSocket.on('activity', (activity: ActivityEvent) => {
-      setActivities(prev => [activity, ...prev].slice(0, 100)) // Keep last 100 activities
-    })
-
-    // Operation confirmations (to clear rollback timers)
-    newSocket.on('operationConfirmed', (operationId: string) => {
-      clearRollbackTimer(operationId)
-    })
-
-    // Operation failed (handle rollback)
-    newSocket.on('operationFailed', (operationId: string, error: string) => {
-      console.error(`Operation ${operationId} failed:`, error)
-      clearRollbackTimer(operationId)
-      // The consuming component should handle the rollback based on the operation type
-    })
-
-    // Notification events (handled by consuming components)
-    // These are set up but event handlers are defined later with the on* methods
-
-    setSocket(newSocket)
-  }, [url, socket])
-
-  const disconnect = useCallback(() => {
-    if (socket) {
-      socket.disconnect()
-      setSocket(null)
-      setConnectionStatus('disconnected')
-      setConnectedUsers([])
-      
-      // Clean up all timers
-      for (const [operationId, timer] of rollbackTimersRef.current) {
-        clearTimeout(timer)
-      }
-      rollbackTimersRef.current.clear()
-      pendingOperationsRef.current.clear()
-    }
-  }, [socket])
-
-  const joinBoard = useCallback((boardId: string, user: ConnectedUser) => {
-    if (socket?.connected) {
-      socket.emit('join', boardId, user)
-    }
-  }, [socket])
-
-  const leaveBoard = useCallback((boardId: string) => {
-    if (socket?.connected) {
-      socket.emit('leave', boardId)
-    }
-  }, [socket])
-
-  const emitTaskCreated = useCallback((task: Task, optimistic: boolean = false) => {
-    if (socket?.connected) {
-      const operationId = `taskCreated_${task.id}_${Date.now()}`
-      
-      if (optimistic) {
-        // Store operation for potential rollback
-        pendingOperationsRef.current.set(operationId, { type: 'create', task })
-        
-        // Set rollback timer
-        setRollbackTimer(operationId, () => {
-          // Rollback logic would be handled by the consuming component
-          console.warn(`Task creation ${task.id} was not confirmed by server`)
-        })
-      }
-      
-      socket.emit('taskCreated', task, operationId)
-    }
-  }, [socket, setRollbackTimer])
-
-  const emitTaskUpdated = useCallback((task: Task, optimistic: boolean = false) => {
-    if (socket?.connected) {
-      const operationId = `taskUpdated_${task.id}_${Date.now()}`
-      
-      if (optimistic) {
-        pendingOperationsRef.current.set(operationId, { type: 'update', task })
-        setRollbackTimer(operationId, () => {
-          console.warn(`Task update ${task.id} was not confirmed by server`)
-        })
-      }
-      
-      socket.emit('taskUpdated', task, operationId)
-    }
-  }, [socket, setRollbackTimer])
-
-  const emitTaskDeleted = useCallback((taskId: number, optimistic: boolean = false) => {
-    if (socket?.connected) {
-      const operationId = `taskDeleted_${taskId}_${Date.now()}`
-      
-      if (optimistic) {
-        pendingOperationsRef.current.set(operationId, { type: 'delete', taskId })
-        setRollbackTimer(operationId, () => {
-          console.warn(`Task deletion ${taskId} was not confirmed by server`)
-        })
-      }
-      
-      socket.emit('taskDeleted', taskId, operationId)
-    }
-  }, [socket, setRollbackTimer])
-
-  const emitTaskMoved = useCallback((taskId: number, fromStatus: TaskStatus, toStatus: TaskStatus, task: Task, optimistic: boolean = false) => {
-    if (socket?.connected) {
-      const operationId = `taskMoved_${taskId}_${Date.now()}`
-      
-      if (optimistic) {
-        pendingOperationsRef.current.set(operationId, { type: 'move', taskId, fromStatus, toStatus, task })
-        setRollbackTimer(operationId, () => {
-          console.warn(`Task move ${taskId} was not confirmed by server`)
-        })
-      }
-      
-      socket.emit('taskMoved', taskId, fromStatus, toStatus, task, operationId)
-    }
-  }, [socket, setRollbackTimer])
-
-  const updatePresence = useCallback((presence: UserPresence) => {
-    if (socket?.connected) {
-      socket.emit('updatePresence', presence)
-    }
-  }, [socket])
-
-  // Notification emit methods
-  const emitNotificationRead = useCallback((notificationId: number) => {
-    if (socket?.connected) {
-      socket.emit('notificationRead', notificationId)
-    }
-  }, [socket])
-
-  const emitNotificationDeleted = useCallback((notificationId: number) => {
-    if (socket?.connected) {
-      socket.emit('notificationDeleted', notificationId)
-    }
-  }, [socket])
-
-  const emitNotificationsReadAll = useCallback((recipientId: number) => {
-    if (socket?.connected) {
-      socket.emit('notificationsReadAll', recipientId)
-    }
-  }, [socket])
-
-  // Event listener methods
+  // Event listener registration (for components that want to react to real-time events)
   const onTaskCreated = useCallback((callback: (task: Task) => void) => {
-    if (!socket) return () => {}
-    
-    socket.on('taskCreated', callback)
-    return () => socket.off('taskCreated', callback)
-  }, [socket])
+    taskCreatedCallbacks.current.add(callback)
+    return () => { taskCreatedCallbacks.current.delete(callback) }
+  }, [])
 
   const onTaskUpdated = useCallback((callback: (task: Task) => void) => {
-    if (!socket) return () => {}
-    
-    socket.on('taskUpdated', callback)
-    return () => socket.off('taskUpdated', callback)
-  }, [socket])
-
-  const onTaskDeleted = useCallback((callback: (taskId: number) => void) => {
-    if (!socket) return () => {}
-    
-    socket.on('taskDeleted', callback)
-    return () => socket.off('taskDeleted', callback)
-  }, [socket])
-
-  const onTaskMoved = useCallback((callback: (taskId: number, fromStatus: TaskStatus, toStatus: TaskStatus, task: Task) => void) => {
-    if (!socket) return () => {}
-    
-    socket.on('taskMoved', callback)
-    return () => socket.off('taskMoved', callback)
-  }, [socket])
-
-  // Notification event listener methods
-  const onNotificationCreated = useCallback((callback: (notification: NotificationWithRelations) => void) => {
-    if (!socket) return () => {}
-    
-    socket.on('notificationCreated', callback)
-    return () => socket.off('notificationCreated', callback)
-  }, [socket])
-
-  const onNotificationUpdated = useCallback((callback: (notification: NotificationWithRelations) => void) => {
-    if (!socket) return () => {}
-    
-    socket.on('notificationUpdated', callback)
-    return () => socket.off('notificationUpdated', callback)
-  }, [socket])
-
-  const onNotificationDeleted = useCallback((callback: (notificationId: number) => void) => {
-    if (!socket) return () => {}
-    
-    socket.on('notificationDeleted', callback)
-    return () => socket.off('notificationDeleted', callback)
-  }, [socket])
-
-  const clearActivities = useCallback(() => {
-    setActivities([])
+    taskUpdatedCallbacks.current.add(callback)
+    return () => { taskUpdatedCallbacks.current.delete(callback) }
   }, [])
 
-  useEffect(() => {
-    // Auto-connect when component mounts
-    connect()
-    
-    // Cleanup on unmount
-    return () => {
-      // Clean up all timers and pending operations
-      for (const [operationId, timer] of rollbackTimersRef.current) {
-        clearTimeout(timer)
-      }
-      rollbackTimersRef.current.clear()
-      pendingOperationsRef.current.clear()
-      
-      // Disconnect socket
-      if (socket) {
-        socket.disconnect()
-        socket.removeAllListeners()
-      }
-      setSocket(null)
-      setConnectionStatus('disconnected')
-      setConnectedUsers([])
-      setActivities([])
-    }
-  }, []) // Only run on mount/unmount - DO NOT include connect/disconnect to avoid infinite loops
+  const onTaskDeleted = useCallback((callback: (taskId: number) => void) => {
+    taskDeletedCallbacks.current.add(callback)
+    return () => { taskDeletedCallbacks.current.delete(callback) }
+  }, [])
+
+  const onTaskMoved = useCallback((callback: (taskId: number, fromStatus: TaskStatus, toStatus: TaskStatus, task: Task) => void) => {
+    taskMovedCallbacks.current.add(callback)
+    return () => { taskMovedCallbacks.current.delete(callback) }
+  }, [])
+
+  const onNotificationCreated = useCallback((callback: (notification: NotificationWithRelations) => void) => {
+    notificationCreatedCallbacks.current.add(callback)
+    return () => { notificationCreatedCallbacks.current.delete(callback) }
+  }, [])
+
+  const onNotificationUpdated = useCallback((callback: (notification: NotificationWithRelations) => void) => {
+    notificationUpdatedCallbacks.current.add(callback)
+    return () => { notificationUpdatedCallbacks.current.delete(callback) }
+  }, [])
+
+  const onNotificationDeleted = useCallback((callback: (notificationId: number) => void) => {
+    notificationDeletedCallbacks.current.add(callback)
+    return () => { notificationDeletedCallbacks.current.delete(callback) }
+  }, [])
+
+  const clearRollbackTimer = useCallback((_operationId: string) => {}, [])
+  const clearActivities = useCallback(() => { setActivities([]) }, [])
 
   const value: WebSocketContextValue = {
-    socket,
+    socket: null,
     connectionStatus,
     connectedUsers,
     activities,
@@ -464,7 +205,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     onNotificationUpdated,
     onNotificationDeleted,
     clearRollbackTimer,
-    clearActivities
+    clearActivities,
   }
 
   return (

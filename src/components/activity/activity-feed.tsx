@@ -125,7 +125,7 @@ export function ActivityFeed({
   const [projects, setProjects] = useState<Array<{ id: number; name: string }>>([])
   const [agents, setAgents] = useState<Array<{ id: number; name: string; role: string; color: string }>>([])
   
-  const { socket, connectionStatus } = useWebSocket()
+  const { connectionStatus } = useWebSocket()
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const loadMoreRef = useRef<HTMLDivElement>(null)
 
@@ -212,35 +212,18 @@ export function ActivityFeed({
     fetchActivities(1, false, filters)
   }, [filters, fetchActivities])
 
-  // Real-time activity updates
+  // Real-time activity updates via polling
+  // (Socket.io removed for Vercel serverless compatibility)
   useEffect(() => {
-    if (!realTime || !socket) return
+    if (!realTime) return
 
-    const handleNewActivity = (activity: ActivityItem) => {
-      setActivities(prev => [activity, ...prev].slice(0, maxItems))
-    }
+    // Poll for new activities every 10 seconds
+    const interval = setInterval(() => {
+      fetchActivities(1, false, filters)
+    }, 10000)
 
-    socket.on('activity', handleNewActivity)
-
-    return () => {
-      // Proper cleanup to handle socket reconnection scenarios
-      try {
-        socket.off('activity', handleNewActivity)
-      } catch (error) {
-        // Socket might be in an invalid state during reconnection
-        console.warn('Failed to remove activity listener:', error)
-      }
-    }
-  }, [socket, realTime, maxItems])
-
-  // Additional cleanup on component unmount to prevent memory leaks
-  useEffect(() => {
-    return () => {
-      if (socket) {
-        socket.off('activity')
-      }
-    }
-  }, [])
+    return () => clearInterval(interval)
+  }, [realTime, filters, fetchActivities])
 
   // Infinite scroll intersection observer
   useEffect(() => {

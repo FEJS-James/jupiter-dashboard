@@ -40,7 +40,7 @@ export function CommentsSection({
   const [sortBy, setSortBy] = useState<'newest' | 'oldest'>('newest')
   const [showDeleted, setShowDeleted] = useState(false)
   
-  const { socket, connectionStatus } = useWebSocket()
+  const { connectionStatus } = useWebSocket()
   
   // Fetch comments from API
   const fetchComments = useCallback(async (showSpinner = true) => {
@@ -105,135 +105,14 @@ export function CommentsSection({
     }
   }, [fetchComments, initialComments.length])
   
-  // Real-time comment updates
+  // Real-time comment updates via polling
   useEffect(() => {
-    if (!socket) return
-    
-    const handleCommentAdded = (receivedTaskId: number, comment: TaskComment) => {
-      if (receivedTaskId === taskId) {
-        if (comment.parentId) {
-          // Add as reply
-          setComments(prev => prev.map(c => 
-            c.id === comment.parentId 
-              ? { 
-                  ...c, 
-                  replies: [...(c.replies || []), comment],
-                  replyCount: (c.replyCount || 0) + 1
-                }
-              : c
-          ))
-        } else {
-          // Add as top-level comment
-          setComments(prev => [comment, ...prev])
-        }
-      }
-    }
-    
-    const handleCommentUpdated = (receivedTaskId: number, commentId: number, updatedComment: TaskComment) => {
-      if (receivedTaskId === taskId) {
-        setComments(prev => prev.map(comment => {
-          if (comment.id === commentId) {
-            return updatedComment
-          }
-          // Check replies
-          if (comment.replies) {
-            const updatedReplies = comment.replies.map(reply => 
-              reply.id === commentId ? updatedComment : reply
-            )
-            if (updatedReplies.some(reply => reply.id === commentId)) {
-              return { ...comment, replies: updatedReplies }
-            }
-          }
-          return comment
-        }))
-      }
-    }
-    
-    const handleCommentDeleted = (receivedTaskId: number, commentId: number, hardDelete: boolean) => {
-      if (receivedTaskId === taskId) {
-        if (hardDelete) {
-          // Remove comment entirely
-          setComments(prev => prev.filter(c => c.id !== commentId))
-          // Also remove from replies
-          setComments(prev => prev.map(c => ({
-            ...c,
-            replies: c.replies?.filter(r => r.id !== commentId),
-            replyCount: c.replies?.some(r => r.id === commentId) ? (c.replyCount || 0) - 1 : c.replyCount
-          })))
-        } else {
-          // Soft delete - mark as deleted
-          setComments(prev => prev.map(comment => {
-            if (comment.id === commentId) {
-              return { ...comment, isDeleted: true, deletedAt: new Date().toISOString() }
-            }
-            // Check replies
-            if (comment.replies) {
-              const updatedReplies = comment.replies.map(reply => 
-                reply.id === commentId 
-                  ? { ...reply, isDeleted: true, deletedAt: new Date().toISOString() }
-                  : reply
-              )
-              return { ...comment, replies: updatedReplies }
-            }
-            return comment
-          }))
-        }
-      }
-    }
-    
-    const handleCommentReaction = (receivedTaskId: number, commentId: number, reaction: any, action: 'added' | 'removed') => {
-      if (receivedTaskId === taskId) {
-        setComments(prev => prev.map(comment => {
-          if (comment.id === commentId) {
-            const reactions = comment.reactions || []
-            if (action === 'added') {
-              return { ...comment, reactions: [...reactions, reaction] }
-            } else {
-              return { 
-                ...comment, 
-                reactions: reactions.filter(r => 
-                  !(r.agent.id === reaction.agent.id && r.reaction === reaction.reaction)
-                )
-              }
-            }
-          }
-          // Check replies
-          if (comment.replies) {
-            const updatedReplies = comment.replies.map(reply => {
-              if (reply.id === commentId) {
-                const reactions = reply.reactions || []
-                if (action === 'added') {
-                  return { ...reply, reactions: [...reactions, reaction] }
-                } else {
-                  return { 
-                    ...reply, 
-                    reactions: reactions.filter(r => 
-                      !(r.agent.id === reaction.agent.id && r.reaction === reaction.reaction)
-                    )
-                  }
-                }
-              }
-              return reply
-            })
-            return { ...comment, replies: updatedReplies }
-          }
-          return comment
-        }))
-      }
-    }
-    
-    socket.on('commentAdded', handleCommentAdded)
-    socket.on('commentUpdated', handleCommentUpdated)
-    socket.on('commentDeleted', handleCommentDeleted)
-    socket.on('commentReaction', handleCommentReaction)
-    
-    return () => {
-      socket.off('commentAdded', handleCommentAdded)
-      socket.off('commentUpdated', handleCommentUpdated)
-      socket.off('commentDeleted', handleCommentDeleted)
-      socket.off('commentReaction', handleCommentReaction)
-    }
-  }, [socket, taskId])
+    const interval = setInterval(() => {
+      fetchComments(false)
+    }, 15000)
+
+    return () => clearInterval(interval)
+  }, [fetchComments])
   
   // Handle comment operations
   const handleAddComment = async (data: any) => {
