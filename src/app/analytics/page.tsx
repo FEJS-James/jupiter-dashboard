@@ -10,6 +10,8 @@ import { CalendarIcon, Download, RefreshCw, BarChart3, TrendingUp, Users, Zap } 
 import { format, subDays } from 'date-fns'
 import { useTheme } from '@/contexts/theme-context'
 import { cn } from '@/lib/utils'
+import { useMediaQuery } from '@/hooks/use-media-query'
+import { useMounted } from '@/hooks/use-mounted'
 
 // Chart components
 import { OverviewCards } from '@/components/analytics/overview-cards'
@@ -49,6 +51,9 @@ interface DateRange {
 
 export default function AnalyticsPage() {
   const { actualTheme } = useTheme()
+  const mounted = useMounted()
+  const isMobileQuery = useMediaQuery('(max-width: 768px)')
+  const isMobile = mounted && isMobileQuery
   const [dateRange, setDateRange] = useState<DateRange>({
     from: subDays(new Date(), 30),
     to: new Date()
@@ -196,7 +201,7 @@ export default function AnalyticsPage() {
                     to: range?.to
                   })
                 }}
-                numberOfMonths={1}
+                numberOfMonths={isMobile ? 1 : 2}
               />
             </PopoverContent>
           </Popover>
