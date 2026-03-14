@@ -4,6 +4,47 @@ import { beforeAll, afterEach, afterAll, vi } from 'vitest'
 import { server } from './mocks/server'
 import { mockWebsocketManager } from './mocks/websocket-manager'
 
+// Mock framer-motion to prevent animation issues in tests
+vi.mock('framer-motion', () => ({
+  motion: new Proxy({}, {
+    get: (_target, prop) => {
+      // Return a forwardRef component for any motion.xxx element
+      return React.forwardRef(({ children, ...props }: any, ref: any) => {
+        // Strip framer-motion specific props
+        const validProps: Record<string, any> = {}
+        const invalidProps = ['initial', 'animate', 'exit', 'transition', 'variants', 'whileHover', 'whileTap', 'whileFocus', 'whileDrag', 'whileInView', 'layout', 'layoutId', 'onAnimationStart', 'onAnimationComplete', 'drag', 'dragConstraints', 'dragElastic', 'dragMomentum', 'dragTransition', 'onDrag', 'onDragStart', 'onDragEnd']
+        for (const [key, val] of Object.entries(props)) {
+          if (!invalidProps.includes(key)) {
+            validProps[key] = val
+          }
+        }
+        return React.createElement(prop as string, { ...validProps, ref }, children)
+      })
+    }
+  }),
+  AnimatePresence: ({ children }: { children: React.ReactNode }) => React.createElement(React.Fragment, null, children),
+  useAnimation: () => ({
+    start: vi.fn(),
+    stop: vi.fn(),
+    set: vi.fn(),
+  }),
+  useMotionValue: (initial: any) => ({
+    get: () => initial,
+    set: vi.fn(),
+    onChange: vi.fn(),
+  }),
+  useTransform: () => ({
+    get: () => 0,
+    set: vi.fn(),
+  }),
+  useSpring: () => ({
+    get: () => 0,
+    set: vi.fn(),
+  }),
+  useInView: () => [null, true],
+  useReducedMotion: () => false,
+}))
+
 // Mock Radix UI Select to prevent pointer capture issues
 vi.mock('@radix-ui/react-select', () => ({
   Root: ({ children, ...props }: any) => React.createElement('div', { ...props, 'data-testid': 'select-root' }, children),
@@ -216,12 +257,20 @@ vi.mock('../contexts/websocket-context', () => ({
 // Mock the drag and drop library
 vi.mock('@hello-pangea/dnd', () => ({
   DragDropContext: ({ children }: { children: React.ReactNode }) => children,
-  Droppable: ({ children }: { children: (provided: any) => React.ReactNode }) => 
-    children({
-      droppableProps: {},
-      innerRef: () => {},
-      placeholder: null,
-    }),
+  Droppable: ({ children }: { children: (provided: any, snapshot: any) => React.ReactNode }) => 
+    children(
+      {
+        droppableProps: {},
+        innerRef: () => {},
+        placeholder: null,
+      },
+      {
+        isDraggingOver: false,
+        draggingOverWith: null,
+        draggingFromThisWith: null,
+        isUsingPlaceholder: false,
+      }
+    ),
   Draggable: ({ children }: { children: (provided: any, snapshot: any) => React.ReactNode }) =>
     children(
       {
