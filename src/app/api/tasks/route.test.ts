@@ -62,6 +62,7 @@ vi.mock('@/lib/db', () => {
 // Mock drizzle ORM functions
 vi.mock('drizzle-orm', () => ({
   eq: vi.fn((field, value) => ({ field, value, type: 'eq' })),
+  ne: vi.fn((field, value) => ({ field, value, type: 'ne' })),
   and: vi.fn((...conditions) => ({ conditions, type: 'and' })),
   desc: vi.fn((field) => ({ field, type: 'desc' })),
   sql: vi.fn((strings, ...values) => ({ strings, values, type: 'sql' })),
