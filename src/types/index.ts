@@ -16,7 +16,7 @@ export interface BaseEntity {
 
 // Project Management Types
 
-export type TaskStatus = 'backlog' | 'in-progress' | 'code-review' | 'testing' | 'deploying' | 'done' | 'blocked'
+export type TaskStatus = 'backlog' | 'in-progress' | 'code-review' | 'testing' | 'deploying' | 'done' | 'blocked' | 'archived'
 export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent'
 export type AgentRole = 'coder' | 'reviewer' | 'devops' | 'manager' | 'tester'
 export type AgentStatus = 'available' | 'busy' | 'offline'

@@ -25,6 +25,8 @@ interface EnhancedBoardProps {
   onDeleteTask?: (task: Task) => void
   onMoveTask?: (taskId: number, newStatus: TaskStatus) => Promise<void>
   onTasksUpdated?: () => void
+  onArchiveTask?: (task: Task) => void
+  onArchiveAllDone?: () => void
 }
 
 const columnConfig: Array<{
@@ -49,6 +51,8 @@ function BoardContent({
   onDeleteTask,
   onMoveTask,
   onTasksUpdated,
+  onArchiveTask,
+  onArchiveAllDone,
 }: EnhancedBoardProps) {
   const [isDragging, setIsDragging] = useState(false)
   const [draggedTask, setDraggedTask] = useState<Task | null>(null)
@@ -250,6 +254,8 @@ function BoardContent({
               onCreateTask={onCreateTask}
               onEditTask={onEditTask}
               onDeleteTask={onDeleteTask}
+              onArchiveTask={onArchiveTask}
+              onArchiveAllDone={status === 'done' ? onArchiveAllDone : undefined}
             />
           ))}
         </div>

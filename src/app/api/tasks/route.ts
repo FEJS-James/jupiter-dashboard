@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, ne } from 'drizzle-orm';
 import { db } from '@/lib/db';
 import { tasks, projects, agents } from '@/lib/schema';
 import { createTaskSchema, taskFiltersSchema } from '@/lib/validation';
@@ -56,8 +56,16 @@ export async function GET(request: NextRequest) {
     const rawParams = Object.fromEntries(url.searchParams.entries());
     const filters = taskFiltersSchema.parse(rawParams);
     
+    // Check if archived tasks should be included
+    const includeArchived = url.searchParams.get('includeArchived') === 'true';
+    
     // Build query conditions
     const conditions = [];
+    
+    // Exclude archived tasks by default unless explicitly requested
+    if (!includeArchived && !filters.status) {
+      conditions.push(ne(tasks.status, 'archived'));
+    }
     
     if (filters.status) {
       conditions.push(eq(tasks.status, filters.status));

@@ -14,7 +14,7 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu'
 import { EnhancedTaskCard } from './enhanced-task-card'
-import { Plus, MoreVertical, CheckSquare, Square } from 'lucide-react'
+import { Plus, MoreVertical, CheckSquare, Square, Archive } from 'lucide-react'
 import { useBulkTasks } from '@/contexts/bulk-task-context'
 import { cn } from '@/lib/utils'
 
@@ -27,6 +27,8 @@ interface EnhancedColumnProps {
   onCreateTask?: (status: TaskStatus) => void
   onEditTask?: (task: Task) => void
   onDeleteTask?: (task: Task) => void
+  onArchiveTask?: (task: Task) => void
+  onArchiveAllDone?: () => void
 }
 
 export function EnhancedColumn({
@@ -38,6 +40,8 @@ export function EnhancedColumn({
   onCreateTask,
   onEditTask,
   onDeleteTask,
+  onArchiveTask,
+  onArchiveAllDone,
 }: EnhancedColumnProps) {
   const {
     selectedTaskIds,
@@ -143,6 +147,15 @@ export function EnhancedColumn({
                   <Plus className="h-4 w-4 mr-2" />
                   Add Task
                 </DropdownMenuItem>
+                {status === 'done' && tasks.length > 0 && onArchiveAllDone && (
+                  <DropdownMenuItem
+                    onClick={onArchiveAllDone}
+                    className="hover:bg-slate-800"
+                  >
+                    <Archive className="h-4 w-4 mr-2" />
+                    Archive All Done
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator className="bg-slate-700" />
                 <DropdownMenuItem
                   onClick={handleColumnSelectAll}
@@ -223,6 +236,7 @@ export function EnhancedColumn({
                       index={index}
                       onEdit={onEditTask}
                       onDelete={onDeleteTask}
+                      onArchive={onArchiveTask}
                     />
                   ))}
                 </div>

@@ -34,7 +34,7 @@ function convertDbTaskToApiTask(dbTask: any): Task {
 // Validation schemas for bulk operations
 const bulkMoveSchema = z.object({
   taskIds: z.array(z.number().int().positive()).min(1, 'At least one task ID is required'),
-  status: z.enum(['backlog', 'in-progress', 'code-review', 'testing', 'deploying', 'done', 'blocked']),
+  status: z.enum(['backlog', 'in-progress', 'code-review', 'testing', 'deploying', 'done', 'blocked', 'archived']),
   preserveAssignments: z.boolean().optional().default(true),
 });
 
@@ -69,6 +69,10 @@ const bulkEditSchema = z.object({
   }).strict(),
 });
 
+const bulkArchiveSchema = z.object({
+  taskIds: z.array(z.number().int().positive()).min(1, 'At least one task ID is required'),
+});
+
 /**
  * POST /api/tasks/bulk - Perform bulk operations on tasks
  */
@@ -96,6 +100,8 @@ export async function POST(request: NextRequest) {
         return await handleBulkTag(body);
       case 'edit':
         return await handleBulkEdit(body);
+      case 'archive':
+        return await handleBulkArchive(body);
       default:
         return createErrorResponse(`Unsupported operation: ${operation}`, 400);
     }
@@ -508,6 +514,58 @@ async function handleBulkEdit(body: unknown) {
     return createSuccessResponse(
       updatedTasks, 
       `Successfully updated ${updatedTasks.length} tasks`
+    );
+  });
+}
+
+/**
+ * Handle bulk archive operation — moves tasks to "archived" status
+ */
+async function handleBulkArchive(body: unknown) {
+  const validatedData = bulkArchiveSchema.parse(body);
+  const { taskIds } = validatedData;
+
+  return await db.transaction(async (tx) => {
+    // Get current task states
+    const existingTasks = await tx
+      .select()
+      .from(tasks)
+      .where(inArray(tasks.id, taskIds));
+
+    if (existingTasks.length !== taskIds.length) {
+      throw new Error('One or more tasks not found');
+    }
+
+    // Update tasks to archived status
+    const updatedTasks = await tx
+      .update(tasks)
+      .set({ status: 'archived' })
+      .where(inArray(tasks.id, taskIds))
+      .returning();
+
+    // Log activities in batch
+    const activityPromises = existingTasks.map(task =>
+      ActivityLogger.logTaskMoved(
+        task.id,
+        task.projectId,
+        task.status,
+        'archived',
+        undefined,
+        { bulkOperation: true, taskCount: taskIds.length }
+      )
+    );
+    await Promise.all(activityPromises);
+
+    // Emit real-time events
+    websocketManager.emitBulkOperation('archive', taskIds, {
+      fromStatuses: existingTasks.map(t => t.status),
+      toStatus: 'archived',
+    });
+    websocketManager.emitBulkTasksUpdated(updatedTasks, 'archive');
+
+    return createSuccessResponse(
+      updatedTasks,
+      `Successfully archived ${updatedTasks.length} tasks`
     );
   });
 }

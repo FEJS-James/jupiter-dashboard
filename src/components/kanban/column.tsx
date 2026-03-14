@@ -24,6 +24,7 @@ const statusIcons: Record<TaskStatus, string> = {
   deploying: '🚀',
   done: '✅',
   blocked: '🚫',
+  archived: '📦',
 }
 
 export function Column({ title, status, tasks, color, isDragging, onCreateTask, onEditTask, onDeleteTask }: ColumnProps) {

@@ -29,6 +29,7 @@ const statusIcons: Record<TaskStatus, string> = {
   deploying: '🚀',
   done: '✅',
   blocked: '🚫',
+  archived: '📦',
 }
 
 export function MobileColumn({ 

@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Avatar } from '@/components/ui/avatar'
 import { Checkbox } from '@/components/ui/checkbox'
 import { formatDistanceToNow } from 'date-fns'
-import { Clock, AlertCircle, Edit, Trash2, GripVertical } from 'lucide-react'
+import { Clock, AlertCircle, Edit, Trash2, GripVertical, Archive } from 'lucide-react'
 import { useBulkTasks } from '@/contexts/bulk-task-context'
 import { cn } from '@/lib/utils'
 
@@ -16,6 +16,7 @@ interface EnhancedTaskCardProps {
   index: number
   onEdit?: (task: Task) => void
   onDelete?: (task: Task) => void
+  onArchive?: (task: Task) => void
 }
 
 const priorityColors: Record<TaskPriority, string> = {
@@ -40,7 +41,7 @@ const agentColors: Record<string, string> = {
   tester: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
 }
 
-export function EnhancedTaskCard({ task, index, onEdit, onDelete }: EnhancedTaskCardProps) {
+export function EnhancedTaskCard({ task, index, onEdit, onDelete, onArchive }: EnhancedTaskCardProps) {
   const {
     isSelected,
     toggleTaskSelection,
@@ -238,6 +239,23 @@ export function EnhancedTaskCard({ task, index, onEdit, onDelete }: EnhancedTask
               {/* Hover actions - Hidden in select mode */}
               {!isSelectMode && (
                 <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-1">
+                  {(task.status === 'done' || task.status === 'archived') && onArchive && (
+                    <button 
+                      className={cn(
+                        "p-1 hover:bg-slate-800 rounded",
+                        task.status === 'archived' 
+                          ? "text-amber-400 hover:text-amber-300" 
+                          : "text-slate-400 hover:text-amber-400"
+                      )}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onArchive(task)
+                      }}
+                      title={task.status === 'archived' ? 'Unarchive task' : 'Archive task'}
+                    >
+                      <Archive className="w-3 h-3" />
+                    </button>
+                  )}
                   <button 
                     className="p-1 text-slate-400 hover:text-slate-300 hover:bg-slate-800 rounded"
                     onClick={(e) => {

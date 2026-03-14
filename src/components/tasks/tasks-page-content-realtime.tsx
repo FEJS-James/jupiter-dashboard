@@ -14,6 +14,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Card, CardContent } from '@/components/ui/card'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Plus, RefreshCw, AlertCircle, Activity, ChevronDown, ChevronUp, Users, SlidersHorizontal } from 'lucide-react'
+import { ArchiveView } from '@/components/kanban/archive-view'
 import { Task, TaskStatus, Project, Agent } from '@/types'
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
@@ -166,6 +167,40 @@ export default function TasksPageContentRealtime() {
     } catch (error) {
       console.error('Failed to move task:', error)
       // Error handling is done in the hook
+    }
+  }
+
+  const handleArchiveTask = async (task: Task) => {
+    const isUnarchive = task.status === 'archived'
+    const targetStatus: TaskStatus = isUnarchive ? 'done' : 'archived'
+    try {
+      await moveTaskRealtime(task.id, task.status, targetStatus)
+      toast.success(isUnarchive ? 'Task restored to Done' : 'Task archived')
+    } catch (error) {
+      console.error(`Failed to ${isUnarchive ? 'unarchive' : 'archive'} task:`, error)
+      toast.error(`Failed to ${isUnarchive ? 'unarchive' : 'archive'} task`)
+    }
+  }
+
+  const handleArchiveAllDone = async () => {
+    const doneTasks = tasks.filter(t => t.status === 'done')
+    if (doneTasks.length === 0) return
+
+    try {
+      const taskIds = doneTasks.map(t => t.id)
+      const res = await fetch('/api/tasks/bulk?operation=archive', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ taskIds }),
+      })
+
+      if (!res.ok) throw new Error('Failed to archive tasks')
+
+      toast.success(`Archived ${doneTasks.length} task${doneTasks.length !== 1 ? 's' : ''}`)
+      fetchData()
+    } catch (error) {
+      console.error('Failed to archive all done tasks:', error)
+      toast.error('Failed to archive done tasks')
     }
   }
 
@@ -461,9 +496,20 @@ export default function TasksPageContentRealtime() {
               onDeleteTask={handleDeleteTask}
               onMoveTask={handleMoveTask}
               onTasksUpdated={fetchData}
+              onArchiveTask={handleArchiveTask}
+              onArchiveAllDone={handleArchiveAllDone}
             />
           </CardContent>
         </Card>
+      </motion.div>
+
+      {/* Archive View */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+      >
+        <ArchiveView onTasksChanged={fetchData} />
       </motion.div>
 
       {/* Task Form Dialog */}

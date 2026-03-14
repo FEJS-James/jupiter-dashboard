@@ -59,7 +59,7 @@ export async function POST(
     }
     
     // Update task status and optionally assigned agent
-    const updateData: { status: 'backlog' | 'in-progress' | 'code-review' | 'testing' | 'deploying' | 'done' | 'blocked'; assignedAgent?: string | null } = {
+    const updateData: { status: 'backlog' | 'in-progress' | 'code-review' | 'testing' | 'deploying' | 'done' | 'blocked' | 'archived'; assignedAgent?: string | null } = {
       status: validatedData.status,
     };
     

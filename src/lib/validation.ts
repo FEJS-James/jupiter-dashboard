@@ -26,7 +26,7 @@ export const createTaskSchema = z.object({
   projectId: z.number().int().positive(),
   title: z.string().min(1, 'Task title is required').max(200),
   description: z.string().optional(),
-  status: z.enum(['backlog', 'in-progress', 'code-review', 'testing', 'deploying', 'done', 'blocked']).default('backlog'),
+  status: z.enum(['backlog', 'in-progress', 'code-review', 'testing', 'deploying', 'done', 'blocked', 'archived']).default('backlog'),
   priority: z.enum(['low', 'medium', 'high', 'urgent']).default('medium'),
   assignedAgent: z.string().optional(),
   tags: z.array(z.string()).optional(),
@@ -38,7 +38,7 @@ export const createTaskSchema = z.object({
 export const updateTaskSchema = z.object({
   title: z.string().min(1).max(200).optional(),
   description: z.string().optional(),
-  status: z.enum(['backlog', 'in-progress', 'code-review', 'testing', 'deploying', 'done', 'blocked']).optional(),
+  status: z.enum(['backlog', 'in-progress', 'code-review', 'testing', 'deploying', 'done', 'blocked', 'archived']).optional(),
   priority: z.enum(['low', 'medium', 'high', 'urgent']).optional(),
   assignedAgent: z.string().optional(),
   tags: z.array(z.string()).optional(),
@@ -49,7 +49,7 @@ export const updateTaskSchema = z.object({
 
 export const taskFiltersSchema = z.object({
   project: z.string().optional(),
-  status: z.enum(['backlog', 'in-progress', 'code-review', 'testing', 'deploying', 'done', 'blocked']).optional(),
+  status: z.enum(['backlog', 'in-progress', 'code-review', 'testing', 'deploying', 'done', 'blocked', 'archived']).optional(),
   agent: z.string().optional(),
   priority: z.enum(['low', 'medium', 'high', 'urgent']).optional(),
   limit: z.string().transform(Number).optional(),
@@ -57,7 +57,7 @@ export const taskFiltersSchema = z.object({
 });
 
 export const moveTaskSchema = z.object({
-  status: z.enum(['backlog', 'in-progress', 'code-review', 'testing', 'deploying', 'done', 'blocked']),
+  status: z.enum(['backlog', 'in-progress', 'code-review', 'testing', 'deploying', 'done', 'blocked', 'archived']),
   assignedAgent: z.string().optional().or(z.null()),
 });
 
@@ -137,7 +137,7 @@ export const successResponseSchema = z.object({
 // Bulk operation schemas
 export const bulkMoveSchema = z.object({
   taskIds: z.array(z.number().int().positive()).min(1, 'At least one task ID is required'),
-  status: z.enum(['backlog', 'in-progress', 'code-review', 'testing', 'deploying', 'done', 'blocked']),
+  status: z.enum(['backlog', 'in-progress', 'code-review', 'testing', 'deploying', 'done', 'blocked', 'archived']),
   preserveAssignments: z.boolean().optional().default(true),
 })
 

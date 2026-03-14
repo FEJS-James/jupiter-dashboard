@@ -212,7 +212,8 @@ export function useTaskFilters(tasks: Task[]): UseTaskFiltersReturn {
       'testing': 0,
       'deploying': 0,
       'done': 0,
-      'blocked': 0
+      'blocked': 0,
+      'archived': 0
     }
 
     const priorityCounts: Record<TaskPriority, number> = {

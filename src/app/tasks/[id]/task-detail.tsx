@@ -27,7 +27,8 @@ import {
   XCircle,
   Timer,
   GitBranch,
-  Target
+  Target,
+  Archive
 } from 'lucide-react'
 import { Task, TaskPriority, TaskStatus, Project, Agent } from '@/types'
 import { TaskFormDialog } from '@/components/kanban/task-form-dialog'
@@ -119,6 +120,11 @@ const statusConfig: Record<TaskStatus, { color: string; bgColor: string; icon: R
     color: 'text-red-400', 
     bgColor: 'bg-red-500/20 border-red-500/30',
     icon: <XCircle className="w-3 h-3" />
+  },
+  'archived': { 
+    color: 'text-slate-500', 
+    bgColor: 'bg-slate-600/20 border-slate-600/30',
+    icon: <Archive className="w-3 h-3" />
   }
 }
 
