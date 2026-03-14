@@ -53,7 +53,11 @@ interface AgentWorkloadChartsProps {
         activityCount: number
         activeAgents: number
       }>
-      peakTime: {
+      peakTime?: {
+        hour: string
+        activityCount: number
+      }
+      peakHour?: {
         hour: string
         activityCount: number
       }
@@ -67,6 +71,16 @@ interface AgentWorkloadChartsProps {
 
 export function AgentWorkloadCharts({ data }: AgentWorkloadChartsProps) {
   const { actualTheme } = useTheme()
+
+  // Safe array accessors for API data
+  const workloadDistribution = Array.isArray(data?.workloadDistribution) ? data.workloadDistribution : []
+  const productivityMetrics = Array.isArray(data?.productivityMetrics) ? data.productivityMetrics : []
+  const workloadBalance = data?.workloadBalance || { agents: [], avgTasksPerAgent: 0, totalTasks: 0, overloadedAgents: 0, underloadedAgents: 0 }
+  const workloadBalanceAgents = Array.isArray(workloadBalance.agents) ? workloadBalance.agents : []
+  const agentCapacity = Array.isArray(data?.agentCapacity) ? data.agentCapacity : []
+  const peakActivity = data?.peakActivity || { hourlyData: [], peakTime: undefined, peakHour: undefined }
+  const hourlyData = Array.isArray(peakActivity.hourlyData) ? peakActivity.hourlyData : []
+  const taskSwitching = Array.isArray(data?.taskSwitching) ? data.taskSwitching : []
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -101,6 +115,9 @@ export function AgentWorkloadCharts({ data }: AgentWorkloadChartsProps) {
     'manager': actualTheme === 'dark' ? '#a78bfa' : '#8b5cf6',
     'tester': actualTheme === 'dark' ? '#fbbf24' : '#f59e0b'
   }
+
+  // Normalize: API may return peakHour or peakTime
+  const peakTimeData = peakActivity.peakTime || peakActivity.peakHour || { hour: 'N/A', activityCount: 0 }
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -144,7 +161,7 @@ export function AgentWorkloadCharts({ data }: AgentWorkloadChartsProps) {
                 'text-2xl font-bold',
                 actualTheme === 'dark' ? 'text-white' : 'text-slate-900'
               )}>
-                {data.workloadDistribution.length}
+                {workloadDistribution.length}
               </span>
             </div>
           </CardContent>
@@ -170,7 +187,7 @@ export function AgentWorkloadCharts({ data }: AgentWorkloadChartsProps) {
                 'text-2xl font-bold',
                 actualTheme === 'dark' ? 'text-white' : 'text-slate-900'
               )}>
-                {data.workloadBalance.avgTasksPerAgent}
+                {workloadBalance.avgTasksPerAgent}
               </span>
             </div>
           </CardContent>
@@ -195,7 +212,7 @@ export function AgentWorkloadCharts({ data }: AgentWorkloadChartsProps) {
               <span className={cn(
                 'text-2xl font-bold text-red-500'
               )}>
-                {data.workloadBalance.overloadedAgents}
+                {workloadBalance.overloadedAgents}
               </span>
             </div>
           </CardContent>
@@ -221,7 +238,7 @@ export function AgentWorkloadCharts({ data }: AgentWorkloadChartsProps) {
                 'text-xl font-bold',
                 actualTheme === 'dark' ? 'text-white' : 'text-slate-900'
               )}>
-                {data.peakActivity.peakTime.hour}
+                {peakTimeData.hour}
               </span>
             </div>
           </CardContent>
@@ -244,7 +261,7 @@ export function AgentWorkloadCharts({ data }: AgentWorkloadChartsProps) {
         <CardContent>
           <div className="h-[400px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data.workloadDistribution}>
+              <BarChart data={workloadDistribution}>
                 <CartesianGrid 
                   strokeDasharray="3 3" 
                   stroke={actualTheme === 'dark' ? '#374151' : '#e5e7eb'} 
@@ -282,7 +299,7 @@ export function AgentWorkloadCharts({ data }: AgentWorkloadChartsProps) {
           <CardContent>
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={data.productivityMetrics} layout="horizontal">
+                <BarChart data={productivityMetrics} layout="horizontal">
                   <CartesianGrid 
                     strokeDasharray="3 3" 
                     stroke={actualTheme === 'dark' ? '#374151' : '#e5e7eb'} 
@@ -318,7 +335,7 @@ export function AgentWorkloadCharts({ data }: AgentWorkloadChartsProps) {
           <CardContent>
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={data.workloadBalance.agents}>
+                <BarChart data={workloadBalanceAgents}>
                   <CartesianGrid 
                     strokeDasharray="3 3" 
                     stroke={actualTheme === 'dark' ? '#374151' : '#e5e7eb'} 
@@ -357,7 +374,7 @@ export function AgentWorkloadCharts({ data }: AgentWorkloadChartsProps) {
         <CardContent>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={data.peakActivity.hourlyData}>
+              <AreaChart data={hourlyData}>
                 <CartesianGrid 
                   strokeDasharray="3 3" 
                   stroke={actualTheme === 'dark' ? '#374151' : '#e5e7eb'} 
@@ -403,7 +420,7 @@ export function AgentWorkloadCharts({ data }: AgentWorkloadChartsProps) {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {data.agentCapacity.map((agent, index) => (
+            {agentCapacity.map((agent, index) => (
               <div key={agent.agentName} className={cn(
                 'flex items-center justify-between p-4 rounded-lg',
                 actualTheme === 'dark' ? 'bg-slate-700/50' : 'bg-slate-50'
@@ -411,7 +428,7 @@ export function AgentWorkloadCharts({ data }: AgentWorkloadChartsProps) {
                 <div className="flex items-center space-x-4">
                   <div 
                     className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: data.workloadDistribution.find(w => w.agentName === agent.agentName)?.color || '#gray' }}
+                    style={{ backgroundColor: workloadDistribution.find(w => w.agentName === agent.agentName)?.color || '#gray' }}
                   />
                   <div>
                     <h4 className={cn(
@@ -451,7 +468,7 @@ export function AgentWorkloadCharts({ data }: AgentWorkloadChartsProps) {
       </Card>
 
       {/* Task Switching Analysis */}
-      {data.taskSwitching.length > 0 && (
+      {taskSwitching.length > 0 && (
         <Card className={cn(
           actualTheme === 'dark' 
             ? 'bg-slate-800/50 border-slate-700/50' 
@@ -473,7 +490,7 @@ export function AgentWorkloadCharts({ data }: AgentWorkloadChartsProps) {
           <CardContent>
             <div className="h-[250px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={data.taskSwitching}>
+                <BarChart data={taskSwitching}>
                   <CartesianGrid 
                     strokeDasharray="3 3" 
                     stroke={actualTheme === 'dark' ? '#374151' : '#e5e7eb'} 

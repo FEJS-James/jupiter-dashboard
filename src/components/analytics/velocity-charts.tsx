@@ -32,6 +32,10 @@ interface VelocityChartsProps {
 export function VelocityCharts({ data }: VelocityChartsProps) {
   const { actualTheme } = useTheme()
 
+  // Safe data accessors
+  const chartData = Array.isArray(data?.chartData) ? data.chartData : []
+  const metrics = data?.metrics || { totalCreated: 0, totalCompleted: 0, avgDailyCreation: 0, avgDailyCompletion: 0, velocityTrend: 0, period: '30 days' }
+
   const formatDate = (dateStr: string) => {
     try {
       return format(parseISO(dateStr), 'MMM d')
@@ -98,7 +102,7 @@ export function VelocityCharts({ data }: VelocityChartsProps) {
                 'text-2xl font-bold',
                 actualTheme === 'dark' ? 'text-white' : 'text-slate-900'
               )}>
-                {data.metrics.totalCreated}
+                {metrics.totalCreated}
               </span>
             </div>
           </CardContent>
@@ -124,7 +128,7 @@ export function VelocityCharts({ data }: VelocityChartsProps) {
                 'text-2xl font-bold',
                 actualTheme === 'dark' ? 'text-white' : 'text-slate-900'
               )}>
-                {data.metrics.totalCompleted}
+                {metrics.totalCompleted}
               </span>
             </div>
           </CardContent>
@@ -150,7 +154,7 @@ export function VelocityCharts({ data }: VelocityChartsProps) {
                 'text-2xl font-bold',
                 actualTheme === 'dark' ? 'text-white' : 'text-slate-900'
               )}>
-                {data.metrics.avgDailyCreation}
+                {metrics.avgDailyCreation}
               </span>
             </div>
           </CardContent>
@@ -176,7 +180,7 @@ export function VelocityCharts({ data }: VelocityChartsProps) {
                 'text-2xl font-bold',
                 actualTheme === 'dark' ? 'text-white' : 'text-slate-900'
               )}>
-                {data.metrics.avgDailyCompletion}
+                {metrics.avgDailyCompletion}
               </span>
             </div>
           </CardContent>
@@ -197,16 +201,16 @@ export function VelocityCharts({ data }: VelocityChartsProps) {
           </CardHeader>
           <CardContent>
             <div className="flex items-center space-x-2">
-              {data.metrics.velocityTrend >= 0 ? (
+              {metrics.velocityTrend >= 0 ? (
                 <TrendingUp className="h-4 w-4 text-green-500" />
               ) : (
                 <TrendingDown className="h-4 w-4 text-red-500" />
               )}
               <span className={cn(
                 'text-2xl font-bold',
-                data.metrics.velocityTrend >= 0 ? 'text-green-500' : 'text-red-500'
+                metrics.velocityTrend >= 0 ? 'text-green-500' : 'text-red-500'
               )}>
-                {data.metrics.velocityTrend > 0 ? '+' : ''}{data.metrics.velocityTrend}
+                {metrics.velocityTrend > 0 ? '+' : ''}{metrics.velocityTrend}
               </span>
             </div>
           </CardContent>
@@ -235,7 +239,7 @@ export function VelocityCharts({ data }: VelocityChartsProps) {
         <CardContent>
           <div className="h-[400px]">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={data.chartData}>
+              <LineChart data={chartData}>
                 <CartesianGrid 
                   strokeDasharray="3 3" 
                   stroke={actualTheme === 'dark' ? '#374151' : '#e5e7eb'} 
@@ -264,7 +268,7 @@ export function VelocityCharts({ data }: VelocityChartsProps) {
                   strokeWidth={2}
                   dot={{ fill: chartColors.completed, strokeWidth: 2, r: 3 }}
                 />
-                {data.chartData.some(d => d.createdMA !== undefined) && (
+                {chartData.some(d => d.createdMA !== undefined) && (
                   <Line 
                     type="monotone" 
                     dataKey="createdMA" 
@@ -275,7 +279,7 @@ export function VelocityCharts({ data }: VelocityChartsProps) {
                     dot={false}
                   />
                 )}
-                {data.chartData.some(d => d.completedMA !== undefined) && (
+                {chartData.some(d => d.completedMA !== undefined) && (
                   <Line 
                     type="monotone" 
                     dataKey="completedMA" 
@@ -314,7 +318,7 @@ export function VelocityCharts({ data }: VelocityChartsProps) {
         <CardContent>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data.chartData}>
+              <BarChart data={chartData}>
                 <CartesianGrid 
                   strokeDasharray="3 3" 
                   stroke={actualTheme === 'dark' ? '#374151' : '#e5e7eb'} 

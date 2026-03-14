@@ -53,10 +53,10 @@ interface ProjectPerformanceChartsProps {
       projectId: number
       projectName: string
       status: string
-      startDate?: string
-      endDate?: string
+      startDate?: string | number
+      endDate?: string | number
       durationDays: number
-      nextDueDate?: string
+      nextDueDate?: string | number
       overdueTasks: number
       isOverdue: boolean
     }>
@@ -82,6 +82,14 @@ interface ProjectPerformanceChartsProps {
 
 export function ProjectPerformanceCharts({ data }: ProjectPerformanceChartsProps) {
   const { actualTheme } = useTheme()
+
+  // Safe array accessors for API data
+  const projectProgress = Array.isArray(data?.projectProgress) ? data.projectProgress : []
+  const projectVelocity = Array.isArray(data?.projectVelocity) ? data.projectVelocity : []
+  const taskBreakdown = Array.isArray(data?.taskBreakdown) ? data.taskBreakdown : []
+  const projectTimelines = Array.isArray(data?.projectTimelines) ? data.projectTimelines : []
+  const resourceAllocation = Array.isArray(data?.resourceAllocation) ? data.resourceAllocation : []
+  const projectHealth = Array.isArray(data?.projectHealth) ? data.projectHealth : []
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -163,7 +171,7 @@ export function ProjectPerformanceCharts({ data }: ProjectPerformanceChartsProps
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {data.projectHealth.map((project) => (
+            {projectHealth.map((project) => (
               <Card key={project.projectId} className={cn(
                 'p-4',
                 actualTheme === 'dark' ? 'bg-slate-700/50' : 'bg-slate-50'
@@ -217,7 +225,7 @@ export function ProjectPerformanceCharts({ data }: ProjectPerformanceChartsProps
         <CardContent>
           <div className="h-[400px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data.projectProgress}>
+              <BarChart data={projectProgress}>
                 <CartesianGrid 
                   strokeDasharray="3 3" 
                   stroke={actualTheme === 'dark' ? '#374151' : '#e5e7eb'} 
@@ -259,7 +267,7 @@ export function ProjectPerformanceCharts({ data }: ProjectPerformanceChartsProps
           <CardContent>
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={data.projectVelocity} layout="horizontal">
+                <BarChart data={projectVelocity} layout="horizontal">
                   <CartesianGrid 
                     strokeDasharray="3 3" 
                     stroke={actualTheme === 'dark' ? '#374151' : '#e5e7eb'} 
@@ -294,7 +302,7 @@ export function ProjectPerformanceCharts({ data }: ProjectPerformanceChartsProps
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {data.projectProgress.map((project) => (
+              {projectProgress.map((project) => (
                 <div key={project.projectId} className="space-y-2">
                   <div className="flex items-center justify-between">
                     <span className={cn(
@@ -331,7 +339,7 @@ export function ProjectPerformanceCharts({ data }: ProjectPerformanceChartsProps
       </div>
 
       {/* Task Breakdown by Project */}
-      {data.taskBreakdown.length > 0 && (
+      {taskBreakdown.length > 0 && (
         <Card className={cn(
           actualTheme === 'dark' 
             ? 'bg-slate-800/50 border-slate-700/50' 
@@ -346,7 +354,7 @@ export function ProjectPerformanceCharts({ data }: ProjectPerformanceChartsProps
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {data.taskBreakdown.slice(0, 4).map((project) => (
+              {taskBreakdown.slice(0, 4).map((project) => (
                 <div key={project.projectId} className="space-y-4">
                   <h4 className={cn(
                     'font-medium',
@@ -450,7 +458,7 @@ export function ProjectPerformanceCharts({ data }: ProjectPerformanceChartsProps
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {data.projectTimelines.map((project) => (
+            {projectTimelines.map((project) => (
               <div key={project.projectId} className={cn(
                 'p-4 rounded-lg',
                 actualTheme === 'dark' ? 'bg-slate-700/50' : 'bg-slate-50'
@@ -498,7 +506,7 @@ export function ProjectPerformanceCharts({ data }: ProjectPerformanceChartsProps
                       <span className={cn(
                         actualTheme === 'dark' ? 'text-white' : 'text-slate-900'
                       )}>
-                        {format(parseISO(project.startDate), 'MMM d, yyyy')}
+                        {format(typeof project.startDate === 'number' ? new Date(project.startDate * 1000) : parseISO(project.startDate), 'MMM d, yyyy')}
                       </span>
                     </div>
                   )}
@@ -513,7 +521,7 @@ export function ProjectPerformanceCharts({ data }: ProjectPerformanceChartsProps
                       <span className={cn(
                         actualTheme === 'dark' ? 'text-white' : 'text-slate-900'
                       )}>
-                        {format(parseISO(project.nextDueDate), 'MMM d, yyyy')}
+                        {format(typeof project.nextDueDate === 'number' ? new Date(project.nextDueDate * 1000) : parseISO(project.nextDueDate), 'MMM d, yyyy')}
                       </span>
                     </div>
                   )}
@@ -552,7 +560,7 @@ export function ProjectPerformanceCharts({ data }: ProjectPerformanceChartsProps
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {data.resourceAllocation.map((agent) => (
+            {resourceAllocation.map((agent) => (
               <div key={agent.agentName} className={cn(
                 'p-4 rounded-lg',
                 actualTheme === 'dark' ? 'bg-slate-700/50' : 'bg-slate-50'

@@ -43,14 +43,16 @@ interface AdditionalAnalyticsProps {
         taskId: number
         title: string
         status: string
-        daysStuck: number
+        daysStuck?: number
+        daysInStatus?: number
         urgency: string
       }>
       summary: {
         totalStuck: number
         highUrgency: number
         mediumUrgency: number
-        avgDaysStuck: number
+        avgDaysStuck?: number
+        avgDaysInStatus?: number
       }
     }
     commentSentiment: {
@@ -79,6 +81,17 @@ interface AdditionalAnalyticsProps {
 
 export function AdditionalAnalytics({ data }: AdditionalAnalyticsProps) {
   const { actualTheme } = useTheme()
+
+  // Safe array accessors for API data
+  const priorityDistribution = Array.isArray(data?.priorityDistribution) ? data.priorityDistribution : []
+  const commentEngagement = Array.isArray(data?.commentEngagement) ? data.commentEngagement : []
+  const heatmapGrid = Array.isArray(data?.activityHeatmap?.grid) ? data.activityHeatmap.grid : []
+  const peakTime = data?.activityHeatmap?.peakTime || { day: 'N/A', hour: 'N/A', activityCount: 0 }
+  const taskAgingData = data?.taskAging || { stuckTasks: [], summary: { totalStuck: 0, highUrgency: 0, mediumUrgency: 0, avgDaysStuck: 0 } }
+  const stuckTasks = Array.isArray(taskAgingData.stuckTasks) ? taskAgingData.stuckTasks : []
+  const sentimentData = data?.commentSentiment || { comments: [], summary: { positive: 0, negative: 0, neutral: 0, overallSentiment: 'neutral' } }
+  const sentimentComments = Array.isArray(sentimentData.comments) ? sentimentData.comments : []
+  const taskTrend = Array.isArray(data?.taskTrend) ? data.taskTrend : []
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -187,7 +200,7 @@ export function AdditionalAnalytics({ data }: AdditionalAnalyticsProps) {
                 'text-2xl font-bold',
                 actualTheme === 'dark' ? 'text-white' : 'text-slate-900'
               )}>
-                {data.commentEngagement.reduce((sum, agent) => sum + agent.commentCount, 0)}
+                {commentEngagement.reduce((sum, agent) => sum + agent.commentCount, 0)}
               </span>
             </div>
           </CardContent>
@@ -212,7 +225,7 @@ export function AdditionalAnalytics({ data }: AdditionalAnalyticsProps) {
               <span className={cn(
                 'text-2xl font-bold text-red-500'
               )}>
-                {data.taskAging.summary.totalStuck}
+                {taskAgingData.summary.totalStuck}
               </span>
             </div>
           </CardContent>
@@ -238,7 +251,7 @@ export function AdditionalAnalytics({ data }: AdditionalAnalyticsProps) {
                 'text-lg font-bold',
                 actualTheme === 'dark' ? 'text-white' : 'text-slate-900'
               )}>
-                {data.activityHeatmap.peakTime.day} {data.activityHeatmap.peakTime.hour}
+                {peakTime.day} {peakTime.hour}
               </span>
             </div>
           </CardContent>
@@ -261,13 +274,13 @@ export function AdditionalAnalytics({ data }: AdditionalAnalyticsProps) {
             <div className="flex items-center space-x-2">
               <TrendingUp className={cn(
                 'h-4 w-4',
-                getSentimentColor(data.commentSentiment.summary.overallSentiment)
+                getSentimentColor(sentimentData.summary.overallSentiment)
               )} />
               <span className={cn(
                 'text-lg font-bold capitalize',
-                getSentimentColor(data.commentSentiment.summary.overallSentiment)
+                getSentimentColor(sentimentData.summary.overallSentiment)
               )}>
-                {data.commentSentiment.summary.overallSentiment}
+                {sentimentData.summary.overallSentiment}
               </span>
             </div>
           </CardContent>
@@ -293,16 +306,17 @@ export function AdditionalAnalytics({ data }: AdditionalAnalyticsProps) {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={data.priorityDistribution}
+                    data={priorityDistribution}
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={(entry: any) => `${entry.name}: ${((entry.value / data.priorityDistribution.reduce((sum, item) => sum + item.count, 0)) * 100).toFixed(1)}%`}
+                    nameKey="priority"
+                    label={(entry: any) => `${entry.priority || entry.name}: ${entry.percentage ?? ((entry.value / Math.max(priorityDistribution.reduce((sum, item) => sum + item.count, 0), 1)) * 100).toFixed(1)}%`}
                     outerRadius={80}
                     fill="#8884d8"
                     dataKey="count"
                   >
-                    {data.priorityDistribution.map((entry, index) => (
+                    {priorityDistribution.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={priorityColors[index % priorityColors.length]} />
                     ))}
                   </Pie>
@@ -329,7 +343,7 @@ export function AdditionalAnalytics({ data }: AdditionalAnalyticsProps) {
           <CardContent>
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={data.commentEngagement} layout="horizontal">
+                <BarChart data={commentEngagement} layout="horizontal">
                   <CartesianGrid 
                     strokeDasharray="3 3" 
                     stroke={actualTheme === 'dark' ? '#374151' : '#e5e7eb'} 
@@ -366,12 +380,12 @@ export function AdditionalAnalytics({ data }: AdditionalAnalyticsProps) {
             'text-sm',
             actualTheme === 'dark' ? 'text-slate-400' : 'text-slate-600'
           )}>
-            Peak activity: {data.activityHeatmap.peakTime.day} at {data.activityHeatmap.peakTime.hour} ({data.activityHeatmap.peakTime.activityCount} activities)
+            Peak activity: {peakTime.day} at {peakTime.hour} ({peakTime.activityCount} activities)
           </p>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            {data.activityHeatmap.grid.map((dayData) => (
+            {heatmapGrid.map((dayData) => (
               <div key={dayData.dayIndex} className="flex items-center space-x-2">
                 <div className={cn(
                   'w-16 text-xs font-medium',
@@ -434,7 +448,7 @@ export function AdditionalAnalytics({ data }: AdditionalAnalyticsProps) {
         <CardContent>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={data.taskTrend}>
+              <LineChart data={taskTrend}>
                 <CartesianGrid 
                   strokeDasharray="3 3" 
                   stroke={actualTheme === 'dark' ? '#374151' : '#e5e7eb'} 
@@ -468,7 +482,7 @@ export function AdditionalAnalytics({ data }: AdditionalAnalyticsProps) {
       </Card>
 
       {/* Task Aging Analysis */}
-      {data.taskAging.stuckTasks.length > 0 && (
+      {stuckTasks.length > 0 && (
         <Card className={cn(
           actualTheme === 'dark' 
             ? 'bg-slate-800/50 border-slate-700/50' 
@@ -486,12 +500,12 @@ export function AdditionalAnalytics({ data }: AdditionalAnalyticsProps) {
               'text-sm',
               actualTheme === 'dark' ? 'text-slate-400' : 'text-slate-600'
             )}>
-              {data.taskAging.summary.highUrgency} high urgency, {data.taskAging.summary.mediumUrgency} medium urgency
+              {taskAgingData.summary.highUrgency} high urgency, {taskAgingData.summary.mediumUrgency} medium urgency
             </p>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {data.taskAging.stuckTasks.slice(0, 8).map((task) => (
+              {stuckTasks.slice(0, 8).map((task) => (
                 <div key={task.taskId} className={cn(
                   'flex items-center justify-between p-3 rounded-lg',
                   actualTheme === 'dark' ? 'bg-slate-700/50' : 'bg-slate-50'
@@ -523,7 +537,7 @@ export function AdditionalAnalytics({ data }: AdditionalAnalyticsProps) {
                       'text-sm font-medium',
                       getUrgencyColor(task.urgency)
                     )}>
-                      {task.daysStuck}d
+                      {(task.daysStuck ?? task.daysInStatus ?? 0)}d
                     </span>
                   </div>
                 </div>
@@ -554,7 +568,7 @@ export function AdditionalAnalytics({ data }: AdditionalAnalyticsProps) {
                   <div className={cn(
                     'text-2xl font-bold text-green-500'
                   )}>
-                    {data.commentSentiment.summary.positive}
+                    {sentimentData.summary.positive}
                   </div>
                   <div className={cn(
                     'text-xs',
@@ -568,7 +582,7 @@ export function AdditionalAnalytics({ data }: AdditionalAnalyticsProps) {
                     'text-2xl font-bold',
                     actualTheme === 'dark' ? 'text-slate-400' : 'text-slate-600'
                   )}>
-                    {data.commentSentiment.summary.neutral}
+                    {sentimentData.summary.neutral}
                   </div>
                   <div className={cn(
                     'text-xs',
@@ -581,7 +595,7 @@ export function AdditionalAnalytics({ data }: AdditionalAnalyticsProps) {
                   <div className={cn(
                     'text-2xl font-bold text-red-500'
                   )}>
-                    {data.commentSentiment.summary.negative}
+                    {sentimentData.summary.negative}
                   </div>
                   <div className={cn(
                     'text-xs',
@@ -604,9 +618,9 @@ export function AdditionalAnalytics({ data }: AdditionalAnalyticsProps) {
                 </span>
                 <span className={cn(
                   'ml-2 font-medium capitalize',
-                  getSentimentColor(data.commentSentiment.summary.overallSentiment)
+                  getSentimentColor(sentimentData.summary.overallSentiment)
                 )}>
-                  {data.commentSentiment.summary.overallSentiment}
+                  {sentimentData.summary.overallSentiment}
                 </span>
               </div>
             </div>
@@ -627,7 +641,7 @@ export function AdditionalAnalytics({ data }: AdditionalAnalyticsProps) {
           </CardHeader>
           <CardContent>
             <div className="space-y-3 max-h-[300px] overflow-y-auto">
-              {data.commentSentiment.comments.slice(0, 5).map((comment, index) => (
+              {sentimentComments.slice(0, 5).map((comment, index) => (
                 <div key={index} className={cn(
                   'p-3 rounded-lg',
                   actualTheme === 'dark' ? 'bg-slate-700/50' : 'bg-slate-50'

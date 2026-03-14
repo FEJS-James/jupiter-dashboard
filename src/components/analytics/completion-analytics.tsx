@@ -42,6 +42,13 @@ interface CompletionAnalyticsProps {
 export function CompletionAnalytics({ data }: CompletionAnalyticsProps) {
   const { actualTheme } = useTheme()
 
+  // Safe array accessors for API data
+  const completionByPriority = Array.isArray(data?.completionByPriority) ? data.completionByPriority : []
+  const completionByProject = Array.isArray(data?.completionByProject) ? data.completionByProject : []
+  const statusDistribution = Array.isArray(data?.statusDistribution) ? data.statusDistribution : []
+  const completionTimeHistogram = Array.isArray(data?.completionTimeHistogram) ? data.completionTimeHistogram : []
+  const stuckTasks = Array.isArray(data?.stuckTasks) ? data.stuckTasks : []
+
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
@@ -131,8 +138,8 @@ export function CompletionAnalytics({ data }: CompletionAnalyticsProps) {
                 'text-2xl font-bold',
                 actualTheme === 'dark' ? 'text-white' : 'text-slate-900'
               )}>
-                {data.completionByPriority.length > 0 ? 
-                  Math.round(data.completionByPriority.reduce((sum, p) => sum + p.rate, 0) / data.completionByPriority.length) : 0
+                {completionByPriority.length > 0 ? 
+                  Math.round(completionByPriority.reduce((sum, p) => sum + p.rate, 0) / completionByPriority.length) : 0
                 }%
               </span>
             </div>
@@ -158,7 +165,7 @@ export function CompletionAnalytics({ data }: CompletionAnalyticsProps) {
               <span className={cn(
                 'text-2xl font-bold text-red-500'
               )}>
-                {data.stuckTasks.length}
+                {stuckTasks.length}
               </span>
             </div>
           </CardContent>
@@ -184,7 +191,7 @@ export function CompletionAnalytics({ data }: CompletionAnalyticsProps) {
                 'text-lg font-bold',
                 actualTheme === 'dark' ? 'text-white' : 'text-slate-900'
               )}>
-                {data.completionTimeHistogram.find(h => h.count > 0)?.range || '1-3 days'}
+                {completionTimeHistogram.find(h => h.count > 0)?.range || '1-3 days'}
               </span>
             </div>
           </CardContent>
@@ -209,7 +216,7 @@ export function CompletionAnalytics({ data }: CompletionAnalyticsProps) {
               <span className={cn(
                 'text-lg font-bold text-green-500'
               )}>
-                {data.completionByProject.length > 0 ? Math.max(...data.completionByProject.map(p => p.rate)) : 0}%
+                {completionByProject.length > 0 ? Math.max(...completionByProject.map(p => p.rate)) : 0}%
               </span>
             </div>
           </CardContent>
@@ -232,7 +239,7 @@ export function CompletionAnalytics({ data }: CompletionAnalyticsProps) {
         <CardContent>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data.completionByPriority}>
+              <BarChart data={completionByPriority}>
                 <CartesianGrid 
                   strokeDasharray="3 3" 
                   stroke={actualTheme === 'dark' ? '#374151' : '#e5e7eb'} 
@@ -270,16 +277,17 @@ export function CompletionAnalytics({ data }: CompletionAnalyticsProps) {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={data.statusDistribution}
+                    data={statusDistribution}
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={(entry: any) => `${entry.name}: ${((entry.value / data.statusDistribution.reduce((sum, item) => sum + item.count, 0)) * 100).toFixed(1)}%`}
+                    nameKey="status"
+                    label={(entry: any) => `${entry.status || entry.name}: ${entry.percentage ?? ((entry.value / Math.max(statusDistribution.reduce((sum, item) => sum + item.count, 0), 1)) * 100).toFixed(1)}%`}
                     outerRadius={80}
                     fill="#8884d8"
                     dataKey="count"
                   >
-                    {data.statusDistribution.map((entry, index) => (
+                    {statusDistribution.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={statusColors[index % statusColors.length]} />
                     ))}
                   </Pie>
@@ -306,7 +314,7 @@ export function CompletionAnalytics({ data }: CompletionAnalyticsProps) {
           <CardContent>
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={data.completionTimeHistogram}>
+                <BarChart data={completionTimeHistogram}>
                   <CartesianGrid 
                     strokeDasharray="3 3" 
                     stroke={actualTheme === 'dark' ? '#374151' : '#e5e7eb'} 
@@ -344,7 +352,7 @@ export function CompletionAnalytics({ data }: CompletionAnalyticsProps) {
         <CardContent>
           <div className="h-[400px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data.completionByProject} layout="horizontal">
+              <BarChart data={completionByProject} layout="horizontal">
                 <CartesianGrid 
                   strokeDasharray="3 3" 
                   stroke={actualTheme === 'dark' ? '#374151' : '#e5e7eb'} 
@@ -365,7 +373,7 @@ export function CompletionAnalytics({ data }: CompletionAnalyticsProps) {
       </Card>
 
       {/* Stuck Tasks Table */}
-      {data.stuckTasks.length > 0 && (
+      {stuckTasks.length > 0 && (
         <Card className={cn(
           actualTheme === 'dark' 
             ? 'bg-slate-800/50 border-slate-700/50' 
@@ -382,7 +390,7 @@ export function CompletionAnalytics({ data }: CompletionAnalyticsProps) {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {data.stuckTasks.slice(0, 10).map((task) => (
+              {stuckTasks.slice(0, 10).map((task) => (
                 <div key={task.taskId} className={cn(
                   'flex items-center justify-between p-3 rounded-lg',
                   actualTheme === 'dark' ? 'bg-slate-700/50' : 'bg-slate-50'

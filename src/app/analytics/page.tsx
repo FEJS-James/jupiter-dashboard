@@ -19,7 +19,28 @@ import { AgentWorkloadCharts } from '@/components/analytics/agent-workload-chart
 import { ProjectPerformanceCharts } from '@/components/analytics/project-performance-charts'
 import { AdditionalAnalytics } from '@/components/analytics/additional-analytics'
 import { LoadingSpinner } from '@/components/ui/loading-spinner'
+import { Skeleton } from '@/components/ui/skeleton'
 import { toast } from 'sonner'
+
+function AnalyticsSkeleton() {
+  return (
+    <div className="space-y-4">
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="h-32 rounded-lg bg-slate-200/50 dark:bg-slate-800/50 animate-pulse" />
+      ))}
+    </div>
+  )
+}
+
+function EmptyState({ message }: { message: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-16 text-center">
+      <BarChart3 className="h-12 w-12 text-slate-400 mb-4" />
+      <p className="text-slate-500 dark:text-slate-400 text-lg">{message}</p>
+      <p className="text-slate-400 dark:text-slate-500 text-sm mt-1">Try adjusting your date range or check back later.</p>
+    </div>
+  )
+}
 
 interface DateRange {
   from: Date | undefined
@@ -52,9 +73,16 @@ export default function AnalyticsPage() {
       if (dateRange.from) params.set('startDate', dateRange.from.toISOString())
       if (dateRange.to) params.set('endDate', dateRange.to.toISOString())
 
+      // Velocity endpoint uses 'days' param instead of startDate/endDate
+      const velocityParams = new URLSearchParams()
+      if (dateRange.from && dateRange.to) {
+        const diffDays = Math.ceil((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 60 * 60 * 24))
+        velocityParams.set('days', String(Math.max(1, Math.min(diffDays, 365))))
+      }
+
       const endpoints = [
         `/api/analytics/overview?${params}`,
-        `/api/analytics/velocity?${params}`,
+        `/api/analytics/velocity?${velocityParams}`,
         `/api/analytics/completion?${params}`,
         `/api/analytics/agents?${params}`,
         `/api/analytics/projects?${params}`,
@@ -194,9 +222,15 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Overview Cards */}
-      {overviewData && (
+      {overviewData ? (
         <OverviewCards data={overviewData} />
-      )}
+      ) : loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
+          {Array.from({ length: 7 }).map((_, i) => (
+            <Skeleton key={i} className="h-[120px] rounded-lg" />
+          ))}
+        </div>
+      ) : null}
 
       {/* Analytics Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
@@ -224,32 +258,52 @@ export default function AnalyticsPage() {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
-          {velocityData && (
+          {velocityData ? (
             <VelocityCharts data={velocityData} />
+          ) : loading ? (
+            <AnalyticsSkeleton />
+          ) : (
+            <EmptyState message="No velocity data available" />
           )}
         </TabsContent>
 
         <TabsContent value="completion" className="space-y-6">
-          {completionData && (
+          {completionData ? (
             <CompletionAnalytics data={completionData} />
+          ) : loading ? (
+            <AnalyticsSkeleton />
+          ) : (
+            <EmptyState message="No completion data available" />
           )}
         </TabsContent>
 
         <TabsContent value="agents" className="space-y-6">
-          {agentData && (
+          {agentData ? (
             <AgentWorkloadCharts data={agentData} />
+          ) : loading ? (
+            <AnalyticsSkeleton />
+          ) : (
+            <EmptyState message="No agent data available" />
           )}
         </TabsContent>
 
         <TabsContent value="projects" className="space-y-6">
-          {projectData && (
+          {projectData ? (
             <ProjectPerformanceCharts data={projectData} />
+          ) : loading ? (
+            <AnalyticsSkeleton />
+          ) : (
+            <EmptyState message="No project data available" />
           )}
         </TabsContent>
 
         <TabsContent value="additional" className="space-y-6">
-          {additionalData && (
+          {additionalData ? (
             <AdditionalAnalytics data={additionalData} />
+          ) : loading ? (
+            <AnalyticsSkeleton />
+          ) : (
+            <EmptyState message="No additional analytics available" />
           )}
         </TabsContent>
       </Tabs>
