@@ -116,6 +116,35 @@ export async function PATCH(
       return createErrorResponse(`status must be one of: ${validStatuses.join(', ')}`, 400);
     }
 
+    // Fetch current offer to validate status transition
+    const [currentOffer] = await domainsDb
+      .select()
+      .from(domainOffers)
+      .where(
+        and(
+          eq(domainOffers.id, body.offerId),
+          eq(domainOffers.domainId, id),
+        ),
+      )
+      .limit(1);
+
+    if (!currentOffer) return createErrorResponse('Offer not found', 404);
+
+    // Validate status transition
+    const validTransitions: Record<string, string[]> = {
+      pending: ['accepted', 'rejected', 'countered', 'expired'],
+      countered: ['accepted', 'rejected', 'expired'],
+      // accepted, rejected, expired are terminal states
+    };
+
+    const allowedNext = validTransitions[currentOffer.status];
+    if (!allowedNext || !allowedNext.includes(body.status)) {
+      return createErrorResponse(
+        `Invalid status transition: cannot move from '${currentOffer.status}' to '${body.status}'`,
+        400,
+      );
+    }
+
     const updateData: Record<string, unknown> = {
       status: body.status,
       updatedAt: new Date().toISOString(),

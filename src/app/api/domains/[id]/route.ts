@@ -76,19 +76,28 @@ export async function PATCH(
 
     const body = await parseRequestBody(request);
 
-    // Don't allow updating id or createdAt
-    delete body.id;
-    delete body.createdAt;
+    // Whitelist allowed update fields to prevent mass assignment
+    const allowedFields = [
+      'domainName', 'tld', 'status', 'tier', 'score', 'estimatedValue',
+      'registrationCost', 'registrar', 'purchaseDate', 'renewalDate',
+      'renewalCost', 'dnsProvider', 'parkingStatus', 'notes',
+      'approvedBy', 'approvedDate', 'salePrice', 'saleDate', 'salePlatform',
+      'proposedBy', 'proposedDate', 'proposedReasoning',
+    ];
+    const updateData: Record<string, unknown> = {};
+    for (const key of allowedFields) {
+      if (key in body) updateData[key] = body[key];
+    }
 
-    if (Object.keys(body).length === 0) {
+    if (Object.keys(updateData).length === 0) {
       return createErrorResponse('No fields to update', 400);
     }
 
-    body.updatedAt = new Date().toISOString();
+    updateData.updatedAt = new Date().toISOString();
 
     const [updated] = await domainsDb
       .update(domains)
-      .set(body)
+      .set(updateData)
       .where(eq(domains.id, id))
       .returning();
 
