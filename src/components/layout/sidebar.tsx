@@ -16,6 +16,8 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useTheme } from '@/contexts/theme-context'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 
 interface SidebarProps {
   className?: string
@@ -25,6 +27,7 @@ interface SidebarProps {
 export function Sidebar({ className, onCollapseChange }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const { actualTheme } = useTheme()
+  const pathname = usePathname()
 
   const toggleCollapse = () => {
     const newCollapsedState = !isCollapsed
@@ -34,8 +37,8 @@ export function Sidebar({ className, onCollapseChange }: SidebarProps) {
   const [selectedProject, setSelectedProject] = useState('AgentFlow Pipeline')
 
   const navigationItems = [
-    { icon: Home, label: 'Dashboard', href: '/', active: false },
-    { icon: CheckSquare, label: 'Tasks', href: '/tasks', active: true },
+    { icon: Home, label: 'Dashboard', href: '/' },
+    { icon: CheckSquare, label: 'Tasks', href: '/tasks' },
     { icon: Layers, label: 'Projects', href: '/projects' },
     { icon: Users, label: 'Agents', href: '/agents' },
     { icon: BarChart3, label: 'Analytics', href: '/analytics' },
@@ -155,30 +158,37 @@ export function Sidebar({ className, onCollapseChange }: SidebarProps) {
 
         {/* Navigation */}
         <nav className="flex-1 p-4 space-y-2">
-          {navigationItems.map((item, index) => (
-            <motion.div
-              key={item.label}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.1 * (index + 2) }}
-            >
-              <button
-                className={cn(
-                  'w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-all duration-200',
-                  item.active
-                    ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30'
-                    : actualTheme === 'dark'
-                      ? 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/50'
-                )}
+          {navigationItems.map((item, index) => {
+            const isActive = item.href === '/' 
+              ? pathname === '/' 
+              : pathname.startsWith(item.href)
+            
+            return (
+              <motion.div
+                key={item.label}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.1 * (index + 2) }}
               >
-                <item.icon className={cn('h-5 w-5 flex-shrink-0', isCollapsed ? 'mx-auto' : '')} />
-                {!isCollapsed && (
-                  <span className="text-sm font-medium">{item.label}</span>
-                )}
-              </button>
-            </motion.div>
-          ))}
+                <Link
+                  href={item.href}
+                  className={cn(
+                    'w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-all duration-200',
+                    isActive
+                      ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30'
+                      : actualTheme === 'dark'
+                        ? 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/50'
+                  )}
+                >
+                  <item.icon className={cn('h-5 w-5 flex-shrink-0', isCollapsed ? 'mx-auto' : '')} />
+                  {!isCollapsed && (
+                    <span className="text-sm font-medium">{item.label}</span>
+                  )}
+                </Link>
+              </motion.div>
+            )
+          })}
         </nav>
 
         {/* Agent Status */}
