@@ -340,12 +340,11 @@ export function ActivityFeed({
         </div>
 
         {/* Project Filter */}
-        <Select value={filters.project || ''} onValueChange={(value) => handleFilterChange('project', value === 'all' ? undefined : value)}>
+        <Select value={filters.project || ''} onValueChange={(value) => handleFilterChange('project', value || undefined)}>
           <SelectTrigger className="w-40 bg-slate-800/50 border-slate-600">
             <SelectValue placeholder="All Projects" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Projects</SelectItem>
             {projects.map(project => (
               <SelectItem key={project.id} value={project.id.toString()}>
                 {project.name}
