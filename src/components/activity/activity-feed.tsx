@@ -155,12 +155,16 @@ export function ActivityFeed({
       const data = await response.json()
       
       if (data.success) {
+        // API returns { success, data: { data: [...], hasMore, ... } }
+        const payload = data.data
+        const items = Array.isArray(payload) ? payload : (Array.isArray(payload?.data) ? payload.data : [])
+        const more = Array.isArray(payload) ? false : (payload?.hasMore ?? false)
         if (append) {
-          setActivities(prev => [...prev, ...data.data])
+          setActivities(prev => [...prev, ...items])
         } else {
-          setActivities(data.data)
+          setActivities(items)
         }
-        setHasMore(data.hasMore)
+        setHasMore(more)
         setPage(pageNum)
       } else {
         throw new Error(data.error || 'Failed to fetch activities')
