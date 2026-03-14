@@ -1,20 +1,24 @@
 import Link from 'next/link';
+import { generateBlogPageMetadata, generateBreadcrumbJsonLd, aboutBreadcrumbs } from '@/lib/blog-seo';
+import { JsonLd } from '@/components/json-ld';
 import { Navbar } from '../_components/navbar';
 import { FooterCompact } from '../_components/footer';
 
 export const revalidate = 60;
 
-export const metadata = {
+export const metadata = generateBlogPageMetadata('dailybudgetlife', {
   title: 'About',
   description:
     'Learn about DailyBudgetLife — our mission, approach to budgeting, and the team behind the blog.',
-};
+  path: '/about',
+});
 
 // ─── Page ───────────────────────────────────────────────────────────────────
 
 export default function AboutPage() {
   return (
     <>
+      <JsonLd data={generateBreadcrumbJsonLd(aboutBreadcrumbs('dailybudgetlife'))} />
       <Navbar activePage="about" />
 
       {/* Hero */}

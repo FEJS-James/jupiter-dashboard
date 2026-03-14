@@ -6,15 +6,18 @@ import {
   getHeroImageForTopic,
   type DBLArticle,
 } from '@/lib/dailybudgetlife-data';
+import { generateBlogPageMetadata, generateBreadcrumbJsonLd, blogListBreadcrumbs } from '@/lib/blog-seo';
+import { JsonLd } from '@/components/json-ld';
 import { Navbar } from '../_components/navbar';
 import { FooterCompact } from '../_components/footer';
 
 export const revalidate = 60;
 
-export const metadata = {
+export const metadata = generateBlogPageMetadata('dailybudgetlife', {
   title: 'All Articles',
   description: 'Browse all DailyBudgetLife articles — budgeting tips, saving guides, and more.',
-};
+  path: '/blog',
+});
 
 // ─── Components ─────────────────────────────────────────────────────────────
 
@@ -189,6 +192,7 @@ export default async function BlogListingPage({
 
   return (
     <>
+      <JsonLd data={generateBreadcrumbJsonLd(blogListBreadcrumbs('dailybudgetlife'))} />
       <Navbar activePage="articles" />
       <div className="mx-auto max-w-3xl px-6 py-12">
         <h1 className="mb-2 text-3xl font-bold text-gray-900">Articles</h1>

@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { getPublishedArticles, getArticlesCount } from '@/lib/smarthomemade-data'
+import { generateBlogPageMetadata, generateBreadcrumbJsonLd, blogListBreadcrumbs } from '@/lib/blog-seo'
+import { JsonLd } from '@/components/json-ld'
 import { SmartHomeMadeNavbar } from '../_components/navbar'
 import { SmartHomeMadeFooter } from '../_components/footer'
 import { ArticleCard } from '../_components/article-card'
@@ -19,10 +21,11 @@ const categories = [
   { label: 'Audio', tag: 'audio' },
 ]
 
-export const metadata: Metadata = {
+export const metadata: Metadata = generateBlogPageMetadata('smarthomemade', {
   title: 'All Reviews',
   description: 'Browse all SmartHomeMade reviews — smart plugs, lighting, security, cameras, climate, and audio.',
-}
+  path: '/blog',
+})
 
 interface PageProps {
   searchParams: Promise<{ page?: string; tag?: string }>
@@ -47,6 +50,7 @@ export default async function BlogListingPage({ searchParams }: PageProps) {
 
   return (
     <div className="min-h-screen bg-white">
+      <JsonLd data={generateBreadcrumbJsonLd(blogListBreadcrumbs('smarthomemade'))} />
       <SmartHomeMadeNavbar />
 
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">

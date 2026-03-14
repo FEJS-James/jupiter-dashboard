@@ -8,6 +8,13 @@ import {
   formatDate,
   safeDate,
 } from '@/lib/techpulse-data'
+import {
+  generateArticleMetadata,
+  generateArticleJsonLd,
+  generateBreadcrumbJsonLd,
+  articleBreadcrumbs,
+} from '@/lib/blog-seo'
+import { JsonLd } from '@/components/json-ld'
 import { TechPulseNavbar } from '../_components/navbar'
 import { TechPulseFooter } from '../_components/footer'
 import { ArticleContent } from './_components/article-content'
@@ -24,10 +31,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const article = await getArticleBySlug(slug)
   if (!article) return { title: 'Article Not Found' }
 
-  return {
+  const publishDate = article.publishDate ? safeDate(article.publishDate).toISOString() : null
+
+  return generateArticleMetadata('techpulse', {
     title: article.title,
-    description: article.metaDescription || article.excerpt || undefined,
-  }
+    description: article.metaDescription || article.excerpt || null,
+    slug,
+    image: article.heroImage || getHeroImage(Array.isArray(article.tags) ? article.tags : []),
+    publishDate,
+    author: article.author,
+  })
 }
 
 export default async function ArticlePage({ params }: PageProps) {
@@ -43,6 +56,15 @@ export default async function ArticlePage({ params }: PageProps) {
 
   return (
     <div className="tp-dot-bg min-h-screen">
+      <JsonLd data={generateArticleJsonLd('techpulse', {
+        title: article.title,
+        description: article.metaDescription || article.excerpt || null,
+        slug,
+        image: imageUrl,
+        publishDate: publishDate.toISOString(),
+        author: article.author,
+      })} />
+      <JsonLd data={generateBreadcrumbJsonLd(articleBreadcrumbs('techpulse', article.title, slug))} />
       <TechPulseNavbar />
 
       <main className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-8">

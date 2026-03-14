@@ -6,6 +6,13 @@ import {
   getAdjacentArticles,
   getHeroImageForTopic,
 } from '@/lib/dailybudgetlife-data';
+import {
+  generateArticleMetadata,
+  generateArticleJsonLd,
+  generateBreadcrumbJsonLd,
+  articleBreadcrumbs,
+} from '@/lib/blog-seo';
+import { JsonLd } from '@/components/json-ld';
 import { Navbar } from '../_components/navbar';
 import { FooterCompact } from '../_components/footer';
 
@@ -25,10 +32,14 @@ export async function generateMetadata({
   const { slug } = await params;
   const article = await getArticleBySlug(slug);
   if (!article) return { title: 'Article Not Found' };
-  return {
+  return generateArticleMetadata('dailybudgetlife', {
     title: article.title,
-    description: article.metaDescription ?? article.excerpt ?? '',
-  };
+    description: article.metaDescription ?? article.excerpt ?? null,
+    slug,
+    image: article.heroImage || getHeroImageForTopic(article.tags),
+    publishDate: article.publishDate,
+    author: article.author,
+  });
 }
 
 // ─── TOC extraction ─────────────────────────────────────────────────────────
@@ -109,6 +120,15 @@ export default async function ArticlePage({
 
   return (
     <>
+      <JsonLd data={generateArticleJsonLd('dailybudgetlife', {
+        title: article.title,
+        description: article.metaDescription || article.excerpt || null,
+        slug,
+        image: article.heroImage || getHeroImageForTopic(article.tags),
+        publishDate: article.publishDate,
+        author: article.author,
+      })} />
+      <JsonLd data={generateBreadcrumbJsonLd(articleBreadcrumbs('dailybudgetlife', article.title, slug))} />
       <Navbar />
       {/* Hero */}
       <div className="relative h-64 overflow-hidden bg-stone-200 md:h-80">

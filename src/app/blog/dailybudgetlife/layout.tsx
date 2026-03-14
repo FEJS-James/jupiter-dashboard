@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { DM_Sans } from 'next/font/google';
+import { BLOG_CONFIGS } from '@/lib/blog-seo';
 
 const dmSans = DM_Sans({
   subsets: ['latin'],
@@ -7,13 +8,14 @@ const dmSans = DM_Sans({
   display: 'swap',
 });
 
+const config = BLOG_CONFIGS.dailybudgetlife;
+
 export const metadata: Metadata = {
   title: {
-    default: 'DailyBudgetLife — Smart Money, Simple Living',
-    template: '%s | DailyBudgetLife',
+    default: `${config.name} — Smart Money, Simple Living`,
+    template: `%s | ${config.name}`,
   },
-  description:
-    'Practical personal finance tips, budgeting strategies, and money-saving guides for everyday life.',
+  description: config.description,
 };
 
 export default function DailyBudgetLifeLayout({

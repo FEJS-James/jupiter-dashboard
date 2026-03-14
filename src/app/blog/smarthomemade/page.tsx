@@ -1,17 +1,16 @@
-import type { Metadata } from 'next'
 import Link from 'next/link'
 import { getPublishedArticles } from '@/lib/smarthomemade-data'
+import { generateBlogPageMetadata, generateWebSiteJsonLd, generateBreadcrumbJsonLd, homeBreadcrumbs } from '@/lib/blog-seo'
+import { JsonLd } from '@/components/json-ld'
 import { SmartHomeMadeNavbar } from './_components/navbar'
 import { SmartHomeMadeFooter } from './_components/footer'
 import { ArticleCard } from './_components/article-card'
 
 export const revalidate = 60
 
-export const metadata: Metadata = {
+export const metadata = generateBlogPageMetadata('smarthomemade', {
   title: 'SmartHomeMade — Smart Home Reviews & Guides',
-  description:
-    'Your trusted source for smart home device reviews, setup guides, and automation tips.',
-}
+})
 
 const stats = [
   { value: '50+', label: 'Device Reviews' },
@@ -61,6 +60,8 @@ export default async function SmartHomeMadeHomePage() {
 
   return (
     <div className="min-h-screen bg-white">
+      <JsonLd data={generateWebSiteJsonLd('smarthomemade')} />
+      <JsonLd data={generateBreadcrumbJsonLd(homeBreadcrumbs('smarthomemade'))} />
       <SmartHomeMadeNavbar />
 
       <main>

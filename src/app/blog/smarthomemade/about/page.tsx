@@ -1,17 +1,21 @@
 import type { Metadata } from 'next'
+import { generateBlogPageMetadata, generateBreadcrumbJsonLd, aboutBreadcrumbs } from '@/lib/blog-seo'
+import { JsonLd } from '@/components/json-ld'
 import { SmartHomeMadeNavbar } from '../_components/navbar'
 import { SmartHomeMadeFooter } from '../_components/footer'
 
 export const revalidate = 60
 
-export const metadata: Metadata = {
+export const metadata: Metadata = generateBlogPageMetadata('smarthomemade', {
   title: 'About',
   description: 'Learn more about SmartHomeMade — your trusted source for smart home reviews and guides.',
-}
+  path: '/about',
+})
 
 export default function AboutPage() {
   return (
     <div className="min-h-screen bg-white">
+      <JsonLd data={generateBreadcrumbJsonLd(aboutBreadcrumbs('smarthomemade'))} />
       <SmartHomeMadeNavbar />
 
       <main className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-12">

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
+import { BLOG_CONFIGS } from '@/lib/blog-seo'
 import './smarthomemade.css'
 
 const inter = Inter({
@@ -7,13 +8,14 @@ const inter = Inter({
   variable: '--font-inter',
 })
 
+const config = BLOG_CONFIGS.smarthomemade
+
 export const metadata: Metadata = {
   title: {
-    default: 'SmartHomeMade — Smart Home Reviews & Guides',
-    template: '%s | SmartHomeMade',
+    default: `${config.name} — Smart Home Reviews & Guides`,
+    template: `%s | ${config.name}`,
   },
-  description:
-    'Your trusted source for smart home device reviews, setup guides, and automation tips.',
+  description: config.description,
 }
 
 export default function SmartHomeMadeLayout({
