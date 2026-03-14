@@ -211,7 +211,7 @@ export default function EditProjectPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-950 p-6">
+      <div className="min-h-screen bg-slate-950 p-3 sm:p-6">
         <div className="max-w-3xl mx-auto">
           <div className="mb-8">
             <Skeleton className="h-4 w-32 mb-4 bg-slate-800" />
@@ -239,7 +239,7 @@ export default function EditProjectPage() {
 
   if (loadError) {
     return (
-      <div className="min-h-screen bg-slate-950 p-6">
+      <div className="min-h-screen bg-slate-950 p-3 sm:p-6">
         <div className="max-w-3xl mx-auto">
           <Link href="/projects" className="inline-flex items-center gap-2 text-slate-400 hover:text-slate-300 mb-8">
             <ArrowLeft className="w-4 h-4" />
@@ -274,7 +274,7 @@ export default function EditProjectPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 p-6">
+    <div className="min-h-screen bg-slate-950 p-3 sm:p-6">
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <motion.div 
@@ -287,7 +287,7 @@ export default function EditProjectPage() {
             <ArrowLeft className="w-4 h-4" />
             Back to Project
           </Link>
-          <h1 className="text-3xl font-bold text-slate-100 mb-2">
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-100 mb-2">
             Edit Project
           </h1>
           <p className="text-slate-400">

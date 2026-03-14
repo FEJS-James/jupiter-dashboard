@@ -161,7 +161,7 @@ export default function NewProjectPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 p-6">
+    <div className="min-h-screen bg-slate-950 p-3 sm:p-6">
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <motion.div 
@@ -174,7 +174,7 @@ export default function NewProjectPage() {
             <ArrowLeft className="w-4 h-4" />
             Back to Projects
           </Link>
-          <h1 className="text-3xl font-bold text-slate-100 mb-2">
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-100 mb-2">
             Create New Project
           </h1>
           <p className="text-slate-400">

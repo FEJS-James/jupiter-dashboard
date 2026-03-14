@@ -233,13 +233,13 @@ export default function NotificationsPage() {
   const unreadCount = stats?.unreadCount || 0
 
   return (
-    <div className="container max-w-4xl mx-auto p-6">
+    <div className="container max-w-4xl mx-auto p-3 sm:p-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center space-x-3">
-          <Bell className="h-8 w-8 text-primary" />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-6">
+        <div className="flex items-center space-x-2 sm:space-x-3">
+          <Bell className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
           <div>
-            <h1 className="text-3xl font-bold">Notifications</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold">Notifications</h1>
             {unreadCount > 0 && (
               <p className="text-muted-foreground">
                 You have {unreadCount} unread notification{unreadCount !== 1 ? 's' : ''}

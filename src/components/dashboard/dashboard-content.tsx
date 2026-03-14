@@ -290,17 +290,17 @@ export function DashboardContent() {
   // Error state UI
   if (error.hasError) {
     return (
-      <div className="p-6 space-y-8">
+      <div className="p-3 sm:p-6 space-y-4 sm:space-y-8">
         <motion.div 
           className="space-y-2"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <h1 className="text-3xl font-bold text-white" id="dashboard-title">
+          <h1 className="text-2xl sm:text-3xl font-bold text-white" id="dashboard-title">
             Dashboard Error
           </h1>
-          <p className="text-lg text-slate-400">
+          <p className="text-sm sm:text-lg text-slate-400">
             We encountered an issue loading your dashboard.
           </p>
         </motion.div>
@@ -357,19 +357,19 @@ export function DashboardContent() {
   // Loading state UI
   if (loading) {
     return (
-      <div className="p-6 space-y-8" role="main" aria-busy="true" aria-label="Loading dashboard">
+      <div className="p-3 sm:p-6 space-y-4 sm:space-y-8" role="main" aria-busy="true" aria-label="Loading dashboard">
         <div className="space-y-2">
-          <Skeleton className="h-8 w-64" />
-          <Skeleton className="h-4 w-96" />
+          <Skeleton className="h-8 w-48 sm:w-64" />
+          <Skeleton className="h-4 w-full sm:w-96" />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
           {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-32" />
+            <Skeleton key={i} className="h-24 sm:h-32" />
           ))}
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Skeleton className="h-96" />
-          <Skeleton className="h-96" />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+          <Skeleton className="h-64 sm:h-96" />
+          <Skeleton className="h-64 sm:h-96" />
         </div>
         <span className="sr-only" aria-live="polite">Loading dashboard data...</span>
       </div>
@@ -377,25 +377,25 @@ export function DashboardContent() {
   }
 
   return (
-    <main className="p-6 space-y-8" ref={mainContentRef} tabIndex={-1} role="main" aria-labelledby="main-heading">
+    <main className="p-3 sm:p-6 space-y-4 sm:space-y-8" ref={mainContentRef} tabIndex={-1} role="main" aria-labelledby="main-heading">
       {/* Welcome Header */}
       <motion.header 
-        className="space-y-2"
+        className="space-y-1 sm:space-y-2"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <h1 id="main-heading" className="text-3xl font-bold text-white">
+        <h1 id="main-heading" className="text-2xl sm:text-3xl font-bold text-white">
           Welcome to AgentFlow
         </h1>
-        <p className="text-lg text-slate-400">
+        <p className="text-sm sm:text-lg text-slate-400">
           Your autonomous development pipeline is ready for action.
         </p>
       </motion.header>
 
       {/* Quick Actions */}
       <motion.nav
-        className="flex flex-wrap gap-4"
+        className="flex flex-wrap gap-2 sm:gap-4"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}
@@ -403,39 +403,39 @@ export function DashboardContent() {
       >
         <Link href="/projects/new">
           <Button 
-            className="bg-blue-600 hover:bg-blue-700"
+            className="bg-blue-600 hover:bg-blue-700 min-h-[44px] text-sm sm:text-base"
             aria-label="Create new project"
           >
-            <Plus className="w-4 h-4 mr-2" aria-hidden="true" />
+            <Plus className="w-4 h-4 mr-1 sm:mr-2" aria-hidden="true" />
             New Project
           </Button>
         </Link>
         <Link href="/projects">
           <Button 
             variant="outline" 
-            className="border-slate-600 text-slate-200 hover:bg-slate-800"
+            className="border-slate-600 text-slate-200 hover:bg-slate-800 min-h-[44px] text-sm sm:text-base"
             aria-label="Browse existing projects"
           >
-            <FolderOpen className="w-4 h-4 mr-2" aria-hidden="true" />
-            Browse Projects
+            <FolderOpen className="w-4 h-4 mr-1 sm:mr-2" aria-hidden="true" />
+            <span className="hidden sm:inline">Browse </span>Projects
           </Button>
         </Link>
         <Link href="/activity">
           <Button 
             variant="outline" 
-            className="border-slate-600 text-slate-200 hover:bg-slate-800"
+            className="border-slate-600 text-slate-200 hover:bg-slate-800 min-h-[44px] text-sm sm:text-base"
             aria-label="View activity log"
           >
-            <Activity className="w-4 h-4 mr-2" aria-hidden="true" />
-            View Activity
+            <Activity className="w-4 h-4 mr-1 sm:mr-2" aria-hidden="true" />
+            Activity
           </Button>
         </Link>
         <Button 
           variant="outline" 
-          className="border-slate-600 text-slate-200 hover:bg-slate-800"
+          className="border-slate-600 text-slate-200 hover:bg-slate-800 min-h-[44px] text-sm sm:text-base"
           aria-label="Open settings"
         >
-          <Settings className="w-4 h-4 mr-2" aria-hidden="true" />
+          <Settings className="w-4 h-4 mr-1 sm:mr-2" aria-hidden="true" />
           Settings
         </Button>
       </motion.nav>
@@ -443,7 +443,7 @@ export function DashboardContent() {
       {/* Stats Cards */}
       <section aria-labelledby="stats-heading">
         <h2 id="stats-heading" className="sr-only">Dashboard Statistics</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
           {[
             { 
               title: 'Active Projects', 
@@ -491,12 +491,12 @@ export function DashboardContent() {
                 transition={{ duration: 0.5, delay: index * 0.1 }}
               >
                 <Card className="bg-slate-800/50 backdrop-blur-xl border-slate-700/50">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-slate-400">{card.title}</p>
+                  <CardContent className="p-3 sm:p-6">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-xs sm:text-sm font-medium text-slate-400 truncate">{card.title}</p>
                         <p 
-                          className="text-2xl font-bold text-white"
+                          className="text-lg sm:text-2xl font-bold text-white"
                           aria-label={`${card.value} ${card.title.toLowerCase()}${card.total > 0 ? ` out of ${card.total} total` : ''}`}
                         >
                           {card.value}
@@ -511,10 +511,10 @@ export function DashboardContent() {
                         </p>
                       </div>
                       <div 
-                        className={`h-12 w-12 rounded-lg bg-${card.color}-500/20 flex items-center justify-center`}
+                        className={`h-8 w-8 sm:h-12 sm:w-12 rounded-lg bg-${card.color}-500/20 flex items-center justify-center shrink-0`}
                         aria-label={card.description}
                       >
-                        <Icon className={`h-6 w-6 text-${card.color}-500`} aria-hidden="true" />
+                        <Icon className={`h-4 w-4 sm:h-6 sm:w-6 text-${card.color}-500`} aria-hidden="true" />
                       </div>
                     </div>
                   </CardContent>
@@ -712,7 +712,7 @@ export function DashboardContent() {
                           aria-hidden="true"
                         />
                         <div className="flex-1">
-                          <p className="text-sm font-medium text-white truncate max-w-48">
+                          <p className="text-sm font-medium text-white truncate max-w-[120px] sm:max-w-48">
                             {task.title}
                           </p>
                           <div className="flex items-center gap-2 mt-1">

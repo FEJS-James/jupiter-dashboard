@@ -102,27 +102,27 @@ export default function AgentsPage() {
   };
 
   return (
-    <div className="container mx-auto px-6 py-8">
+    <div className="container mx-auto px-3 sm:px-6 py-4 sm:py-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-8">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-            <Users className="h-8 w-8" />
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight flex items-center gap-2 sm:gap-3">
+            <Users className="h-6 w-6 sm:h-8 sm:w-8" />
             Agent Management
           </h1>
-          <p className="text-muted-foreground mt-2">
+          <p className="text-sm sm:text-base text-muted-foreground mt-1 sm:mt-2">
             Manage your development team and track agent workloads
           </p>
         </div>
-        <Button onClick={() => setShowCreateDialog(true)} className="flex items-center gap-2">
+        <Button onClick={() => setShowCreateDialog(true)} className="flex items-center gap-2 min-h-[44px] w-full sm:w-auto">
           <Plus className="h-4 w-4" />
           Add Agent
         </Button>
       </div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="bg-card border rounded-lg p-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6 mb-4 sm:mb-8">
+        <div className="bg-card border rounded-lg p-3 sm:p-6">
           <div className="flex items-center gap-2">
             <Badge className={getStatusColor('available')}>Available</Badge>
             <span className="text-2xl font-bold">
@@ -130,7 +130,7 @@ export default function AgentsPage() {
             </span>
           </div>
         </div>
-        <div className="bg-card border rounded-lg p-6">
+        <div className="bg-card border rounded-lg p-3 sm:p-6">
           <div className="flex items-center gap-2">
             <Badge className={getStatusColor('busy')}>Busy</Badge>
             <span className="text-2xl font-bold">
@@ -138,7 +138,7 @@ export default function AgentsPage() {
             </span>
           </div>
         </div>
-        <div className="bg-card border rounded-lg p-6">
+        <div className="bg-card border rounded-lg p-3 sm:p-6">
           <div className="flex items-center gap-2">
             <Badge className={getStatusColor('offline')}>Offline</Badge>
             <span className="text-2xl font-bold">
@@ -146,7 +146,7 @@ export default function AgentsPage() {
             </span>
           </div>
         </div>
-        <div className="bg-card border rounded-lg p-6">
+        <div className="bg-card border rounded-lg p-3 sm:p-6">
           <div className="flex items-center gap-2">
             <Users className="h-4 w-4" />
             <span className="text-sm text-muted-foreground">Total Agents</span>
@@ -156,14 +156,14 @@ export default function AgentsPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 mb-4 sm:mb-6">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search agents by name or role..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
+            className="pl-10 min-h-[44px]"
           />
         </div>
         <Select value={roleFilter} onValueChange={(value) => setRoleFilter(value as AgentRole | 'all')}>
@@ -195,9 +195,9 @@ export default function AgentsPage() {
 
       {/* Agent Grid */}
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
           {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="bg-card border rounded-lg p-6 animate-pulse">
+            <div key={i} className="bg-card border rounded-lg p-3 sm:p-6 animate-pulse">
               <div className="h-12 w-12 bg-muted rounded-full mb-4"></div>
               <div className="h-4 bg-muted rounded w-24 mb-2"></div>
               <div className="h-3 bg-muted rounded w-16 mb-4"></div>
@@ -226,7 +226,7 @@ export default function AgentsPage() {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
           {filteredAgents.map((agent) => (
             <AgentCard
               key={agent.id}
