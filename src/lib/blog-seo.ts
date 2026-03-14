@@ -37,8 +37,6 @@ export const BLOG_CONFIGS: Record<string, BlogConfig> = {
 
 /**
  * Returns the full URL for a blog, optionally with a path appended.
- * e.g. blogFullUrl('techpulse') → 'https://techpulsedaily.com'
- * e.g. blogFullUrl('techpulse', '/about') → 'https://techpulsedaily.com/about'
  */
 export function blogFullUrl(blogSlug: string, path?: string): string {
   const config = BLOG_CONFIGS[blogSlug]
@@ -48,7 +46,6 @@ export function blogFullUrl(blogSlug: string, path?: string): string {
 
 /**
  * Returns the full URL for a specific article.
- * e.g. articleFullUrl('techpulse', 'my-article') → 'https://techpulsedaily.com/my-article'
  */
 export function articleFullUrl(blogSlug: string, articleSlug: string): string {
   return blogFullUrl(blogSlug, `/${articleSlug}`)
@@ -108,7 +105,7 @@ export function generateBlogPageMetadata(
 
 interface ArticleMetadataOptions {
   title: string
-  description?: string
+  description?: string | null
   slug: string
   image?: string | null
   publishDate?: string | null
@@ -164,4 +161,144 @@ export function generateArticleMetadata(
   }
 
   return metadata
+}
+
+// ─── JSON-LD Schema Generators ──────────────────────────────────────────────
+
+/**
+ * Generates a WebSite JSON-LD schema for a blog.
+ */
+export function generateWebSiteJsonLd(blogSlug: string) {
+  const config = BLOG_CONFIGS[blogSlug]
+  if (!config) return {}
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: config.name,
+    description: config.description,
+    url: blogFullUrl(blogSlug),
+    inLanguage: config.language,
+  }
+}
+
+interface ArticleJsonLdOptions {
+  title: string
+  description?: string | null
+  slug: string
+  image?: string | null
+  publishDate?: string | null
+  modifiedDate?: string | null
+  author?: string
+}
+
+/**
+ * Generates an Article JSON-LD schema for structured data.
+ */
+export function generateArticleJsonLd(
+  blogSlug: string,
+  options: ArticleJsonLdOptions,
+) {
+  const config = BLOG_CONFIGS[blogSlug]
+  if (!config) return {}
+
+  const { title, description, slug, image, publishDate, modifiedDate, author } =
+    options
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: title,
+    ...(description ? { description } : {}),
+    url: articleFullUrl(blogSlug, slug),
+    ...(image ? { image } : {}),
+    ...(publishDate ? { datePublished: publishDate } : {}),
+    ...(modifiedDate ? { dateModified: modifiedDate } : {}),
+    ...(author
+      ? {
+          author: {
+            '@type': 'Person',
+            name: author,
+          },
+        }
+      : {}),
+    publisher: {
+      '@type': 'Organization',
+      name: config.name,
+      url: blogFullUrl(blogSlug),
+    },
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': articleFullUrl(blogSlug, slug),
+    },
+  }
+}
+
+interface BreadcrumbItem {
+  name: string
+  url?: string
+}
+
+/**
+ * Generates a BreadcrumbList JSON-LD schema.
+ */
+export function generateBreadcrumbJsonLd(items: BreadcrumbItem[]) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: items.map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: item.name,
+      ...(item.url ? { item: item.url } : {}),
+    })),
+  }
+}
+
+// ─── Breadcrumb Presets ─────────────────────────────────────────────────────
+
+/**
+ * Returns breadcrumb items for a blog's homepage.
+ */
+export function homeBreadcrumbs(blogSlug: string): BreadcrumbItem[] {
+  const config = BLOG_CONFIGS[blogSlug]
+  return [{ name: config?.name ?? blogSlug, url: blogFullUrl(blogSlug) }]
+}
+
+/**
+ * Returns breadcrumb items for a blog's article listing page.
+ */
+export function blogListBreadcrumbs(blogSlug: string): BreadcrumbItem[] {
+  const config = BLOG_CONFIGS[blogSlug]
+  return [
+    { name: config?.name ?? blogSlug, url: blogFullUrl(blogSlug) },
+    { name: 'Articles', url: blogFullUrl(blogSlug, '/blog') },
+  ]
+}
+
+/**
+ * Returns breadcrumb items for a blog's about page.
+ */
+export function aboutBreadcrumbs(blogSlug: string): BreadcrumbItem[] {
+  const config = BLOG_CONFIGS[blogSlug]
+  return [
+    { name: config?.name ?? blogSlug, url: blogFullUrl(blogSlug) },
+    { name: 'About', url: blogFullUrl(blogSlug, '/about') },
+  ]
+}
+
+/**
+ * Returns breadcrumb items for an article page.
+ */
+export function articleBreadcrumbs(
+  blogSlug: string,
+  articleTitle: string,
+  articleSlug: string,
+): BreadcrumbItem[] {
+  const config = BLOG_CONFIGS[blogSlug]
+  return [
+    { name: config?.name ?? blogSlug, url: blogFullUrl(blogSlug) },
+    { name: 'Articles', url: blogFullUrl(blogSlug, '/blog') },
+    { name: articleTitle, url: articleFullUrl(blogSlug, articleSlug) },
+  ]
 }

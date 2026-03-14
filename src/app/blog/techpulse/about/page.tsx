@@ -2,17 +2,25 @@ import type { Metadata } from 'next'
 import { TechPulseNavbar } from '../_components/navbar'
 import { TechPulseFooter } from '../_components/footer'
 import { CtaBanner } from '../_components/cta-banner'
+import { JsonLd } from '@/components/json-ld'
+import {
+  generateBreadcrumbJsonLd,
+  generateBlogPageMetadata,
+  aboutBreadcrumbs,
+} from '@/lib/blog-seo'
 
 export const revalidate = 60
 
-export const metadata: Metadata = {
+export const metadata: Metadata = generateBlogPageMetadata('techpulse', {
   title: 'About',
   description: 'Learn more about TechPulse Daily — your source for breaking tech news and analysis.',
-}
+  path: '/about',
+})
 
 export default function AboutPage() {
   return (
     <div className="tp-dot-bg min-h-screen">
+      <JsonLd data={generateBreadcrumbJsonLd(aboutBreadcrumbs('techpulse'))} />
       <TechPulseNavbar />
 
       <main className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-12">

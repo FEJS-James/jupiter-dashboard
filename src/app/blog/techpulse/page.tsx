@@ -5,14 +5,21 @@ import { TechPulseFooter } from './_components/footer'
 import { BreakingTicker } from './_components/breaking-ticker'
 import { ArticleCard } from './_components/article-card'
 import { CtaBanner } from './_components/cta-banner'
+import { JsonLd } from '@/components/json-ld'
+import {
+  generateWebSiteJsonLd,
+  generateBreadcrumbJsonLd,
+  generateBlogPageMetadata,
+  homeBreadcrumbs,
+} from '@/lib/blog-seo'
 
 export const revalidate = 60
 
-export const metadata: Metadata = {
+export const metadata: Metadata = generateBlogPageMetadata('techpulse', {
   title: 'TechPulse Daily — Breaking Tech News & Analysis',
   description:
     'Your daily source for breaking tech news, in-depth analysis, and expert opinions on AI, gaming, hardware, and open source.',
-}
+})
 
 export default async function TechPulseHomePage() {
   const allArticles = await getPublishedArticles({ limit: 20 })
@@ -42,6 +49,8 @@ export default async function TechPulseHomePage() {
 
   return (
     <div className="tp-dot-bg min-h-screen">
+      <JsonLd data={generateWebSiteJsonLd('techpulse')} />
+      <JsonLd data={generateBreadcrumbJsonLd(homeBreadcrumbs('techpulse'))} />
       {/* Breaking News Ticker */}
       <BreakingTicker articles={tickerArticles} />
 

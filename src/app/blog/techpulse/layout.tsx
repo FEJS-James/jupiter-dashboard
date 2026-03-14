@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Space_Grotesk } from 'next/font/google'
+import { BLOG_CONFIGS } from '@/lib/blog-seo'
 import './techpulse.css'
 
 const spaceGrotesk = Space_Grotesk({
@@ -7,13 +8,14 @@ const spaceGrotesk = Space_Grotesk({
   variable: '--font-space-grotesk',
 })
 
+const config = BLOG_CONFIGS.techpulse
+
 export const metadata: Metadata = {
   title: {
-    default: 'TechPulse Daily — Breaking Tech News & Analysis',
-    template: '%s | TechPulse Daily',
+    default: `${config.name} — Breaking Tech News & Analysis`,
+    template: `%s | ${config.name}`,
   },
-  description:
-    'Your daily source for breaking tech news, in-depth analysis, and expert opinions on AI, gaming, hardware, and open source.',
+  description: config.description,
 }
 
 export default function TechPulseLayout({
