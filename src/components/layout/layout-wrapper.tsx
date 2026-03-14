@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from "react"
+import { useMounted } from "@/hooks/use-mounted"
 import { Sidebar } from "./sidebar"
 import { Header } from "./header"
 import { Footer } from "./footer"
@@ -19,13 +20,9 @@ interface LayoutWrapperProps {
 
 export function LayoutWrapper({ children }: LayoutWrapperProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const mounted = useMounted()
   const { actualTheme } = useTheme()
   const isMobile = useMediaQuery('(max-width: 768px)')
-
-  // Use mobile layout on mobile devices
-  if (isMobile) {
-    return <MobileLayoutWrapper>{children}</MobileLayoutWrapper>
-  }
 
   // Listen for sidebar collapse changes
   useEffect(() => {
@@ -40,6 +37,11 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
 
     return () => window.removeEventListener('resize', handleResize)
   }, [])
+
+  // Use mobile layout on mobile devices — only after mount to avoid hydration mismatch
+  if (mounted && isMobile) {
+    return <MobileLayoutWrapper>{children}</MobileLayoutWrapper>
+  }
 
   return (
     <KeyboardShortcutsProvider>

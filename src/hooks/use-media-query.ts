@@ -2,38 +2,33 @@
 
 import { useState, useEffect } from 'react'
 
+/**
+ * SSR-safe media query hook.
+ * 
+ * Returns `false` during SSR and the first client render to prevent
+ * hydration mismatches. The actual media query value is applied after
+ * the component mounts via useEffect.
+ * 
+ * Consumers should treat the initial `false` as "not yet determined"
+ * and avoid conditional rendering that differs from the server output
+ * until after mount.
+ */
 export function useMediaQuery(query: string): boolean {
+  // Always start with false — matches server render output
   const [matches, setMatches] = useState<boolean>(false)
 
   useEffect(() => {
-    // Check if we're on the client side
-    if (typeof window === 'undefined') return
-
     const mediaQuery = window.matchMedia(query)
     
-    // Set initial value
+    // Set the real value now that we're mounted on the client
     setMatches(mediaQuery.matches)
 
-    // Create event listener
     const handleChange = (event: MediaQueryListEvent) => {
       setMatches(event.matches)
     }
 
-    // Add listener
-    if (mediaQuery.addEventListener) {
-      mediaQuery.addEventListener('change', handleChange)
-      
-      return () => {
-        mediaQuery.removeEventListener('change', handleChange)
-      }
-    } else {
-      // Fallback for older browsers
-      mediaQuery.addListener(handleChange)
-      
-      return () => {
-        mediaQuery.removeListener(handleChange)
-      }
-    }
+    mediaQuery.addEventListener('change', handleChange)
+    return () => mediaQuery.removeEventListener('change', handleChange)
   }, [query])
 
   return matches

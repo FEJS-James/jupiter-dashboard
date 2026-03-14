@@ -7,6 +7,7 @@ import { DeleteTaskDialog } from '@/components/kanban/delete-task-dialog'
 import { TaskFiltersComponent } from '@/components/tasks/task-filters'
 import { MobileTaskFilters } from '@/components/tasks/mobile-task-filters'
 import { useMediaQuery } from '@/hooks/use-media-query'
+import { useMounted } from '@/hooks/use-mounted'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -23,6 +24,7 @@ export default function TasksPageContent() {
   const [agents, setAgents] = useState<Agent[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const mounted = useMounted()
   const isMobile = useMediaQuery('(max-width: 768px)')
   
   // Dialog states
@@ -265,7 +267,7 @@ export default function TasksPageContent() {
         </div>
 
         {/* Enhanced Filters and Search */}
-        {isMobile ? (
+        {(mounted && isMobile) ? (
           <MobileTaskFilters
             filters={filters}
             onFiltersChange={setFilters}

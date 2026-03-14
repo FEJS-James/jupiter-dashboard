@@ -6,6 +6,7 @@ import { Task, TaskStatus } from '@/types'
 import { MobileColumn } from './mobile-column'
 import { MobileTaskCard } from './mobile-task-card'
 import { useMediaQuery } from '@/hooks/use-media-query'
+import { useMounted } from '@/hooks/use-mounted'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { useTheme } from '@/contexts/theme-context'
@@ -40,6 +41,7 @@ export function MobileBoard({ tasks, onCreateTask, onEditTask, onDeleteTask, onM
   const [viewMode, setViewMode] = useState<'columns' | 'single'>('columns')
   
   const { actualTheme } = useTheme()
+  const mounted = useMounted()
   const isMobile = useMediaQuery('(max-width: 768px)')
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
@@ -107,8 +109,8 @@ export function MobileBoard({ tasks, onCreateTask, onEditTask, onDeleteTask, onM
     }
   }, [currentColumnIndex, viewMode])
 
-  if (!isMobile) {
-    // Return to desktop board for non-mobile screens
+  if (!mounted || !isMobile) {
+    // Return null during SSR / first render, or on non-mobile screens
     return null
   }
 

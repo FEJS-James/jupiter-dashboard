@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useMediaQuery } from '@/hooks/use-media-query'
+import { useMounted } from '@/hooks/use-mounted'
 import { useTheme } from '@/contexts/theme-context'
 import { cn } from '@/lib/utils'
 import { 
@@ -26,6 +27,7 @@ interface TestResult {
 
 export function MobileResponsiveTest() {
   const { actualTheme } = useTheme()
+  const mounted = useMounted()
   const isMobile = useMediaQuery('(max-width: 768px)')
   const isTablet = useMediaQuery('(min-width: 768px) and (max-width: 1024px)')
   const isDesktop = useMediaQuery('(min-width: 1024px)')
