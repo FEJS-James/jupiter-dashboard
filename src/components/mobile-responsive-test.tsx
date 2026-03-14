@@ -89,6 +89,8 @@ export function MobileResponsiveTest() {
 
   const device = getCurrentDevice()
 
+  if (!mounted) return null
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
