@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import {
   getPublishedArticles,
+  getArticlesCount,
   getAllTags,
   getHeroImageForTopic,
   type DBLArticle,
@@ -205,13 +206,14 @@ export default async function BlogListingPage({
   const activeTag = resolvedParams.tag ?? null;
   const page = Math.max(1, parseInt(resolvedParams.page ?? '1', 10) || 1);
 
-  const [tags, { articles: articleList, total }] = await Promise.all([
+  const [tags, { articles: articleList }, total] = await Promise.all([
     getAllTags(),
     getPublishedArticles({
       limit: ARTICLES_PER_PAGE,
       offset: (page - 1) * ARTICLES_PER_PAGE,
       tag: activeTag ?? undefined,
     }),
+    getArticlesCount(activeTag ?? undefined),
   ]);
 
   const totalPages = Math.max(1, Math.ceil(total / ARTICLES_PER_PAGE));
