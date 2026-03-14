@@ -10,14 +10,15 @@ import {
   BarChart3,
   Settings,
   ChevronDown,
-  Circle,
   FolderOpen,
-  CheckSquare
+  CheckSquare,
+  Loader2
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useTheme } from '@/contexts/theme-context'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useSidebarData } from '@/hooks/use-sidebar-data'
 
 interface SidebarProps {
   className?: string
@@ -28,13 +29,17 @@ export function Sidebar({ className, onCollapseChange }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const { actualTheme } = useTheme()
   const pathname = usePathname()
+  const { projects, agents, loading } = useSidebarData()
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null)
 
   const toggleCollapse = () => {
     const newCollapsedState = !isCollapsed
     setIsCollapsed(newCollapsedState)
     onCollapseChange?.(newCollapsedState)
   }
-  const [selectedProject, setSelectedProject] = useState('AgentFlow Pipeline')
+
+  // Derive selected project name — default to first project
+  const selectedProject = projects.find(p => p.id === selectedProjectId) ?? projects[0]
 
   const navigationItems = [
     { icon: Home, label: 'Dashboard', href: '/' },
@@ -45,24 +50,11 @@ export function Sidebar({ className, onCollapseChange }: SidebarProps) {
     { icon: Settings, label: 'Preferences', href: '/preferences' },
   ]
 
-  const projects = [
-    'AgentFlow Pipeline',
-    'Web Scraper Pro', 
-    'ChatBot Assistant',
-    'Data Analytics Suite'
-  ]
-
-  const agents = [
-    { name: 'Coder', status: 'active', tasks: 2 },
-    { name: 'Reviewer', status: 'idle', tasks: 0 },
-    { name: 'DevOps', status: 'busy', tasks: 1 },
-  ]
-
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-green-500'
+      case 'available': return 'bg-green-500'
       case 'busy': return 'bg-yellow-500'
-      case 'idle': return 'bg-gray-500'
+      case 'offline': return 'bg-gray-500'
       default: return 'bg-gray-500'
     }
   }
@@ -130,28 +122,55 @@ export function Sidebar({ className, onCollapseChange }: SidebarProps) {
             transition={{ delay: 0.1 }}
           >
             <div className="relative">
-              <button className={cn(
-                'w-full flex items-center justify-between p-3 rounded-lg transition-colors group',
-                actualTheme === 'dark'
-                  ? 'bg-slate-800/50 hover:bg-slate-800/70'
-                  : 'bg-slate-100/50 hover:bg-slate-100/70'
-              )}>
-                <div className="flex items-center space-x-3">
-                  <FolderOpen className="h-4 w-4 text-blue-400" />
+              {loading ? (
+                <div className={cn(
+                  'flex items-center space-x-3 p-3 rounded-lg',
+                  actualTheme === 'dark' ? 'bg-slate-800/50' : 'bg-slate-100/50'
+                )}>
+                  <Loader2 className="h-4 w-4 text-blue-400 animate-spin" />
                   <span className={cn(
-                    'text-sm font-medium truncate',
-                    actualTheme === 'dark' ? 'text-white' : 'text-slate-900'
-                  )}>
-                    {selectedProject}
-                  </span>
+                    'text-sm',
+                    actualTheme === 'dark' ? 'text-slate-400' : 'text-slate-600'
+                  )}>Loading projects…</span>
                 </div>
-                <ChevronDown className={cn(
-                  'h-4 w-4 transition-colors',
-                  actualTheme === 'dark' 
-                    ? 'text-slate-400 group-hover:text-slate-300' 
-                    : 'text-slate-600 group-hover:text-slate-700'
-                )} />
-              </button>
+              ) : projects.length === 0 ? (
+                <div className={cn(
+                  'flex items-center space-x-3 p-3 rounded-lg',
+                  actualTheme === 'dark' ? 'bg-slate-800/50' : 'bg-slate-100/50'
+                )}>
+                  <FolderOpen className="h-4 w-4 text-slate-400" />
+                  <span className={cn(
+                    'text-sm',
+                    actualTheme === 'dark' ? 'text-slate-400' : 'text-slate-600'
+                  )}>No projects yet</span>
+                </div>
+              ) : (
+                <Link
+                  href={selectedProject ? `/projects/${selectedProject.id}` : '/projects'}
+                  className={cn(
+                    'w-full flex items-center justify-between p-3 rounded-lg transition-colors group',
+                    actualTheme === 'dark'
+                      ? 'bg-slate-800/50 hover:bg-slate-800/70'
+                      : 'bg-slate-100/50 hover:bg-slate-100/70'
+                  )}
+                >
+                  <div className="flex items-center space-x-3">
+                    <FolderOpen className="h-4 w-4 text-blue-400" />
+                    <span className={cn(
+                      'text-sm font-medium truncate',
+                      actualTheme === 'dark' ? 'text-white' : 'text-slate-900'
+                    )}>
+                      {selectedProject?.name ?? 'Select project'}
+                    </span>
+                  </div>
+                  <ChevronDown className={cn(
+                    'h-4 w-4 transition-colors',
+                    actualTheme === 'dark' 
+                      ? 'text-slate-400 group-hover:text-slate-300' 
+                      : 'text-slate-600 group-hover:text-slate-700'
+                  )} />
+                </Link>
+              )}
             </div>
           </motion.div>
         )}
@@ -209,35 +228,54 @@ export function Sidebar({ className, onCollapseChange }: SidebarProps) {
               )}>
                 Agent Status
               </h3>
-              {agents.map((agent) => (
-                <div key={agent.name} className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <div className={cn('h-2 w-2 rounded-full', getStatusColor(agent.status))} />
-                    <span className={cn(
-                      'text-sm',
-                      actualTheme === 'dark' ? 'text-slate-300' : 'text-slate-700'
-                    )}>{agent.name}</span>
-                  </div>
-                  {agent.tasks > 0 && (
-                    <span className={cn(
-                      'text-xs px-1.5 py-0.5 rounded',
-                      actualTheme === 'dark' 
-                        ? 'bg-slate-700 text-slate-300' 
-                        : 'bg-slate-200 text-slate-700'
-                    )}>
-                      {agent.tasks}
-                    </span>
-                  )}
+              {loading ? (
+                <div className="flex items-center space-x-2">
+                  <Loader2 className={cn('h-3 w-3 animate-spin', actualTheme === 'dark' ? 'text-slate-500' : 'text-slate-400')} />
+                  <span className={cn('text-xs', actualTheme === 'dark' ? 'text-slate-500' : 'text-slate-400')}>
+                    Loading…
+                  </span>
                 </div>
-              ))}
+              ) : agents.length === 0 ? (
+                <span className={cn('text-xs', actualTheme === 'dark' ? 'text-slate-500' : 'text-slate-400')}>
+                  No agents configured
+                </span>
+              ) : (
+                agents.map((agent) => (
+                  <div key={agent.id} className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <div className={cn('h-2 w-2 rounded-full', getStatusColor(agent.status))} />
+                      <span className={cn(
+                        'text-sm',
+                        actualTheme === 'dark' ? 'text-slate-300' : 'text-slate-700'
+                      )}>{agent.name}</span>
+                    </div>
+                    {agent.taskCount > 0 && (
+                      <span className={cn(
+                        'text-xs px-1.5 py-0.5 rounded',
+                        actualTheme === 'dark' 
+                          ? 'bg-slate-700 text-slate-300' 
+                          : 'bg-slate-200 text-slate-700'
+                      )}>
+                        {agent.taskCount}
+                      </span>
+                    )}
+                  </div>
+                ))
+              )}
             </div>
           ) : (
             <div className="space-y-2">
-              {agents.map((agent) => (
-                <div key={agent.name} className="flex justify-center">
-                  <div className={cn('h-2 w-2 rounded-full', getStatusColor(agent.status))} />
+              {loading ? (
+                <div className="flex justify-center">
+                  <Loader2 className={cn('h-3 w-3 animate-spin', actualTheme === 'dark' ? 'text-slate-500' : 'text-slate-400')} />
                 </div>
-              ))}
+              ) : (
+                agents.map((agent) => (
+                  <div key={agent.id} className="flex justify-center">
+                    <div className={cn('h-2 w-2 rounded-full', getStatusColor(agent.status))} />
+                  </div>
+                ))
+              )}
             </div>
           )}
         </motion.div>
