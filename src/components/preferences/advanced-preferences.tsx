@@ -159,23 +159,23 @@ export function AdvancedPreferences() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" role="region" aria-label="Advanced preferences">
       <Tabs defaultValue="keyboard-shortcuts" className="space-y-6">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="keyboard-shortcuts" className="flex items-center gap-2">
-            <Keyboard className="h-4 w-4" />
+            <Keyboard className="h-4 w-4" aria-hidden="true" />
             Shortcuts
           </TabsTrigger>
           <TabsTrigger value="analytics" className="flex items-center gap-2">
-            <BarChart className="h-4 w-4" />
+            <BarChart className="h-4 w-4" aria-hidden="true" />
             Analytics
           </TabsTrigger>
           <TabsTrigger value="export" className="flex items-center gap-2">
-            <Download className="h-4 w-4" />
+            <Download className="h-4 w-4" aria-hidden="true" />
             Export
           </TabsTrigger>
           <TabsTrigger value="custom" className="flex items-center gap-2">
-            <Settings className="h-4 w-4" />
+            <Settings className="h-4 w-4" aria-hidden="true" />
             Custom
           </TabsTrigger>
         </TabsList>
@@ -187,14 +187,14 @@ export function AdvancedPreferences() {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="flex items-center gap-2">
-                    <Keyboard className="h-5 w-5" />
+                    <Keyboard className="h-5 w-5" aria-hidden="true" />
                     Keyboard Shortcuts
                   </CardTitle>
                   <CardDescription>
                     Customize keyboard shortcuts for faster navigation and actions
                   </CardDescription>
                 </div>
-                <Button variant="outline" onClick={resetShortcutsToDefault}>
+                <Button variant="outline" onClick={resetShortcutsToDefault} aria-label="Reset keyboard shortcuts to defaults">
                   Reset to Defaults
                 </Button>
               </div>
@@ -234,6 +234,7 @@ export function AdvancedPreferences() {
                                   onChange={(e) => setShortcutInput(e.target.value)}
                                   placeholder="e.g., ctrl+n"
                                   className="w-32 text-sm"
+                                  aria-label={`New shortcut for ${action.replace('-', ' ')}`}
                                   onKeyDown={(e) => {
                                     if (e.key === 'Enter') {
                                       handleShortcutSave(action)
@@ -242,11 +243,11 @@ export function AdvancedPreferences() {
                                     }
                                   }}
                                 />
-                                <Button size="sm" onClick={() => handleShortcutSave(action)}>
-                                  <Save className="h-3 w-3" />
+                                <Button size="sm" onClick={() => handleShortcutSave(action)} aria-label={`Save shortcut for ${action.replace('-', ' ')}`}>
+                                  <Save className="h-3 w-3" aria-hidden="true" />
                                 </Button>
-                                <Button size="sm" variant="outline" onClick={handleShortcutCancel}>
-                                  <X className="h-3 w-3" />
+                                <Button size="sm" variant="outline" onClick={handleShortcutCancel} aria-label="Cancel shortcut edit">
+                                  <X className="h-3 w-3" aria-hidden="true" />
                                 </Button>
                               </div>
                             ) : (
@@ -258,8 +259,9 @@ export function AdvancedPreferences() {
                                   size="sm"
                                   variant="outline"
                                   onClick={() => handleShortcutEdit(action)}
+                                  aria-label={`Edit shortcut for ${action.replace('-', ' ')}`}
                                 >
-                                  <Edit className="h-3 w-3" />
+                                  <Edit className="h-3 w-3" aria-hidden="true" />
                                 </Button>
                               </div>
                             )}
@@ -272,9 +274,9 @@ export function AdvancedPreferences() {
               ))}
 
               <Alert>
-                <Info className="h-4 w-4" />
+                <Info className="h-4 w-4" aria-hidden="true" />
                 <AlertDescription>
-                  Use standard key combinations like "ctrl+key", "shift+key", or "alt+key".
+                  Use standard key combinations like &quot;ctrl+key&quot;, &quot;shift+key&quot;, or &quot;alt+key&quot;.
                   Some shortcuts may conflict with browser shortcuts.
                 </AlertDescription>
               </Alert>
@@ -287,7 +289,7 @@ export function AdvancedPreferences() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <BarChart className="h-5 w-5" />
+                <BarChart className="h-5 w-5" aria-hidden="true" />
                 Analytics Preferences
               </CardTitle>
               <CardDescription>
@@ -309,12 +311,14 @@ export function AdvancedPreferences() {
                       <Switch
                         checked={analyticsPrefs[key] as boolean || false}
                         onCheckedChange={(checked) => handleUpdateAnalyticsPreference(key, checked)}
+                        aria-label={config.label}
                       />
                     ) : config.type === 'select' ? (
                       <select
                         value={analyticsPrefs[key] as string || ('options' in config ? config.options[0] : '')}
                         onChange={(e) => handleUpdateAnalyticsPreference(key, e.target.value)}
                         className="px-3 py-1 border rounded text-sm"
+                        aria-label={config.label}
                       >
                         {'options' in config && config.options.map((option) => (
                           <option key={option} value={option} className="capitalize">
@@ -327,6 +331,7 @@ export function AdvancedPreferences() {
                         value={analyticsPrefs[key] as string || ''}
                         onChange={(e) => handleUpdateAnalyticsPreference(key, e.target.value)}
                         className="w-32 text-sm"
+                        aria-label={config.label}
                       />
                     )}
                   </div>
@@ -341,7 +346,7 @@ export function AdvancedPreferences() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Download className="h-5 w-5" />
+                <Download className="h-5 w-5" aria-hidden="true" />
                 Export Preferences
               </CardTitle>
               <CardDescription>
@@ -363,12 +368,14 @@ export function AdvancedPreferences() {
                       <Switch
                         checked={exportPrefs[key] as boolean || false}
                         onCheckedChange={(checked) => handleUpdateExportPreference(key, checked)}
+                        aria-label={config.label}
                       />
                     ) : config.type === 'select' ? (
                       <select
                         value={exportPrefs[key] as string || ('options' in config ? config.options[0] : '')}
                         onChange={(e) => handleUpdateExportPreference(key, e.target.value)}
                         className="px-3 py-1 border rounded text-sm"
+                        aria-label={config.label}
                       >
                         {'options' in config && config.options.map((option) => (
                           <option key={option} value={option}>
@@ -382,6 +389,7 @@ export function AdvancedPreferences() {
                         onChange={(e) => handleUpdateExportPreference(key, e.target.value)}
                         placeholder={key === 'filename-template' ? 'export-{date}-{type}' : ''}
                         className="w-48 text-sm"
+                        aria-label={config.label}
                       />
                     )}
                   </div>
@@ -396,7 +404,7 @@ export function AdvancedPreferences() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Settings className="h-5 w-5" />
+                <Settings className="h-5 w-5" aria-hidden="true" />
                 Custom Settings
               </CardTitle>
               <CardDescription>
@@ -412,14 +420,16 @@ export function AdvancedPreferences() {
                     placeholder="Setting key"
                     value={customSettingKey}
                     onChange={(e) => setCustomSettingKey(e.target.value)}
+                    aria-label="Custom setting key"
                   />
                   <Input
                     placeholder="Setting value"
                     value={customSettingValue}
                     onChange={(e) => setCustomSettingValue(e.target.value)}
+                    aria-label="Custom setting value"
                   />
                   <Button onClick={handleAddCustomSetting} disabled={!customSettingKey || !customSettingValue}>
-                    <Plus className="h-4 w-4 mr-1" />
+                    <Plus className="h-4 w-4 mr-1" aria-hidden="true" />
                     Add
                   </Button>
                 </div>
@@ -446,8 +456,9 @@ export function AdvancedPreferences() {
                         variant="outline"
                         onClick={() => handleRemoveCustomSetting(key)}
                         className="text-destructive hover:text-destructive"
+                        aria-label={`Remove custom setting: ${key}`}
                       >
-                        <Trash2 className="h-3 w-3" />
+                        <Trash2 className="h-3 w-3" aria-hidden="true" />
                       </Button>
                     </div>
                   ))}
@@ -467,7 +478,7 @@ export function AdvancedPreferences() {
             <CardContent className="space-y-6">
               <div className="flex gap-2">
                 <Button onClick={exportAllSettings} className="flex items-center gap-2">
-                  <Download className="h-4 w-4" />
+                  <Download className="h-4 w-4" aria-hidden="true" />
                   Export Advanced Settings
                 </Button>
               </div>
@@ -486,13 +497,13 @@ export function AdvancedPreferences() {
                   disabled={!importData.trim()}
                   className="flex items-center gap-2"
                 >
-                  <Upload className="h-4 w-4" />
+                  <Upload className="h-4 w-4" aria-hidden="true" />
                   Import Settings
                 </Button>
               </div>
 
               <Alert>
-                <AlertTriangle className="h-4 w-4" />
+                <AlertTriangle className="h-4 w-4" aria-hidden="true" />
                 <AlertDescription>
                   Importing settings will overwrite your current advanced preferences.
                   Make sure to export your current settings first if you want to keep them.

@@ -93,11 +93,11 @@ function SortableQuickAction({ action, index }: { action: typeof AVAILABLE_QUICK
         isDragging ? 'shadow-lg' : ''
       }`}
     >
-      <div {...attributes} {...listeners} className="text-gray-400 hover:text-gray-600 cursor-grab">
-        <GripVertical className="h-4 w-4" />
+      <div {...attributes} {...listeners} className="text-gray-400 hover:text-gray-600 cursor-grab" aria-label={`Reorder ${action.label}`}>
+        <GripVertical className="h-4 w-4" aria-hidden="true" />
       </div>
       
-      <Icon className="h-4 w-4 text-primary" />
+      <Icon className="h-4 w-4 text-primary" aria-hidden="true" />
       
       <div className="flex-1">
         <div className="font-medium">{action.label}</div>
@@ -183,7 +183,7 @@ export function ProductivityPreferences() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Zap className="h-5 w-5" />
+            <Zap className="h-5 w-5" aria-hidden="true" />
             Default Values
           </CardTitle>
           <CardDescription>
@@ -195,7 +195,7 @@ export function ProductivityPreferences() {
             <div className="space-y-2">
               <Label htmlFor="default-task-priority">Default Task Priority</Label>
               <Select value={defaultTaskPriority} onValueChange={setDefaultTaskPriority}>
-                <SelectTrigger id="default-task-priority">
+                <SelectTrigger id="default-task-priority" aria-label="Default task priority">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -220,7 +220,7 @@ export function ProductivityPreferences() {
                 value={defaultProjectId?.toString() || ''} 
                 onValueChange={(value) => setDefaultProjectId(value ? parseInt(value) : undefined)}
               >
-                <SelectTrigger id="default-project">
+                <SelectTrigger id="default-project" aria-label="Default project">
                   <SelectValue placeholder="No default project" />
                 </SelectTrigger>
                 <SelectContent>
@@ -239,7 +239,7 @@ export function ProductivityPreferences() {
           </div>
           
           <Alert>
-            <Info className="h-4 w-4" />
+            <Info className="h-4 w-4" aria-hidden="true" />
             <AlertDescription>
               These defaults will be pre-selected when creating new tasks, but can be changed for individual items.
             </AlertDescription>
@@ -251,7 +251,7 @@ export function ProductivityPreferences() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Save className="h-5 w-5" />
+            <Save className="h-5 w-5" aria-hidden="true" />
             Auto-Save
           </CardTitle>
           <CardDescription>
@@ -264,7 +264,7 @@ export function ProductivityPreferences() {
               <Label htmlFor="auto-save-enabled" className="text-base font-medium">
                 Enable Auto-Save
               </Label>
-              <p className="text-sm text-gray-600">
+              <p id="auto-save-desc" className="text-sm text-gray-600">
                 Automatically save form changes every few seconds to prevent data loss
               </p>
             </div>
@@ -272,13 +272,14 @@ export function ProductivityPreferences() {
               id="auto-save-enabled"
               checked={autoSaveEnabled}
               onCheckedChange={setAutoSaveEnabled}
+              aria-describedby="auto-save-desc"
             />
           </div>
           
           {autoSaveEnabled && (
-            <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg" role="status" aria-live="polite">
               <div className="flex items-center gap-2 mb-2">
-                <Save className="h-4 w-4 text-green-600" />
+                <Save className="h-4 w-4 text-green-600" aria-hidden="true" />
                 <span className="font-medium text-green-800">Auto-Save Active</span>
               </div>
               <ul className="text-sm text-green-700 space-y-1">
@@ -315,7 +316,7 @@ export function ProductivityPreferences() {
                     }`}
                   >
                     <div className="flex items-center gap-3 flex-1">
-                      <Icon className={`h-5 w-5 ${isActive ? 'text-primary' : 'text-gray-500'}`} />
+                      <Icon className={`h-5 w-5 ${isActive ? 'text-primary' : 'text-gray-500'}`} aria-hidden="true" />
                       <div>
                         <div className={`font-medium ${isActive ? 'text-gray-900' : 'text-gray-700'}`}>
                           {action.label}
@@ -327,15 +328,16 @@ export function ProductivityPreferences() {
                       variant={isActive ? 'default' : 'outline'}
                       size="sm"
                       onClick={() => toggleQuickAction(action.id)}
+                      aria-label={isActive ? `Remove ${action.label} from quick actions` : `Add ${action.label} to quick actions`}
                     >
                       {isActive ? (
                         <>
-                          <Minus className="h-4 w-4 mr-1" />
+                          <Minus className="h-4 w-4 mr-1" aria-hidden="true" />
                           Remove
                         </>
                       ) : (
                         <>
-                          <Plus className="h-4 w-4 mr-1" />
+                          <Plus className="h-4 w-4 mr-1" aria-hidden="true" />
                           Add
                         </>
                       )}
@@ -384,7 +386,7 @@ export function ProductivityPreferences() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <FileDown className="h-5 w-5" />
+            <FileDown className="h-5 w-5" aria-hidden="true" />
             Export Settings
           </CardTitle>
           <CardDescription>
@@ -395,7 +397,7 @@ export function ProductivityPreferences() {
           <div className="space-y-2">
             <Label htmlFor="default-export-format">Default Export Format</Label>
             <Select value={defaultExportFormat} onValueChange={setDefaultExportFormat}>
-              <SelectTrigger id="default-export-format" className="w-full md:w-64">
+              <SelectTrigger id="default-export-format" className="w-full md:w-64" aria-label="Default export format">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

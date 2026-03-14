@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useMemo } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import { useUserPreferences } from '@/contexts/user-preferences-context'
 import { useTheme } from '@/contexts/theme-context'
 import { 
@@ -96,7 +96,7 @@ export function useDisplayPreferences() {
   }, [fontSize, interfaceDensity, accentColor, reducedMotion])
   
   // Apply settings when they change
-  useMemo(() => {
+  useEffect(() => {
     applyDisplaySettings()
   }, [applyDisplaySettings])
   
@@ -171,7 +171,7 @@ export function useAccessibilityPreferences() {
   }, [screenReaderOptimized, highContrastMode, focusIndicatorEnhanced, textScaling])
   
   // Apply settings when they change
-  useMemo(() => {
+  useEffect(() => {
     applyAccessibilitySettings()
   }, [applyAccessibilitySettings])
   

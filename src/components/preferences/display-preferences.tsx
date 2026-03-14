@@ -83,12 +83,12 @@ export function DisplayPreferences() {
   }
   
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" role="region" aria-label="Display preferences">
       {/* Theme Selection */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Palette className="h-5 w-5" />
+            <Palette className="h-5 w-5" aria-hidden="true" />
             Theme
           </CardTitle>
           <CardDescription>
@@ -115,10 +115,11 @@ export function DisplayPreferences() {
                     checked={theme === option.value}
                     onChange={() => setTheme(option.value as 'light' | 'dark' | 'system')}
                     className="sr-only"
+                    aria-label={`${option.label} theme: ${option.description}`}
                   />
                   <Icon className={`h-8 w-8 mb-2 ${
                     theme === option.value ? 'text-primary' : 'text-gray-500'
-                  }`} />
+                  }`} aria-hidden="true" />
                   <div className="font-medium">{option.label}</div>
                   <div className="text-sm text-gray-600 text-center">{option.description}</div>
                 </label>
@@ -132,7 +133,7 @@ export function DisplayPreferences() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Type className="h-5 w-5" />
+            <Type className="h-5 w-5" aria-hidden="true" />
             Typography
           </CardTitle>
           <CardDescription>
@@ -159,6 +160,7 @@ export function DisplayPreferences() {
                     checked={fontSize === option.value}
                     onChange={() => setFontSize(option.value)}
                     className="sr-only"
+                    aria-label={`${option.label} font size: ${option.description}`}
                   />
                   <div className={`mb-2 font-medium`} style={{ fontSize: option.size }}>
                     Aa
@@ -172,7 +174,7 @@ export function DisplayPreferences() {
           
           <div className="space-y-3">
             <Label className="text-base font-medium">Sample Text</Label>
-            <div className={`p-4 border rounded-lg bg-accent/10`} style={{ fontSize: FONT_SIZE_OPTIONS.find(o => o.value === fontSize)?.size }}>
+            <div className={`p-4 border rounded-lg bg-accent/10`} style={{ fontSize: FONT_SIZE_OPTIONS.find(o => o.value === fontSize)?.size }} aria-label="Font size preview">
               <div className="font-semibold mb-2">Task Management Dashboard</div>
               <div className="text-gray-600">
                 This is how your text will appear with the current font size settings. 
@@ -187,7 +189,7 @@ export function DisplayPreferences() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Zap className="h-5 w-5" />
+            <Zap className="h-5 w-5" aria-hidden="true" />
             Interface Density
           </CardTitle>
           <CardDescription>
@@ -212,6 +214,7 @@ export function DisplayPreferences() {
                   checked={interfaceDensity === option.value}
                   onChange={() => setInterfaceDensity(option.value)}
                   className="sr-only"
+                  aria-label={`${option.label} density: ${option.description}`}
                 />
                 
                 {/* Visual representation of density */}
@@ -265,6 +268,7 @@ export function DisplayPreferences() {
                   onClick={() => handleAccentColorSelect(color.value)}
                   className={`group relative w-12 h-12 rounded-lg ${color.class} transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary`}
                   title={color.label}
+                  aria-label={`${color.label} accent color${accentColor === color.value ? ' (selected)' : ''}`}
                 >
                   {accentColor === color.value && (
                     <div className="absolute inset-0 flex items-center justify-center">
@@ -298,6 +302,7 @@ export function DisplayPreferences() {
                     value={customColor}
                     onChange={(e) => handleCustomColorChange(e.target.value)}
                     className="w-16 h-10 p-1 border"
+                    aria-label="Custom accent color picker"
                   />
                   <Input
                     type="text"
@@ -305,6 +310,7 @@ export function DisplayPreferences() {
                     onChange={(e) => handleCustomColorChange(e.target.value)}
                     placeholder="#3b82f6"
                     className="flex-1"
+                    aria-label="Custom accent color hex value"
                   />
                 </div>
                 <div className="p-3 rounded-lg border" style={{ backgroundColor: customColor + '10' }}>
@@ -335,7 +341,7 @@ export function DisplayPreferences() {
               <Label htmlFor="reduced-motion" className="text-base font-medium">
                 Reduce Motion
               </Label>
-              <p className="text-sm text-gray-600">
+              <p id="reduced-motion-desc" className="text-sm text-gray-600">
                 Minimize animations and transitions for a calmer experience or accessibility needs
               </p>
             </div>
@@ -343,6 +349,7 @@ export function DisplayPreferences() {
               id="reduced-motion"
               checked={reducedMotion}
               onCheckedChange={setReducedMotion}
+              aria-describedby="reduced-motion-desc"
             />
           </div>
         </CardContent>
@@ -352,7 +359,7 @@ export function DisplayPreferences() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Globe className="h-5 w-5" />
+            <Globe className="h-5 w-5" aria-hidden="true" />
             Language and Localization
           </CardTitle>
           <CardDescription>
@@ -363,7 +370,7 @@ export function DisplayPreferences() {
           <div className="space-y-2">
             <Label htmlFor="locale">Language</Label>
             <Select value={locale} onValueChange={setLocale}>
-              <SelectTrigger id="locale" className="w-full md:w-64">
+              <SelectTrigger id="locale" className="w-full md:w-64" aria-label="Language selection">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
