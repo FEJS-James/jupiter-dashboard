@@ -357,7 +357,7 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: `Activities deleted successfully`,
-      deletedCount: result.changes || 0,
+      deletedCount: result.rowsAffected || 0,
     })
 
   } catch (error) {
