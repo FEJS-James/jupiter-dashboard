@@ -105,10 +105,13 @@ export async function GET(request: NextRequest) {
     })
 
     return NextResponse.json({
-      unreadCount: unreadCount[0]?.count || 0,
-      totalCount: totalCount[0]?.count || 0,
-      byType,
-      byPriority,
+      success: true,
+      data: {
+        unreadCount: unreadCount[0]?.count || 0,
+        totalCount: totalCount[0]?.count || 0,
+        byType,
+        byPriority,
+      },
     }, {
       headers: {
         'Cache-Control': 'public, s-maxage=5, stale-while-revalidate=30',
