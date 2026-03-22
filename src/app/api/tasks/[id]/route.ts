@@ -123,6 +123,19 @@ export async function PATCH(
       return createErrorResponse('Task not found', 404);
     }
     
+    // Verify target project exists if provided
+    if (validatedData.projectId) {
+      const project = await db
+        .select()
+        .from(projects)
+        .where(eq(projects.id, validatedData.projectId))
+        .limit(1);
+      
+      if (project.length === 0) {
+        return createErrorResponse('Target project not found', 400);
+      }
+    }
+    
     // Verify assigned agent exists if provided
     if (validatedData.assignedAgent) {
       const agent = await db

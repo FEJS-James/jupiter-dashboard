@@ -107,6 +107,25 @@ describe('/api/agents', () => {
       expect(response.status).toBe(200);
     });
 
+    it('should use createCachedSuccessResponse for cache headers', async () => {
+      const { createCachedSuccessResponse } = await import('@/lib/api-utils');
+      const request = new NextRequest('http://localhost:3000/api/agents');
+      
+      await GET(request);
+      
+      expect(createCachedSuccessResponse).toHaveBeenCalled();
+    });
+
+    it('should call db.select twice (agents + aggregated task counts for N+1 fix)', async () => {
+      const { db } = await import('@/lib/db');
+      const request = new NextRequest('http://localhost:3000/api/agents');
+      
+      await GET(request);
+      
+      // First call: fetch agents, second call: aggregated task counts (GROUP BY)
+      expect(db.select).toHaveBeenCalledTimes(2);
+    });
+
     it('should handle requests with role filter', async () => {
       const request = new NextRequest('http://localhost:3000/api/agents?role=coder');
       

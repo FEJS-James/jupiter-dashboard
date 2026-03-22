@@ -204,6 +204,18 @@ describe('/api/activity API Routes', () => {
       expect(response.status).toBe(400)
       expect(data.success).toBe(false)
     })
+
+    it('should return Cache-Control headers for caching', async () => {
+      const request = createRequest('/api/activity')
+      const response = await GET(request)
+
+      expect(response.status).toBe(200)
+      // The route uses createCachedSuccessResponse which adds Cache-Control headers
+      const cacheHeader = response.headers.get('Cache-Control')
+      expect(cacheHeader).toBeTruthy()
+      expect(cacheHeader).toContain('s-maxage')
+      expect(cacheHeader).toContain('stale-while-revalidate')
+    })
   })
 
   describe('POST /api/activity', () => {

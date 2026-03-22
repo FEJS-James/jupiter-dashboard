@@ -36,6 +36,7 @@ export const createTaskSchema = z.object({
 });
 
 export const updateTaskSchema = z.object({
+  projectId: z.number().int().positive().optional(),
   title: z.string().min(1).max(200).optional(),
   description: z.string().optional(),
   status: z.enum(['backlog', 'in-progress', 'code-review', 'testing', 'deploying', 'done', 'blocked', 'archived']).optional(),
@@ -166,6 +167,7 @@ export const bulkTagSchema = z.object({
 export const bulkEditSchema = z.object({
   taskIds: z.array(z.number().int().positive()).min(1, 'At least one task ID is required'),
   updates: z.object({
+    projectId: z.number().int().positive().optional(),
     description: z.string().optional(),
     dueDate: z.string().datetime().optional().or(z.null()),
     effort: z.number().optional(),

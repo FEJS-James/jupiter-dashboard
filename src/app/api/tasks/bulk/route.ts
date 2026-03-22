@@ -62,6 +62,7 @@ const bulkTagSchema = z.object({
 const bulkEditSchema = z.object({
   taskIds: z.array(z.number().int().positive()).min(1, 'At least one task ID is required'),
   updates: z.object({
+    projectId: z.number().int().positive().optional(),
     description: z.string().optional(),
     dueDate: z.string().datetime().optional().or(z.null()),
     effort: z.number().optional(),
@@ -470,8 +471,22 @@ async function handleBulkEdit(body: unknown) {
       throw new Error('One or more tasks not found');
     }
 
+    // Verify target project exists if provided
+    if (updates.projectId) {
+      const project = await tx
+        .select()
+        .from(projects)
+        .where(eq(projects.id, updates.projectId))
+        .limit(1);
+      
+      if (project.length === 0) {
+        throw new Error('Target project not found');
+      }
+    }
+
     // Prepare update data
     const updateData: any = {};
+    if (updates.projectId !== undefined) updateData.projectId = updates.projectId;
     if (updates.description !== undefined) updateData.description = updates.description;
     if (updates.dueDate !== undefined) updateData.dueDate = updates.dueDate ? new Date(updates.dueDate) : null;
     if (updates.effort !== undefined) updateData.effort = updates.effort;
