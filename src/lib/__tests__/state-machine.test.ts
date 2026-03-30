@@ -89,11 +89,58 @@ describe('state-machine', () => {
       expect(result.valid).toBe(false);
     });
 
+    // blocked→in-progress transitions
+    it('allows orchestrator: blocked → in-progress', () => {
+      expect(validateTransition('blocked', 'in-progress', 'orchestrator')).toEqual({ valid: true });
+    });
+
+    it('allows admin: blocked → in-progress', () => {
+      expect(validateTransition('blocked', 'in-progress', 'admin')).toEqual({ valid: true });
+    });
+
+    it('denies coder: blocked → in-progress', () => {
+      const result = validateTransition('blocked', 'in-progress', 'coder');
+      expect(result.valid).toBe(false);
+    });
+
+    it('denies reviewer: blocked → in-progress', () => {
+      const result = validateTransition('blocked', 'in-progress', 'reviewer');
+      expect(result.valid).toBe(false);
+    });
+
+    it('denies tester: blocked → in-progress', () => {
+      const result = validateTransition('blocked', 'in-progress', 'tester');
+      expect(result.valid).toBe(false);
+    });
+
+    it('denies devops: blocked → in-progress', () => {
+      const result = validateTransition('blocked', 'in-progress', 'devops');
+      expect(result.valid).toBe(false);
+    });
+
     // Unknown status
     it('rejects unknown from-status', () => {
       const result = validateTransition('unknown', 'done', 'admin');
       expect(result.valid).toBe(false);
       expect(result.error).toContain('Unknown status');
+    });
+  });
+
+  describe('ROLE_TRANSITIONS coverage', () => {
+    it('every entry in VALID_TRANSITIONS has corresponding ROLE_TRANSITIONS coverage', () => {
+      const missing: string[] = [];
+
+      for (const [from, toStatuses] of Object.entries(VALID_TRANSITIONS)) {
+        for (const to of toStatuses) {
+          const specificKey = `${from}→${to}`;
+          const wildcardKey = `*→${to}`;
+          if (!ROLE_TRANSITIONS[specificKey] && !ROLE_TRANSITIONS[wildcardKey]) {
+            missing.push(specificKey);
+          }
+        }
+      }
+
+      expect(missing).toEqual([]);
     });
   });
 });

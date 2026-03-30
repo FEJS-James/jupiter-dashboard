@@ -25,6 +25,7 @@ const ROLE_TRANSITIONS: Record<string, string[]> = {
   'deploying→done': ['devops'],
   'deploying→in-progress': ['devops'],
   'backlog→in-progress': ['orchestrator', 'admin'],
+  'blocked→in-progress': ['orchestrator', 'admin'],
   '*→blocked': ['orchestrator', 'admin'],
   '*→archived': ['admin'],
 };
@@ -51,15 +52,15 @@ export function validateTransition(from: string, to: string, role: string): Tran
   const specificKey = `${from}→${to}`;
   const wildcardKey = `*→${to}`;
 
+  // admin can do everything (checked before role mapping so missing entries don't block admin)
+  if (role === 'admin') {
+    return { valid: true };
+  }
+
   const allowedRoles = ROLE_TRANSITIONS[specificKey] ?? ROLE_TRANSITIONS[wildcardKey];
 
   if (!allowedRoles) {
     return { valid: false, error: `No role mapping found for transition '${from}' → '${to}'` };
-  }
-
-  // admin can do everything
-  if (role === 'admin') {
-    return { valid: true };
   }
 
   if (!allowedRoles.includes(role)) {

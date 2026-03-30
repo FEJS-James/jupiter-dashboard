@@ -65,13 +65,13 @@ export async function validateApiKey(request: Request): Promise<ApiKeyInfo> {
     .limit(1);
 
   if (rows.length === 0) {
-    throw new AuthError('Invalid API key', 401);
+    throw new AuthError('Invalid or inactive API key', 401);
   }
 
   const row = rows[0];
 
   if (!row.isActive) {
-    throw new AuthError('API key has been deactivated', 401);
+    throw new AuthError('Invalid or inactive API key', 401);
   }
 
   // Update lastUsedAt (fire-and-forget — don't block the request)
@@ -79,7 +79,7 @@ export async function validateApiKey(request: Request): Promise<ApiKeyInfo> {
     .set({ lastUsedAt: new Date().toISOString(), updatedAt: new Date().toISOString() })
     .where(eq(apiKeys.id, row.id))
     .then(() => {})
-    .catch(() => {});
+    .catch((err) => console.error('Failed to update lastUsedAt:', err));
 
   return { valid: true, role: row.role, keyId: row.id, name: row.name };
 }
@@ -91,10 +91,7 @@ export async function requireRole(request: Request, allowedRoles: string[]): Pro
   const info = await validateApiKey(request);
 
   if (!allowedRoles.includes(info.role)) {
-    throw new AuthError(
-      `Role '${info.role}' is not authorized for this endpoint. Required: ${allowedRoles.join(', ')}`,
-      403,
-    );
+    throw new AuthError('Insufficient permissions for this endpoint', 403);
   }
 
   return info;

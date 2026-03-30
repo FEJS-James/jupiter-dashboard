@@ -62,6 +62,14 @@ describe('POST /api/admin/api-keys', () => {
     expect(res.status).toBe(403);
   });
 
+  it('returns 401 when API key is deactivated', async () => {
+    mockRequireRole.mockRejectedValue(new MockAuthError('Invalid or inactive API key', 401));
+    const res = await POST(makeRequest('POST', { name: 'test', role: 'coder' }));
+    expect(res.status).toBe(401);
+    const json = await res.json();
+    expect(json.error).toBe('Invalid or inactive API key');
+  });
+
   it('returns 400 for missing name', async () => {
     const res = await POST(makeRequest('POST', { role: 'coder' }));
     expect(res.status).toBe(400);
