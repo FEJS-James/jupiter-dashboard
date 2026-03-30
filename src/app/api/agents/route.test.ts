@@ -34,18 +34,14 @@ vi.mock('@/lib/db', () => {
   }
 });
 
-vi.mock('drizzle-orm', () => {
-  const mockSql: any = (..._args: any[]) => 'mock-sql';
-  mockSql.raw = vi.fn();
-  return {
-    eq: vi.fn(),
-    like: vi.fn(),
-    or: vi.fn(),
-    and: vi.fn(),
-    count: vi.fn(),
-    sql: mockSql,
-  };
-});
+vi.mock('drizzle-orm', () => ({
+  eq: vi.fn(),
+  like: vi.fn(),
+  or: vi.fn(),
+  and: vi.fn(),
+  count: vi.fn(),
+  sql: Object.assign(vi.fn((...args: unknown[]) => 'mock-sql'), { raw: vi.fn() }),
+}));
 
 vi.mock('@/lib/schema', () => ({
   agents: {
