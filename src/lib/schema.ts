@@ -319,6 +319,85 @@ export const commentNotificationsRelations = relations(commentNotifications, ({ 
   }),
 }));
 
+/**
+ * API Keys table - stores hashed API keys for role-based access control
+ */
+export const apiKeys = sqliteTable('api_keys', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  key: text('key').notNull().unique(), // SHA-256 hash of the plaintext key
+  keyPrefix: text('key_prefix').notNull(), // First 8 chars of plaintext for identification
+  name: text('name').notNull(), // Human-readable label
+  role: text('role', { enum: ['coder', 'reviewer', 'tester', 'devops', 'orchestrator', 'admin'] }).notNull(),
+  agentId: integer('agent_id')
+    .references(() => agents.id, { onDelete: 'set null' }),
+  isActive: integer('is_active', { mode: 'boolean' })
+    .notNull()
+    .default(true),
+  lastUsedAt: text('last_used_at'),
+  createdAt: text('created_at')
+    .notNull()
+    .default(sql`(datetime('now'))`),
+  updatedAt: text('updated_at')
+    .notNull()
+    .default(sql`(datetime('now'))`),
+}, (table) => ({
+  keyIdx: index('api_keys_key_idx').on(table.key),
+  roleIdx: index('api_keys_role_idx').on(table.role),
+}));
+
+/**
+ * Pipeline Events table - audit log of pipeline state transitions
+ */
+export const pipelineEvents = sqliteTable('pipeline_events', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  taskId: integer('task_id')
+    .notNull()
+    .references(() => tasks.id, { onDelete: 'cascade' }),
+  fromStatus: text('from_status').notNull(),
+  toStatus: text('to_status').notNull(),
+  agentRole: text('agent_role').notNull(),
+  apiKeyId: integer('api_key_id')
+    .references(() => apiKeys.id, { onDelete: 'set null' }),
+  payload: text('payload'), // JSON string with submission details
+  timestamp: text('timestamp')
+    .notNull()
+    .default(sql`(datetime('now'))`),
+}, (table) => ({
+  taskIdIdx: index('pipeline_events_task_id_idx').on(table.taskId),
+  timestampIdx: index('pipeline_events_timestamp_idx').on(table.timestamp),
+}));
+
+/**
+ * API Keys relations
+ */
+export const apiKeysRelations = relations(apiKeys, ({ one }) => ({
+  agent: one(agents, {
+    fields: [apiKeys.agentId],
+    references: [agents.id],
+  }),
+}));
+
+/**
+ * Pipeline Events relations
+ */
+export const pipelineEventsRelations = relations(pipelineEvents, ({ one }) => ({
+  task: one(tasks, {
+    fields: [pipelineEvents.taskId],
+    references: [tasks.id],
+  }),
+  apiKey: one(apiKeys, {
+    fields: [pipelineEvents.apiKeyId],
+    references: [apiKeys.id],
+  }),
+}));
+
+// Type exports for TypeScript
+export type ApiKey = typeof apiKeys.$inferSelect;
+export type NewApiKey = typeof apiKeys.$inferInsert;
+
+export type PipelineEvent = typeof pipelineEvents.$inferSelect;
+export type NewPipelineEvent = typeof pipelineEvents.$inferInsert;
+
 // Type exports for TypeScript
 export type Project = typeof projects.$inferSelect;
 export type NewProject = typeof projects.$inferInsert;
